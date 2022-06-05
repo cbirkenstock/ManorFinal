@@ -1,0 +1,25 @@
+import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
+
+import { AppStack } from "./Stacks/AppStack";
+import { AuthStack } from "./Stacks/AuthStack";
+import { ActivityIndicator, View } from "react-native";
+
+import useAuthContext from "../hooks/useAuthContext";
+import React from "react";
+import Colors from "../constants/Colors";
+
+export const Router = () => {
+  const { user, loading } = useAuthContext();
+
+  if (loading) {
+    return <ActivityIndicator />;
+  } else {
+    return (
+      <NavigationContainer>
+        {!user ? <AppStack /> : <AuthStack />}
+      </NavigationContainer>
+    );
+  }
+};
+
+//theme={{ colors: { background: "#000" } }}

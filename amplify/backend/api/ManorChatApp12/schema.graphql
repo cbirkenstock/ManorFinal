@@ -1,0 +1,69 @@
+type Chat @model @auth(rules: [{ allow: public }]) {
+  id: ID!
+  title: String!
+  chatImage: String
+  breadCrumb: String
+  eventDateTime: AWSDateTime
+  EventDescription: String
+  eventLocation: String
+  limit: Int
+  lastMessage: Message @hasOne
+  chatCreator: User @hasOne
+  Members: [ChatUser] @hasMany(indexName: "customByChat", fields: ["id"])
+  Messages: [Message] @hasMany(indexName: "byChat", fields: ["id"])
+  eventChats: [Chat] @hasMany
+  isForEveryone: Boolean
+  isCoreChat: Boolean
+  isCoordinationChat: Boolean
+  isActive: Boolean
+  parentChat1ID: String
+  parentChat2ID: String
+  isGroupChat: Boolean
+  editedEventID: String
+}
+
+type ChatUser @model @auth(rules: [{ allow: public }]) {
+  id: ID!
+  userID: ID!
+  chatID: ID! @index(name: "customByChat")
+  user: User! @belongsTo(fields: ["userID"])
+  chat: Chat! @belongsTo(fields: ["chatID"])
+  notificationsEnabled: Boolean!
+  nickname: String
+  hasUnreadMessage: Boolean
+  unreadMessagesCount: Int
+  isAdmin: Boolean
+  writtenMessages: [Message] @hasMany(indexName: "byChatUser", fields: ["id"])
+  messages: [Message] @manyToMany(relationName: "ChatUserMessage")
+  profileImageUrl: String
+}
+
+type User @model @auth(rules: [{ allow: public }]) {
+  id: ID!
+  name: String!
+  phoneNumber: AWSPhone!
+  profileImageUrl: String
+  venmoHandle: String
+  badgeCount: String
+  chats: [ChatUser] @hasMany(fields: ["id"])
+  expoPushToken: String
+}
+
+type Message @model @auth(rules: [{ allow: public }]) {
+  id: ID!
+  eventChatID: String
+  messageBody: String
+  announcementBody: String
+  imageUrl: String
+  chatID: ID @index(name: "byChat")
+  chatuserID: ID @index(name: "byChatUser")
+  chatUsers: [ChatUser] @manyToMany(relationName: "ChatUserMessage")
+  likes: Int
+  link: AWSURL
+  isMandatory: Boolean
+  imageHeight: Int
+  imageWidth: Int
+  isAccepted: Boolean
+  dateSuggestion: AWSDateTime
+  remindDate: AWSDateTime
+}

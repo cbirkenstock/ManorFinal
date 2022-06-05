@@ -1,0 +1,27 @@
+{
+  "staging": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-manorchatapp12-staging-30821-authRole",
+      "UnauthRoleArn": "arn:aws:iam::177777110084:role/amplify-manorchatapp12-staging-30821-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::177777110084:role/amplify-manorchatapp12-staging-30821-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-manorchatapp12-staging-30821-deployment",
+      "UnauthRoleName": "amplify-manorchatapp12-staging-30821-unauthRole",
+      "StackName": "amplify-manorchatapp12-staging-30821",
+      "StackId": "arn:aws:cloudformation:us-east-1:177777110084:stack/amplify-manorchatapp12-staging-30821/5ffe19d0-888c-11ec-b0d7-0e52bea8e7c9",
+      "AmplifyAppId": "d2yvfp1n8dn1io",
+      "AuthTriggerTemplateURL": "https://s3.amazonaws.com/amplify-manorchatapp12-staging-30821-deployment/amplify-cfn-templates/auth/auth-trigger-cloudformation-template.json"
+    },
+    "categories": {
+      "auth": {
+        "ManorChatApp12": {}
+      },
+      "function": {
+        "ManorChatApp12PostConfirmation": {
+          "deploymentBucketName": "amplify-manorchatapp12-staging-30821-deployment",
+          "s3Key": "amplify-builds/ManorChatApp12PostConfirmation-6f63493266614b493730-build.zip"
+        }
+      }
+    }
+  }
+}
