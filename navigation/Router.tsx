@@ -12,7 +12,11 @@ export const Router = () => {
   const { user, loading } = useAuthContext();
 
   if (loading) {
-    return <ActivityIndicator />;
+    return (
+      <View
+        style={{ flex: 1, backgroundColor: Colors.manorBackgroundGray }}
+      ></View>
+    );
   } else {
     return (
       <NavigationContainer>

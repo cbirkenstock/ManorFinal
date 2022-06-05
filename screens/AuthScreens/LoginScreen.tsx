@@ -5,15 +5,12 @@ import {
   View,
   TextInput,
   KeyboardAvoidingView,
-  TouchableOpacity,
 } from "react-native";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Colors from "../../constants/Colors";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../navigation/Stacks/AuthStack";
-
-type Props = NativeStackScreenProps<RootStackParamList, "LoginScreen">;
+import { LoginScreenProps as Props } from "../../navigation/Types";
+import TriButton from "../../components/TriButton";
 
 export default function LoginScreen({ navigation }: Props) {
   const { signIn } = useAuthContext();
@@ -42,14 +39,8 @@ export default function LoginScreen({ navigation }: Props) {
       behavior="padding"
       enabled
     >
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={loginStyles.safeAreaView}>
         <View style={loginStyles.ManorView}>
-          {/* <Image
-            style={loginStyles.logo}
-            source={{
-              uri: "https://manorchatapptestingbucketpublic.s3.amazonaws.com/GradientManorLogo.png",
-            }}
-          /> */}
           <Text style={loginStyles.text}>Manor</Text>
         </View>
         <View style={loginStyles.inputContainer}>
@@ -80,39 +71,22 @@ export default function LoginScreen({ navigation }: Props) {
               value={password?.toString()}
             />
           </View>
-          <View
-            style={{
-              width: "100%",
-              alignItems: "center",
+          <TriButton
+            mainButton={{
+              title: "Log In",
+              onPress: () => signIn(phone!, password!),
             }}
-          >
-            <TouchableOpacity
-              style={loginStyles.button}
-              onPress={() => signIn(phone!, password!)}
-            >
-              <Text style={loginStyles.buttonText}>Login</Text>
-            </TouchableOpacity>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                width: "75%",
-                marginTop: 10,
-                paddingHorizontal: 10,
-              }}
-            >
-              <TouchableOpacity>
-                <Text style={{ color: "#5C6AEF", fontSize: 15 }}>
-                  Forgot Password?
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => navigation.replace("SignUpScreen")}
-              >
-                <Text style={{ color: "#5C6AEF", fontSize: 15 }}>Sign Up</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+            bottomLeftButton={{
+              title: "Forgot Password?",
+              onPress: () => {
+                return null;
+              },
+            }}
+            bottomRightButton={{
+              title: "Sign Up",
+              onPress: () => navigation.navigate("SignUpScreen"),
+            }}
+          />
         </View>
       </SafeAreaView>
     </KeyboardAvoidingView>
@@ -123,7 +97,10 @@ const loginStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.manorBackgroundGray,
-    justifyContent: "flex-start",
+  },
+
+  safeAreaView: {
+    flex: 1,
   },
 
   ManorView: {

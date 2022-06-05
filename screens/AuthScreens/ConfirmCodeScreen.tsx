@@ -9,10 +9,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import useAuth from "../../hooks/useAuthContext";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../navigation/Stacks/AuthStack";
-
-type Props = NativeStackScreenProps<RootStackParamList, "ConfirmCodeScreen">;
+import { ConfirmCodeScreenProps as Props } from "../../navigation/Types";
 
 export default function SignupScreen({ route, navigation }: Props) {
   const { confirmSignUp, signIn } = useAuth();

@@ -8,11 +8,9 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
 } from "react-native";
+import TriButton from "../../components/TriButton";
 import useAuth from "../../hooks/useAuthContext";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../navigation/Stacks/AuthStack";
-
-type Props = NativeStackScreenProps<RootStackParamList, "SignUpScreen">;
+import { SignUpScreenProps as Props } from "../../navigation/Types";
 
 export default function SignUpScreen({ navigation }: Props) {
   const { signUp } = useAuth();
@@ -100,7 +98,23 @@ export default function SignUpScreen({ navigation }: Props) {
             marginTop: 25,
           }}
         >
-          <TouchableOpacity
+          <TriButton
+            mainButton={{
+              title: "Sign Up",
+              onPress: () => goToConfirmationScreen(),
+            }}
+            bottomLeftButton={{
+              title: "Forgot Password?",
+              onPress: () => {
+                return null;
+              },
+            }}
+            bottomRightButton={{
+              title: "Log In",
+              onPress: () => navigation.replace("LoginScreen"),
+            }}
+          />
+          {/* <TouchableOpacity
             style={loginStyles.button}
             onPress={goToConfirmationScreen}
           >
@@ -123,7 +137,7 @@ export default function SignUpScreen({ navigation }: Props) {
             <TouchableOpacity onPress={() => navigation.replace("LoginScreen")}>
               <Text style={{ color: "#5C6AEF", fontSize: 15 }}>Log In</Text>
             </TouchableOpacity>
-          </View>
+          </View> */}
         </View>
       </SafeAreaView>
     </KeyboardAvoidingView>
