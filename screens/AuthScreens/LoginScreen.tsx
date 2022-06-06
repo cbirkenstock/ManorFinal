@@ -9,7 +9,7 @@ import {
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Colors from "../../constants/Colors";
-import { LoginScreenProps as Props } from "../../navigation/Types";
+import { LoginScreenProps as Props } from "../../navigation/NavTypes";
 import TriButton from "../../components/TriButton";
 
 export default function LoginScreen({ navigation }: Props) {

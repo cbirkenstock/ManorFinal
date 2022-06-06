@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import useAuth from "../../hooks/useAuthContext";
-import { ConfirmCodeScreenProps as Props } from "../../navigation/Types";
+import { ConfirmCodeScreenProps as Props } from "../../navigation/NavTypes";
 
 export default function SignupScreen({ route, navigation }: Props) {
   const { confirmSignUp, signIn } = useAuth();

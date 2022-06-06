@@ -1,0 +1,83 @@
+{
+  "version": "1",
+  "cognitoConfig": {
+    "identityPoolName": "testAuthIdentityPool",
+    "allowUnauthenticatedIdentities": false,
+    "resourceNameTruncated": "manorcbdb11695",
+    "userPoolName": "ManorChatApp12",
+    "autoVerifiedAttributes": [
+      "phone_number"
+    ],
+    "mfaConfiguration": "OFF",
+    "mfaTypes": [
+      "SMS Text Message"
+    ],
+    "smsAuthenticationMessage": "Your authentication code is {####}",
+    "smsVerificationMessage": "Forgot password code: {####}",
+    "emailVerificationSubject": "Your verification code",
+    "emailVerificationMessage": "Your verification code is {####}",
+    "defaultPasswordPolicy": false,
+    "passwordPolicyMinLength": 6,
+    "passwordPolicyCharacters": [],
+    "requiredAttributes": [
+      "phone_number"
+    ],
+    "aliasAttributes": [],
+    "userpoolClientGenerateSecret": false,
+    "userpoolClientRefreshTokenValidity": "3650",
+    "userpoolClientWriteAttributes": [],
+    "userpoolClientReadAttributes": [],
+    "userpoolClientLambdaRole": "ManorCbdb11695_userpoolclient_lambda_role",
+    "userpoolClientSetAttributes": false,
+    "sharedId": "bdb11695",
+    "resourceName": "ManorChatApp12",
+    "authSelections": "identityPoolAndUserPool",
+    "serviceName": "Cognito",
+    "usernameAttributes": [
+      "phone_number"
+    ],
+    "useDefault": "manual",
+    "userPoolGroups": false,
+    "userPoolGroupList": [],
+    "adminQueries": false,
+    "thirdPartyAuth": false,
+    "authProviders": [],
+    "usernameCaseSensitive": false,
+    "useEnabledMfas": true,
+    "authRoleArn": {
+      "Fn::GetAtt": [
+        "AuthRole",
+        "Arn"
+      ]
+    },
+    "unauthRoleArn": {
+      "Fn::GetAtt": [
+        "UnauthRole",
+        "Arn"
+      ]
+    },
+    "breakCircularDependency": true,
+    "dependsOn": [
+      {
+        "category": "function",
+        "resourceName": "ManorChatApp12PostConfirmation",
+        "triggerProvider": "Cognito",
+        "attributes": [
+          "Arn",
+          "Name"
+        ]
+      }
+    ],
+    "triggers": {
+      "PostConfirmation": [
+        "custom"
+      ]
+    },
+    "hostedUI": false,
+    "parentStack": {
+      "Ref": "AWS::StackId"
+    },
+    "authTriggerConnections": "[\n  {\n    \"triggerType\": \"PostConfirmation\",\n    \"lambdaFunctionName\": \"ManorChatApp12PostConfirmation\"\n  }\n]",
+    "permissions": []
+  }
+}

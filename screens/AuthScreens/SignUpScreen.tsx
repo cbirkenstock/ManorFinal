@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import TriButton from "../../components/TriButton";
 import useAuth from "../../hooks/useAuthContext";
-import { SignUpScreenProps as Props } from "../../navigation/Types";
+import { SignUpScreenProps as Props } from "../../navigation/NavTypes";
 
 export default function SignUpScreen({ navigation }: Props) {
   const { signUp } = useAuth();

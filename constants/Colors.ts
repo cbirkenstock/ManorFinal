@@ -9,7 +9,8 @@ export default {
   manorWarmBlack: "#0F0F0F",
   manorLightBlue: "#00ffff",
   manorPaymentBlue: "",
-  manorBackgroundGray: "#242323",
+  manorBackgroundGray: "#171717",
+  //manorBackgroundGray: "#242323",
   light: {
     text: "#000",
     background: "#fff",

@@ -3,13 +3,13 @@ import SignUpScreen from "../../screens/AuthScreens/SignUpScreen";
 import LoginScreen from "../../screens/AuthScreens/LoginScreen";
 import ConfirmCodeScreen from "../../screens/AuthScreens/ConfirmCodeScreen";
 
-export type RootStackParamList = {
+export type AuthStackParamList = {
   SignUpScreen: undefined;
   LoginScreen: undefined;
   ConfirmCodeScreen: { phone: string; password: string };
 };
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export const AuthStack = () => {
   return (
