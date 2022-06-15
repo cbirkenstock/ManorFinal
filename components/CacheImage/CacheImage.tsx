@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
-import { fetchSignedUrl } from "../../managers/PhotoManager";
+import { fetchSignedUrl } from "../../managers/MediaManager";
 
 interface CachImageProps extends Omit<ImageProps, "source"> {
   cacheKey: string;
@@ -39,8 +39,10 @@ export default function CacheImage(props: CachImageProps) {
         }
       }
     }
-
     loadImg();
+    return () => {
+      setCachePath("");
+    };
   }, []);
 
   /*
@@ -89,13 +91,7 @@ export default function CacheImage(props: CachImageProps) {
 
   return (
     <>
-      {cachePath ? (
-        <Image source={{ uri: cachePath }} style={style} />
-      ) : (
-        <View style={{ alignItems: "center", justifyContent: "center" }}>
-          <ActivityIndicator size={33} />
-        </View>
-      )}
+      {cachePath ? <Image source={{ uri: cachePath }} style={style} /> : null}
     </>
   );
 }

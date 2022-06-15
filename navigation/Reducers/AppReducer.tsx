@@ -1,4 +1,4 @@
-import { Chat, ChatUser } from "../../src/models";
+import { Chat, ChatUser, Message } from "../../src/models";
 
 /* -------------------------------------------------------------------------- */
 /*                                 Action Enum                                */
@@ -12,8 +12,9 @@ for increasing readability.
 export enum AppActionCase {
   setChat = "setChat",
   setMembers = "setMembers",
-  setCurrentChatUser = "setCurrentChatUser",
+  setChatUser = "setChatUser",
   setNewEventLocation = "setNewEventLocation",
+  setMessages = "setMessages",
 }
 
 /* -------------------------------------------------------------------------- */
@@ -44,8 +45,8 @@ interface MembersAction {
   payload: ChatUser[];
 }
 
-interface CurrentChatUserAction {
-  type: AppActionCase.setCurrentChatUser;
+interface ChatUserAction {
+  type: AppActionCase.setChatUser;
   payload: ChatUser | null;
 }
 
@@ -54,11 +55,17 @@ interface NewEventLocationAction {
   payload: string | null;
 }
 
+interface MessageAction {
+  type: AppActionCase.setMessages;
+  payload: Message[];
+}
+
 type ActionTypes =
   | ChatAction
   | MembersAction
-  | CurrentChatUserAction
-  | NewEventLocationAction;
+  | ChatUserAction
+  | NewEventLocationAction
+  | MessageAction;
 
 /* -------------------------------------------------------------------------- */
 /*                                 State Type                                 */
@@ -67,8 +74,9 @@ type ActionTypes =
 interface AppState {
   chat: Chat | null;
   members: ChatUser[];
-  currentChatUser: ChatUser | null;
+  chatUser: ChatUser | null;
   newEventLocation: string | null;
+  messages: Message[];
 }
 
 /* -------------------------------------------------------------------------- */
@@ -89,15 +97,20 @@ function appReducer(state: AppState, action: ActionTypes) {
         ...state,
         members: payload,
       };
-    case AppActionCase.setCurrentChatUser:
+    case AppActionCase.setChatUser:
       return {
         ...state,
-        currentChatUser: payload,
+        chatUser: payload,
       };
     case AppActionCase.setNewEventLocation:
       return {
         ...state,
         newEventLocation: payload,
+      };
+    case AppActionCase.setMessages:
+      return {
+        ...state,
+        messages: payload,
       };
     default:
       throw new Error(`No case for type ${type} found in AppReducer.`);

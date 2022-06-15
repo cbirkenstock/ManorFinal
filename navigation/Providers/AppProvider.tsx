@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer } from "react";
 import appReducer, { AppActionCase } from "../Reducers/AppReducer";
-import { Chat, ChatUser } from "../../src/models";
+import { Chat, ChatUser, Message } from "../../src/models";
 import {
   AppInitialStateProps,
   initialState,
@@ -30,9 +30,9 @@ export const AppProvider = (props: AppProviderProps) => {
     });
   };
 
-  const setCurrentChatUser = async (chatUser: ChatUser) => {
+  const setChatUser = async (chatUser: ChatUser) => {
     dispatch({
-      type: AppActionCase.setCurrentChatUser,
+      type: AppActionCase.setChatUser,
       payload: chatUser,
     });
   };
@@ -44,15 +44,24 @@ export const AppProvider = (props: AppProviderProps) => {
     });
   };
 
-  const value = {
+  const setMessages = async (messages: Message[]) => {
+    dispatch({
+      type: AppActionCase.setMessages,
+      payload: messages,
+    });
+  };
+
+  const value: AppInitialStateProps = {
     chat: state.chat,
     members: state.members,
-    currentChatUser: state.currentChatUser,
+    chatUser: state.chatUser,
     newEventLocation: state.newEventLocation,
+    messages: state.messages,
     setChat,
     setMembers,
-    setCurrentChatUser,
+    setChatUser,
     setNewEventLocation,
+    setMessages,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

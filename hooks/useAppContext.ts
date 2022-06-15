@@ -1,14 +1,14 @@
 import { useContext } from "react";
 import { AppContext } from "../navigation/Providers/AppProvider";
 
-export const useChatContext = () => {
+export const useAppContext = () => {
   const context = useContext(AppContext);
 
   if (context === undefined) {
-    throw new Error("useShop must be used within ShopContext");
+    throw new Error("useAppContext must be used within AppContext");
   }
 
   return context;
 };
 
-export default useChatContext;
+export default useAppContext;

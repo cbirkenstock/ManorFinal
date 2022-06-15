@@ -164,6 +164,13 @@ export const schema = {
           isRequired: false,
           attributes: [],
         },
+        membersCount: {
+          name: "membersCount",
+          isArray: false,
+          type: "Int",
+          isRequired: false,
+          attributes: [],
+        },
         parentChat1ID: {
           name: "parentChat1ID",
           isArray: false,
@@ -251,6 +258,20 @@ export const schema = {
           isArray: false,
           type: "ID",
           isRequired: true,
+          attributes: [],
+        },
+        marginTop: {
+          name: "marginTop",
+          isArray: false,
+          type: "Int",
+          isRequired: false,
+          attributes: [],
+        },
+        rerender: {
+          name: "rerender",
+          isArray: false,
+          type: "Boolean",
+          isRequired: false,
           attributes: [],
         },
         eventChatID: {
@@ -430,7 +451,7 @@ export const schema = {
           name: "userID",
           isArray: false,
           type: "ID",
-          isRequired: false,
+          isRequired: true,
           attributes: [],
         },
         user: {
@@ -450,7 +471,7 @@ export const schema = {
           name: "chatID",
           isArray: false,
           type: "ID",
-          isRequired: false,
+          isRequired: true,
           attributes: [],
         },
         chat: {

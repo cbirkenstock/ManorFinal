@@ -39,6 +39,11 @@ export type ProfileScreenProps = NativeStackScreenProps<
   "ProfileScreen"
 >;
 
+export type ChatScreenProps = NativeStackScreenProps<
+  InnerAppStackParamList,
+  "ChatScreen"
+>;
+
 /* -------------------------- useNavigation Imports ------------------------- */
 
 export type InnerContactScreenNavigationProp = NativeStackNavigationProp<

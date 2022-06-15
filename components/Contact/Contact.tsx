@@ -18,12 +18,15 @@ interface ContactProps {
 
 export default function Contact(props: ContactProps) {
   const { contact } = props;
-  const navigation = useNavigation<OuterContactScreenNavigationProp>();
   const { user } = useAuthContext();
+  const navigation = useNavigation<OuterContactScreenNavigationProp>();
+
   const [members, setMembers] = useState<ChatUser[]>([]);
-  const [displayUser, setDisplayUser] = useState<User | null>(null);
+  const [displayUser, setDisplayUser] = useState<User | undefined>();
   const [lastMessage, setLastMessage] = useState<Message | undefined>();
-  const [hasUnreadMessages, setHasUnreadMessages] = useState<boolean>();
+  const [currentChatUser, setCurrentChatUser] = useState<
+    ChatUser | undefined
+  >();
 
   /* -------------------------------------------------------------------------- */
   /*                                Subscription                                */
@@ -33,10 +36,9 @@ export default function Contact(props: ContactProps) {
   Checks whenever a chatUser belonging to specific chat is inserted or updated. If inserted then it is added to members
   if updated, check if it is current user, and then update has Unread Messages
   */
-
   useEffect(() => {
     const subscription = DataStore.observe(ChatUser, (chatUser) =>
-      chatUser.chatID("eq", contact.id)
+      chatUser.chatID("eq", contact?.id)
     ).subscribe((msg) => {
       const chatUser = msg.element;
 
@@ -44,8 +46,8 @@ export default function Contact(props: ContactProps) {
         const newMembers = [...members, msg.element];
         setMembers(newMembers);
       } else if (msg.model === ChatUser && msg.opType === "UPDATE") {
-        if (contact.id == chatUser.chatID && user?.id == chatUser.userID) {
-          setHasUnreadMessages(chatUser.hasUnreadMessage ?? true);
+        if (contact?.id == chatUser.chatID && user?.id == chatUser.userID) {
+          setCurrentChatUser(chatUser);
         }
       }
     });
@@ -58,18 +60,18 @@ export default function Contact(props: ContactProps) {
   /* -------------------------------------------------------------------------- */
 
   /*
-  call all of these functions together becuase they only need to be called once and this way you don't need 
-  4 rerenders
+  call all of these functions together becuase they only need to be called once 
+  and this way you don't need 4 rerenders
   */
   useEffect(() => {
     fetchDisplayUser();
-    fetchHasUnreadMessages();
+    fetchCurrentChatUser();
     fetchMembers();
     fetchLastMessage();
   }, []);
 
   const fetchDisplayUser = () => {
-    if (!contact.isGroupChat) {
+    if (!contact?.isGroupChat) {
       const otherChatUser = members.find(
         (chatUser) => chatUser.userID !== user?.id
       );
@@ -80,20 +82,20 @@ export default function Contact(props: ContactProps) {
     }
   };
 
-  const fetchHasUnreadMessages = async () => {
-    const hasUnreadMessages = (
+  const fetchCurrentChatUser = async () => {
+    const _currentChatUser = (
       await DataStore.query(ChatUser, (chatUser) =>
-        chatUser.userID("eq", user?.id ?? "").chatID("eq", contact.id)
+        chatUser.userID("eq", user?.id ?? "").chatID("eq", contact?.id)
       )
-    ).map((chatUser) => chatUser.hasUnreadMessage)[0];
+    )[0];
 
-    setHasUnreadMessages(hasUnreadMessages ?? true);
+    setCurrentChatUser(_currentChatUser);
   };
 
   const fetchMembers = async () => {
-    if (!contact.isGroupChat || !contact.chatImageUrl) {
+    if (!contact?.isGroupChat || !contact?.chatImageUrl) {
       const members = await DataStore.query(ChatUser, (chatUser) =>
-        chatUser.chatID("eq", contact.id)
+        chatUser.chatID("eq", contact?.id)
       );
 
       setMembers(members);
@@ -101,10 +103,10 @@ export default function Contact(props: ContactProps) {
   };
 
   const fetchLastMessage = async () => {
-    if (contact.chatLastMessageId) {
+    if (contact?.chatLastMessageId) {
       const _lastMessage = await DataStore.query(
         Message,
-        contact.chatLastMessageId
+        contact?.chatLastMessageId
       );
 
       setLastMessage(_lastMessage);
@@ -116,14 +118,16 @@ export default function Contact(props: ContactProps) {
   /* -------------------------------------------------------------------------- */
 
   const onPress = () => {
-    navigation.navigate("ChatNav", {
-      screen: "ChatScreen",
-      params: {
-        id: contact.id,
-        isEventChat: contact.isEventChat ? true : false,
-        members: members,
-      },
-    });
+    if (currentChatUser) {
+      navigation.navigate("ChatNav", {
+        screen: "ChatScreen",
+        params: {
+          chat: contact,
+          chatUser: currentChatUser,
+          members: members.length > 0 ? members : undefined,
+        },
+      });
+    }
   };
 
   /* -------------------------------------------------------------------------- */
@@ -131,7 +135,7 @@ export default function Contact(props: ContactProps) {
   /* -------------------------------------------------------------------------- */
 
   const requiresDefaultContactImage = !(
-    contact.chatImageUrl || displayUser?.profileImageUrl
+    contact?.chatImageUrl || displayUser?.profileImageUrl
   );
 
   const ContactIcon = () => {
@@ -141,7 +145,7 @@ export default function Contact(props: ContactProps) {
           style={[
             styles.newMessageView,
             {
-              backgroundColor: hasUnreadMessages
+              backgroundColor: currentChatUser?.hasUnreadMessage
                 ? Colors.manorLightBlue
                 : "transparent",
             },
@@ -153,8 +157,8 @@ export default function Contact(props: ContactProps) {
             </View>
           ) : (
             <CacheImage
-              source={contact.chatImageUrl ?? displayUser?.profileImageUrl!}
-              cacheKey={contact.chatImageUrl ?? displayUser?.profileImageUrl!}
+              source={contact?.chatImageUrl ?? displayUser?.profileImageUrl!}
+              cacheKey={contact?.chatImageUrl ?? displayUser?.profileImageUrl!}
               style={styles.contactImage}
             />
           )}
@@ -162,7 +166,7 @@ export default function Contact(props: ContactProps) {
         <Text
           style={[
             styles.contactNameText,
-            { color: contact.isEventChat ? Colors.manorPurple : "white" },
+            { color: contact?.isEventChat ? Colors.manorPurple : "white" },
           ]}
         >
           {contact?.title ?? displayUser?.name}

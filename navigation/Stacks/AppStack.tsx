@@ -13,7 +13,7 @@ import UsersScreen from "../../screens/AppScreens/UsersScreen";
 // import GoogleMapsScreen from "../../screens/GoogleMapsScreen";
 import Colors from "../../constants/Colors";
 import { AppProvider } from "../Providers/AppProvider";
-import { ChatUser } from "../../src/models";
+import { Chat, ChatUser } from "../../src/models";
 import { NavigatorScreenParams } from "@react-navigation/native";
 
 export type InnerAppStackParamList = {
@@ -22,8 +22,8 @@ export type InnerAppStackParamList = {
   ContactScreen: undefined;
   ProfileScreen: undefined;
   ChatScreen: {
-    id: string;
-    isEventChat: boolean;
+    chat: Chat;
+    chatUser: ChatUser;
     members: ChatUser[] | undefined;
   };
   UsersScreen: { chatType: "dm" | "group" | "event" | "coordination" | "core" };
@@ -89,7 +89,7 @@ export const AppStack = () => {
             <InnerStack.Screen
               name="ChatScreen"
               component={ChatScreen}
-              options={({ route }) => ({
+              options={() => ({
                 headerShown: false,
               })}
             />

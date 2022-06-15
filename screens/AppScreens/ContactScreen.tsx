@@ -25,6 +25,10 @@ export default function ContactScreen({ route, navigation }: Props) {
   const exitViewHeightAnim = useRef(new Animated.Value(0)).current;
   const exitViewOpacityAnim = useRef(new Animated.Value(0)).current;
 
+  /* -------------------------------------------------------------------------- */
+  /*                                 Fetch Chats                                */
+  /* -------------------------------------------------------------------------- */
+
   useEffect(() => {
     const fetchChats = async () => {
       const _chats = (
@@ -33,39 +37,65 @@ export default function ContactScreen({ route, navigation }: Props) {
         )
       ).map((chatUser) => chatUser.chat);
 
+      if (_chats.length === 0) {
+        const headerTrojanChat = new Chat({
+          title: "Header_Trojan_Horse",
+        });
+        _chats.push(headerTrojanChat);
+      }
+
       setChats(_chats);
     };
 
     fetchChats();
   }, []);
 
-  const renderContact = ({ index }: { index: number }) => {
-    const hangingChat = index % 2 == 0 && index == chats!.length - 1;
-    const regularChatPair = index % 2 == 0;
+  /* -------------------------------------------------------------------------- */
+  /*                       Render Flatlist Item Functions                       */
+  /* -------------------------------------------------------------------------- */
 
-    if (hangingChat) {
+  /* --------------------------------- Contact -------------------------------- */
+
+  const renderContact = ({ index }: { index: number }) => {
+    const start: boolean = index === 0;
+    const noChats = start && chats![index].title === "Header_Trojan_Horse";
+    const hangingChat: boolean = index % 2 == 0 && index == chats!.length - 1;
+
+    const HeaderComponent = () => {
       return (
-        <>
-          <Header
-            exitViewHeightAnim={exitViewHeightAnim}
-            exitViewOpacityAnim={exitViewOpacityAnim}
-          />
-          <View style={{ width: "50%", flexDirection: "row" }}>
-            <Contact contact={chats![index]} />
-          </View>
-        </>
+        <Header
+          exitViewHeightAnim={exitViewHeightAnim}
+          exitViewOpacityAnim={exitViewOpacityAnim}
+        />
       );
-    } else if (regularChatPair) {
+    };
+
+    const HangingChat = () => {
+      return (
+        <View style={{ width: "50%", flexDirection: "row" }}>
+          <Contact contact={chats![index]} />
+        </View>
+      );
+    };
+
+    const ChatPair = () => {
       return (
         <View style={{ width: "100%", flexDirection: "row" }}>
           <Contact contact={chats![index]} />
           <Contact contact={chats![index + 1]} />
         </View>
       );
-    } else {
-      return null;
-    }
+    };
+
+    return (
+      <>
+        {start && <HeaderComponent />}
+        {!noChats && (hangingChat ? <HangingChat /> : <ChatPair />)}
+      </>
+    );
   };
+
+  /* ----------------------------- Drop Down Item ----------------------------- */
 
   const renderDropdownItem = ({ item }: { item: DropdownItemProps["tab"] }) => {
     return (
@@ -76,6 +106,10 @@ export default function ContactScreen({ route, navigation }: Props) {
       />
     );
   };
+
+  /* -------------------------------------------------------------------------- */
+  /*                                   Render                                   */
+  /* -------------------------------------------------------------------------- */
 
   return (
     <LinearGradient

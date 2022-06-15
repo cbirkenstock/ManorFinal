@@ -43,6 +43,7 @@ export declare class Chat {
   readonly isCoordinationChat?: boolean | null;
   readonly isEventChat?: boolean | null;
   readonly isActive?: boolean | null;
+  readonly membersCount?: nymber;
   readonly parentChat1ID?: string | null;
   readonly parentChat2ID?: string | null;
   readonly editedEventID?: string | null;
@@ -62,6 +63,8 @@ export declare class Chat {
 
 export declare class Message {
   readonly id: string;
+  readonly marginTop?: number;
+  readonly rerender?: Boolean;
   readonly eventChatID?: string | null;
   readonly messageBody?: string | null;
   readonly announcementBody?: string | null;

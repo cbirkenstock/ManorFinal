@@ -3,11 +3,24 @@ import { User } from "../../src/models";
 export interface AuthInitialStateProps {
   loading: boolean;
   user: User | null;
-  signUp: (name: string, phone: string, password: string) => PromiseConstructor;
-  confirmSignUp: (phone: string, code: string) => PromiseConstructor;
-  signIn: (phone: string, password: string) => PromiseConstructor;
-  signOut: (phoneL: string, password: string) => PromiseConstructor;
-  setUser: (phone: string, password: string) => PromiseConstructor;
+  signUp: (
+    name: string,
+    phone: string,
+    password: string
+  ) => Promise<void> | PromiseConstructor;
+  confirmSignUp: (
+    phone: string,
+    code: string
+  ) => Promise<void> | PromiseConstructor;
+  signIn: (
+    phone: string,
+    password: string
+  ) => Promise<void> | PromiseConstructor;
+  signOut: (
+    phone: string,
+    password: string
+  ) => Promise<void> | PromiseConstructor;
+  setUser: (user: User) => Promise<void> | PromiseConstructor;
 }
 
 export const initialState = {
