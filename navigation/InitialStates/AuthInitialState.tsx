@@ -16,10 +16,7 @@ export interface AuthInitialStateProps {
     phone: string,
     password: string
   ) => Promise<void> | PromiseConstructor;
-  signOut: (
-    phone: string,
-    password: string
-  ) => Promise<void> | PromiseConstructor;
+  signOut: () => Promise<void> | PromiseConstructor;
   setUser: (user: User) => Promise<void> | PromiseConstructor;
 }
 

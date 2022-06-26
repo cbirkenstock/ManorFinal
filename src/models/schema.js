@@ -62,16 +62,9 @@ export const schema = {
         lastMessage: {
           name: "lastMessage",
           isArray: false,
-          type: {
-            model: "Message",
-          },
+          type: "String",
           isRequired: false,
           attributes: [],
-          association: {
-            connectionType: "HAS_ONE",
-            associatedWith: "id",
-            targetName: "chatLastMessageId",
-          },
         },
         chatCreator: {
           name: "chatCreator",
@@ -208,13 +201,6 @@ export const schema = {
           attributes: [],
           isReadOnly: true,
         },
-        chatLastMessageId: {
-          name: "chatLastMessageId",
-          isArray: false,
-          type: "ID",
-          isRequired: false,
-          attributes: [],
-        },
         chatChatCreatorId: {
           name: "chatChatCreatorId",
           isArray: false,
@@ -236,6 +222,273 @@ export const schema = {
         {
           type: "model",
           properties: {},
+        },
+        {
+          type: "auth",
+          properties: {
+            rules: [
+              {
+                allow: "public",
+                operations: ["create", "update", "delete", "read"],
+              },
+            ],
+          },
+        },
+      ],
+    },
+    User: {
+      name: "User",
+      fields: {
+        id: {
+          name: "id",
+          isArray: false,
+          type: "ID",
+          isRequired: true,
+          attributes: [],
+        },
+        name: {
+          name: "name",
+          isArray: false,
+          type: "String",
+          isRequired: true,
+          attributes: [],
+        },
+        phoneNumber: {
+          name: "phoneNumber",
+          isArray: false,
+          type: "AWSPhone",
+          isRequired: true,
+          attributes: [],
+        },
+        profileImageUrl: {
+          name: "profileImageUrl",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
+        venmoHandle: {
+          name: "venmoHandle",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
+        badgeCount: {
+          name: "badgeCount",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
+        chats: {
+          name: "chats",
+          isArray: true,
+          type: {
+            model: "ChatUser",
+          },
+          isRequired: false,
+          attributes: [],
+          isArrayNullable: true,
+          association: {
+            connectionType: "HAS_MANY",
+            associatedWith: "user",
+          },
+        },
+        expoPushToken: {
+          name: "expoPushToken",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
+        createdAt: {
+          name: "createdAt",
+          isArray: false,
+          type: "AWSDateTime",
+          isRequired: false,
+          attributes: [],
+          isReadOnly: true,
+        },
+        updatedAt: {
+          name: "updatedAt",
+          isArray: false,
+          type: "AWSDateTime",
+          isRequired: false,
+          attributes: [],
+          isReadOnly: true,
+        },
+      },
+      syncable: true,
+      pluralName: "Users",
+      attributes: [
+        {
+          type: "model",
+          properties: {},
+        },
+        {
+          type: "auth",
+          properties: {
+            rules: [
+              {
+                allow: "public",
+                operations: ["create", "update", "delete", "read"],
+              },
+            ],
+          },
+        },
+      ],
+    },
+    ChatUser: {
+      name: "ChatUser",
+      fields: {
+        id: {
+          name: "id",
+          isArray: false,
+          type: "ID",
+          isRequired: true,
+          attributes: [],
+        },
+        userID: {
+          name: "userID",
+          isArray: false,
+          type: "id",
+          isRequired: true,
+          attributes: [],
+        },
+        user: {
+          name: "user",
+          isArray: false,
+          type: {
+            model: "User",
+          },
+          isRequired: true,
+          attributes: [],
+          association: {
+            connectionType: "BELONGS_TO",
+            targetName: "userID",
+          },
+        },
+        chatID: {
+          name: "chatID",
+          isArray: false,
+          type: "id",
+          isRequired: true,
+          attributes: [],
+        },
+        chat: {
+          name: "chat",
+          isArray: false,
+          type: {
+            model: "Chat",
+          },
+          isRequired: true,
+          attributes: [],
+          association: {
+            connectionType: "BELONGS_TO",
+            targetName: "chatID",
+          },
+        },
+        notificationsEnabled: {
+          name: "notificationsEnabled",
+          isArray: false,
+          type: "Boolean",
+          isRequired: true,
+          attributes: [],
+        },
+        nickname: {
+          name: "nickname",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
+        hasUnreadMessage: {
+          name: "hasUnreadMessage",
+          isArray: false,
+          type: "Boolean",
+          isRequired: false,
+          attributes: [],
+        },
+        unreadMessagesCount: {
+          name: "unreadMessagesCount",
+          isArray: false,
+          type: "Int",
+          isRequired: false,
+          attributes: [],
+        },
+        isAdmin: {
+          name: "isAdmin",
+          isArray: false,
+          type: "Boolean",
+          isRequired: false,
+          attributes: [],
+        },
+        writtenMessages: {
+          name: "writtenMessages",
+          isArray: true,
+          type: {
+            model: "Message",
+          },
+          isRequired: false,
+          attributes: [],
+          isArrayNullable: true,
+          association: {
+            connectionType: "HAS_MANY",
+            associatedWith: "chatuserID",
+          },
+        },
+        messages: {
+          name: "messages",
+          isArray: true,
+          type: {
+            model: "ChatUserMessage",
+          },
+          isRequired: false,
+          attributes: [],
+          isArrayNullable: true,
+          association: {
+            connectionType: "HAS_MANY",
+            associatedWith: "chatUser",
+          },
+        },
+        profileImageUrl: {
+          name: "profileImageUrl",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
+        createdAt: {
+          name: "createdAt",
+          isArray: false,
+          type: "AWSDateTime",
+          isRequired: false,
+          attributes: [],
+          isReadOnly: true,
+        },
+        updatedAt: {
+          name: "updatedAt",
+          isArray: false,
+          type: "AWSDateTime",
+          isRequired: false,
+          attributes: [],
+          isReadOnly: true,
+        },
+      },
+      syncable: true,
+      pluralName: "ChatUsers",
+      attributes: [
+        {
+          type: "model",
+          properties: {},
+        },
+        {
+          type: "key",
+          properties: {
+            name: "customByChat",
+            fields: ["chatID"],
+          },
         },
         {
           type: "auth",
@@ -437,273 +690,6 @@ export const schema = {
         },
       ],
     },
-    ChatUser: {
-      name: "ChatUser",
-      fields: {
-        id: {
-          name: "id",
-          isArray: false,
-          type: "ID",
-          isRequired: true,
-          attributes: [],
-        },
-        userID: {
-          name: "userID",
-          isArray: false,
-          type: "ID",
-          isRequired: true,
-          attributes: [],
-        },
-        user: {
-          name: "user",
-          isArray: false,
-          type: {
-            model: "User",
-          },
-          isRequired: true,
-          attributes: [],
-          association: {
-            connectionType: "BELONGS_TO",
-            targetName: "userID",
-          },
-        },
-        chatID: {
-          name: "chatID",
-          isArray: false,
-          type: "ID",
-          isRequired: true,
-          attributes: [],
-        },
-        chat: {
-          name: "chat",
-          isArray: false,
-          type: {
-            model: "Chat",
-          },
-          isRequired: true,
-          attributes: [],
-          association: {
-            connectionType: "BELONGS_TO",
-            targetName: "chatID",
-          },
-        },
-        notificationsEnabled: {
-          name: "notificationsEnabled",
-          isArray: false,
-          type: "Boolean",
-          isRequired: true,
-          attributes: [],
-        },
-        nickname: {
-          name: "nickname",
-          isArray: false,
-          type: "String",
-          isRequired: false,
-          attributes: [],
-        },
-        hasUnreadMessage: {
-          name: "hasUnreadMessage",
-          isArray: false,
-          type: "Boolean",
-          isRequired: false,
-          attributes: [],
-        },
-        unreadMessagesCount: {
-          name: "unreadMessagesCount",
-          isArray: false,
-          type: "Int",
-          isRequired: false,
-          attributes: [],
-        },
-        isAdmin: {
-          name: "isAdmin",
-          isArray: false,
-          type: "Boolean",
-          isRequired: false,
-          attributes: [],
-        },
-        writtenMessages: {
-          name: "writtenMessages",
-          isArray: true,
-          type: {
-            model: "Message",
-          },
-          isRequired: false,
-          attributes: [],
-          isArrayNullable: true,
-          association: {
-            connectionType: "HAS_MANY",
-            associatedWith: "chatuserID",
-          },
-        },
-        messages: {
-          name: "messages",
-          isArray: true,
-          type: {
-            model: "ChatUserMessage",
-          },
-          isRequired: false,
-          attributes: [],
-          isArrayNullable: true,
-          association: {
-            connectionType: "HAS_MANY",
-            associatedWith: "chatUser",
-          },
-        },
-        profileImageUrl: {
-          name: "profileImageUrl",
-          isArray: false,
-          type: "String",
-          isRequired: false,
-          attributes: [],
-        },
-        createdAt: {
-          name: "createdAt",
-          isArray: false,
-          type: "AWSDateTime",
-          isRequired: false,
-          attributes: [],
-          isReadOnly: true,
-        },
-        updatedAt: {
-          name: "updatedAt",
-          isArray: false,
-          type: "AWSDateTime",
-          isRequired: false,
-          attributes: [],
-          isReadOnly: true,
-        },
-      },
-      syncable: true,
-      pluralName: "ChatUsers",
-      attributes: [
-        {
-          type: "model",
-          properties: {},
-        },
-        {
-          type: "key",
-          properties: {
-            name: "customByChat",
-            fields: ["chatID"],
-          },
-        },
-        {
-          type: "auth",
-          properties: {
-            rules: [
-              {
-                allow: "public",
-                operations: ["create", "update", "delete", "read"],
-              },
-            ],
-          },
-        },
-      ],
-    },
-    User: {
-      name: "User",
-      fields: {
-        id: {
-          name: "id",
-          isArray: false,
-          type: "ID",
-          isRequired: true,
-          attributes: [],
-        },
-        name: {
-          name: "name",
-          isArray: false,
-          type: "String",
-          isRequired: true,
-          attributes: [],
-        },
-        phoneNumber: {
-          name: "phoneNumber",
-          isArray: false,
-          type: "AWSPhone",
-          isRequired: true,
-          attributes: [],
-        },
-        profileImageUrl: {
-          name: "profileImageUrl",
-          isArray: false,
-          type: "String",
-          isRequired: false,
-          attributes: [],
-        },
-        venmoHandle: {
-          name: "venmoHandle",
-          isArray: false,
-          type: "String",
-          isRequired: false,
-          attributes: [],
-        },
-        badgeCount: {
-          name: "badgeCount",
-          isArray: false,
-          type: "String",
-          isRequired: false,
-          attributes: [],
-        },
-        chats: {
-          name: "chats",
-          isArray: true,
-          type: {
-            model: "ChatUser",
-          },
-          isRequired: false,
-          attributes: [],
-          isArrayNullable: true,
-          association: {
-            connectionType: "HAS_MANY",
-            associatedWith: "user",
-          },
-        },
-        expoPushToken: {
-          name: "expoPushToken",
-          isArray: false,
-          type: "String",
-          isRequired: false,
-          attributes: [],
-        },
-        createdAt: {
-          name: "createdAt",
-          isArray: false,
-          type: "AWSDateTime",
-          isRequired: false,
-          attributes: [],
-          isReadOnly: true,
-        },
-        updatedAt: {
-          name: "updatedAt",
-          isArray: false,
-          type: "AWSDateTime",
-          isRequired: false,
-          attributes: [],
-          isReadOnly: true,
-        },
-      },
-      syncable: true,
-      pluralName: "Users",
-      attributes: [
-        {
-          type: "model",
-          properties: {},
-        },
-        {
-          type: "auth",
-          properties: {
-            rules: [
-              {
-                allow: "public",
-                operations: ["create", "update", "delete", "read"],
-              },
-            ],
-          },
-        },
-      ],
-    },
     ChatUserMessage: {
       name: "ChatUserMessage",
       fields: {
@@ -713,19 +699,6 @@ export const schema = {
           type: "ID",
           isRequired: true,
           attributes: [],
-        },
-        message: {
-          name: "message",
-          isArray: false,
-          type: {
-            model: "Message",
-          },
-          isRequired: true,
-          attributes: [],
-          association: {
-            connectionType: "BELONGS_TO",
-            targetName: "messageID",
-          },
         },
         chatUser: {
           name: "chatUser",
@@ -738,6 +711,19 @@ export const schema = {
           association: {
             connectionType: "BELONGS_TO",
             targetName: "chatUserID",
+          },
+        },
+        message: {
+          name: "message",
+          isArray: false,
+          type: {
+            model: "Message",
+          },
+          isRequired: true,
+          attributes: [],
+          association: {
+            connectionType: "BELONGS_TO",
+            targetName: "messageID",
           },
         },
         createdAt: {
@@ -767,15 +753,15 @@ export const schema = {
         {
           type: "key",
           properties: {
-            name: "byMessage",
-            fields: ["messageID"],
+            name: "byChatUser",
+            fields: ["chatUserID"],
           },
         },
         {
           type: "key",
           properties: {
-            name: "byChatUser",
-            fields: ["chatUserID"],
+            name: "byMessage",
+            fields: ["messageID"],
           },
         },
       ],
@@ -783,5 +769,5 @@ export const schema = {
   },
   enums: {},
   nonModels: {},
-  version: "c4f9cbedec9b586daba91b80d22e1430",
+  version: "f27dcfb699cf0b9d0f06f20b3376c619",
 };

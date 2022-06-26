@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, Pressable, Animated, Dimensions } from "react-native";
 import { useNavigation } from "@react-navigation/core";
 import { Ionicons, Octicons } from "@expo/vector-icons";
-import { InnerContactScreenNavigationProp } from "../../navigation/NavTypes";
+import { InnerContactScreenNavigationProps } from "../../navigation/NavTypes";
 import { styles } from "./styles";
 import { animate } from "../../managers/AnimationManager";
 
@@ -13,7 +13,7 @@ interface HeaderProps {
 
 export default function Header(props: HeaderProps) {
   const { exitViewHeightAnim, exitViewOpacityAnim } = props;
-  const navigation = useNavigation<InnerContactScreenNavigationProp>();
+  const navigation = useNavigation<InnerContactScreenNavigationProps>();
   const height = Dimensions.get("screen").height;
 
   return (

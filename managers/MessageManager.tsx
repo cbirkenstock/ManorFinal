@@ -24,7 +24,7 @@ const getMarginTop = (context: AppInitialStateProps) => {
   const lastMessage = messages[0];
   const partOfGroup = lastMessage?.chatuserID === chatUser?.id;
 
-  if (!partOfGroup || lastMessage.eventChatID) {
+  if (!partOfGroup || lastMessage?.eventChatID) {
     return 10;
   } else {
     return 1;
@@ -137,7 +137,7 @@ export const updateLastMessage = async (
   if (chat) {
     DataStore.save(
       Chat.copyOf(chat, (updatedChat) => {
-        updatedChat.lastMessage = newMessage;
+        updatedChat.lastMessage = newMessage.messageBody;
       })
     ).then(async (chat) => setChat(chat));
   }

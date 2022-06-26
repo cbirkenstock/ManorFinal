@@ -19,8 +19,7 @@ export default function AttendeesView(props: AttendeesViewProps) {
   /*             FlatList & SingleNameContact Dimension Calculations            */
   /* -------------------------------------------------------------------------- */
 
-  const width = Dimensions.get("window").width;
-  const flatListWidth = 0.9 * width;
+  const flatListWidth = 0.9 * Dimensions.get("window").width;
   const firstPageNumber = 7;
   const spacing = 3;
   const flatListHeight = (flatListWidth - 7 * 3) / firstPageNumber;

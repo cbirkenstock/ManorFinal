@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Image } from "react-native";
 import { useNavigation } from "@react-navigation/core";
 import { useState, useEffect } from "react";
 import { ChatUser, User } from "../../src/models";
@@ -7,8 +7,8 @@ import { DataStore } from "@aws-amplify/datastore";
 import { Chat, Message } from "../../src/models";
 import Colors from "../../constants/Colors";
 import useAuthContext from "../../hooks/useAuthContext";
-import { OuterContactScreenNavigationProp } from "../../navigation/NavTypes";
-import CacheImage from "../../components/CacheImage";
+import { OuterContactScreenNavigationProps } from "../../navigation/NavTypes";
+import CacheImage from "../CustomPrimitives/CacheImage";
 import DefaultContactImage from "../DefaultContactImage";
 import { styles } from "./styles";
 
@@ -19,11 +19,10 @@ interface ContactProps {
 export default function Contact(props: ContactProps) {
   const { contact } = props;
   const { user } = useAuthContext();
-  const navigation = useNavigation<OuterContactScreenNavigationProp>();
+  const navigation = useNavigation<OuterContactScreenNavigationProps>();
 
   const [members, setMembers] = useState<ChatUser[]>([]);
   const [displayUser, setDisplayUser] = useState<User | undefined>();
-  const [lastMessage, setLastMessage] = useState<Message | undefined>();
   const [currentChatUser, setCurrentChatUser] = useState<
     ChatUser | undefined
   >();
@@ -46,7 +45,10 @@ export default function Contact(props: ContactProps) {
         const newMembers = [...members, msg.element];
         setMembers(newMembers);
       } else if (msg.model === ChatUser && msg.opType === "UPDATE") {
-        if (contact?.id == chatUser.chatID && user?.id == chatUser.userID) {
+        if (
+          contact?.id == chatUser?.chat?.id &&
+          user?.id == chatUser?.user?.id
+        ) {
           setCurrentChatUser(chatUser);
         }
       }
@@ -59,59 +61,51 @@ export default function Contact(props: ContactProps) {
   /*                                  useEffect                                 */
   /* -------------------------------------------------------------------------- */
 
-  /*
-  call all of these functions together becuase they only need to be called once 
-  and this way you don't need 4 rerenders
-  */
-  useEffect(() => {
-    fetchDisplayUser();
-    fetchCurrentChatUser();
-    fetchMembers();
-    fetchLastMessage();
-  }, []);
+  /* ---------------------------- Set Display User ---------------------------- */
 
-  const fetchDisplayUser = () => {
+  useEffect(() => {
     if (!contact?.isGroupChat) {
       const otherChatUser = members.find(
-        (chatUser) => chatUser.userID !== user?.id
+        (chatUser) => chatUser.user.id !== user?.id
       );
 
-      if (otherChatUser) {
-        setDisplayUser(otherChatUser.user);
-      }
+      otherChatUser && setDisplayUser(otherChatUser.user);
     }
-  };
+  }, [members]);
 
-  const fetchCurrentChatUser = async () => {
-    const _currentChatUser = (
-      await DataStore.query(ChatUser, (chatUser) =>
-        chatUser.userID("eq", user?.id ?? "").chatID("eq", contact?.id)
-      )
-    )[0];
+  /* -------------------------- Set Current ChatUser -------------------------- */
 
-    setCurrentChatUser(_currentChatUser);
-  };
+  useEffect(() => {
+    let unmounted = false;
 
-  const fetchMembers = async () => {
+    DataStore.query(ChatUser, (chatUser) =>
+      chatUser.userID("eq", user?.id ?? "").chatID("eq", contact?.id)
+    ).then((chatUserArray) => {
+      !unmounted && chatUserArray[0] && setCurrentChatUser(chatUserArray[0]);
+    });
+
+    return () => {
+      unmounted = true;
+    };
+  }, []);
+
+  /* ------------------------------- Set Members ------------------------------ */
+
+  useEffect(() => {
+    let unmounted = false;
+
     if (!contact?.isGroupChat || !contact?.chatImageUrl) {
-      const members = await DataStore.query(ChatUser, (chatUser) =>
+      DataStore.query(ChatUser, (chatUser) =>
         chatUser.chatID("eq", contact?.id)
-      );
-
-      setMembers(members);
+      ).then((members) => {
+        !unmounted && setMembers(members);
+      });
     }
-  };
 
-  const fetchLastMessage = async () => {
-    if (contact?.chatLastMessageId) {
-      const _lastMessage = await DataStore.query(
-        Message,
-        contact?.chatLastMessageId
-      );
-
-      setLastMessage(_lastMessage);
-    }
-  };
+    return () => {
+      unmounted = true;
+    };
+  }, []);
 
   /* -------------------------------------------------------------------------- */
   /*                                Nav Function                                */
@@ -145,22 +139,28 @@ export default function Contact(props: ContactProps) {
           style={[
             styles.newMessageView,
             {
-              backgroundColor: currentChatUser?.hasUnreadMessage
+              shadowColor: currentChatUser?.hasUnreadMessage
                 ? Colors.manorLightBlue
-                : "transparent",
+                : "black",
             },
           ]}
         >
           {requiresDefaultContactImage ? (
-            <View style={[styles.contactImage, { backgroundColor: "#2d3238" }]}>
+            <View style={styles.contactImage}>
               <DefaultContactImage members={members} />
             </View>
           ) : (
-            <CacheImage
-              source={contact?.chatImageUrl ?? displayUser?.profileImageUrl!}
-              cacheKey={contact?.chatImageUrl ?? displayUser?.profileImageUrl!}
+            <Image
               style={styles.contactImage}
+              source={{
+                uri: "https://thumbs.dreamstime.com/b/logo-show-text-template-show-vintage-marquee-light-show-sign-typography-d-render-61801158.jpg",
+              }}
             />
+            // <CacheImage
+            //   source={contact?.chatImageUrl ?? displayUser?.profileImageUrl!}
+            //   cacheKey={contact?.chatImageUrl ?? displayUser?.profileImageUrl!}
+            //   style={styles.contactImage}
+            // />
           )}
         </View>
         <Text
@@ -172,7 +172,7 @@ export default function Contact(props: ContactProps) {
           {contact?.title ?? displayUser?.name}
         </Text>
         <Text style={styles.messagePreviewText} numberOfLines={1}>
-          {lastMessage?.messageBody}
+          {contact?.lastMessage}
         </Text>
       </TouchableOpacity>
     );
@@ -181,4 +181,6 @@ export default function Contact(props: ContactProps) {
   return <ContactIcon />;
 }
 
-export const MemoizedContact = React.memo(Contact);
+export const MemoizedContact = React.memo(Contact, () => {
+  return false;
+});

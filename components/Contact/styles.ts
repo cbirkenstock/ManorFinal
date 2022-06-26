@@ -17,13 +17,13 @@ export const styles = StyleSheet.create({
     borderRadius: (Dimensions.get("window").width / 2 - 15) / 2,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "black",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 9,
   },
 
   contactImage: {
+    backgroundColor: Colors.manorBlueGray,
     width: Dimensions.get("window").width / 2 - 38,
     height: Dimensions.get("window").width / 2 - 38,
     borderRadius: (Dimensions.get("window").width / 2 - 23) / 2,
@@ -39,7 +39,7 @@ export const styles = StyleSheet.create({
   },
 
   messagePreviewText: {
-    color: "#E1D9D1",
+    color: Colors.manorDarkWhite,
     fontSize: 20,
     marginHorizontal: 3,
   },

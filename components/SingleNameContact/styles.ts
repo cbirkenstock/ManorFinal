@@ -4,7 +4,6 @@ export const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     justifyContent: "flex-start",
-    marginTop: 5,
   },
 
   contactNameText: {

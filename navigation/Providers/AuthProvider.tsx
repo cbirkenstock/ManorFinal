@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useContext,
-  useEffect,
-  useReducer,
-  createContext,
-} from "react";
+import React, { useState, useEffect, useReducer, createContext } from "react";
 import { Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -106,6 +100,7 @@ export const AuthProvider = (props: AuthProviderProps) => {
     try {
       await Auth.signOut();
       setUser(null);
+      AsyncStorage.setItem("currentUser", "");
     } catch (error) {
       console.log("error signing out: ", error);
     }

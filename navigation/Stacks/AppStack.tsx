@@ -1,14 +1,15 @@
 import { useNavigation } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
-import { Pressable, Text } from "react-native";
+import { Text, TouchableOpacity } from "react-native";
+import { AntDesign } from "@expo/vector-icons";
 // import ChatInfoScreen from "../../screens/ChatInfoScreen";
 // import ChatScreen from "../../screens/ChatScreen";
 import ContactScreen from "../../screens/AppScreens/ContactScreen";
 import ProfileScreen from "../../screens/AppScreens/ProfileScreen";
 import ChatScreen from "../../screens/AppScreens/ChatScreen";
 // import UnreachedMembersScreen from "../../screens/UnreachedMembersScreen";
-import UsersScreen from "../../screens/AppScreens/UsersScreen";
+import UsersScreen, { ChatEnum } from "../../screens/AppScreens/UsersScreen";
 // import WebModalScreen from "../../screens/WebModelScreen";
 // import GoogleMapsScreen from "../../screens/GoogleMapsScreen";
 import Colors from "../../constants/Colors";
@@ -26,7 +27,7 @@ export type InnerAppStackParamList = {
     chatUser: ChatUser;
     members: ChatUser[] | undefined;
   };
-  UsersScreen: { chatType: "dm" | "group" | "event" | "coordination" | "core" };
+  UsersScreen: { chatType: ChatEnum };
 };
 
 export type OuterAppStackParamList = {
@@ -50,14 +51,6 @@ export const AppStack = () => {
               headerShown: false,
             })}
           />
-          <InnerStack.Screen
-            name="UsersScreen"
-            component={UsersScreen}
-            options={{
-              headerShown: true,
-              title: "Users",
-            }}
-          />
         </InnerStack.Group>
         <InnerStack.Group screenOptions={{ presentation: "modal" }}>
           <InnerStack.Screen
@@ -67,13 +60,20 @@ export const AppStack = () => {
               headerShown: false,
               title: "",
               headerBackTitleVisible: true,
-              // headerStyle: {
-              //   elevation: 0,
-              //   shadowOpacity: 0,
-              //   borderBottomWidth: 0,
-              //   backgroundColor: "black",
-              // },
               headerTintColor: Colors.manorPurple,
+            }}
+          />
+          <InnerStack.Screen
+            name="UsersScreen"
+            component={UsersScreen}
+            options={{
+              headerTitle: "",
+              headerBackTitleVisible: false,
+              headerTintColor: Colors.manorPurple,
+              headerStyle: {
+                backgroundColor: Colors.manorBackgroundGray,
+              },
+              headerShadowVisible: false,
             }}
           />
         </InnerStack.Group>

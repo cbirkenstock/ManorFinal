@@ -1,7 +1,7 @@
 import React from "react";
 import { ChatUser } from "../../src/models";
 import { View } from "react-native";
-import CacheImage from "../CacheImage/CacheImage";
+import CacheImage from "../CustomPrimitives/CacheImage/CacheImage";
 
 interface DefaultContactImageProps {
   members: ChatUser[];

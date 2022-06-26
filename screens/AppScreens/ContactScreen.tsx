@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Pressable,
   View,
+  Dimensions,
 } from "react-native";
 import Colors from "../../constants/Colors";
 import Header from "../../components/Header";
@@ -18,9 +19,12 @@ import { Chat, ChatUser } from "../../src/models";
 import { animateTwoSequence } from "../../managers/AnimationManager";
 import { dropDown } from "../../constants/Dropdown";
 import DropdownItem, { DropdownItemProps } from "../../components/DropdownItem";
+import { contactSubscription } from "../../managers/SubscriptionManager";
+import { appendChats } from "../../managers/ChatManager";
 
 export default function ContactScreen({ route, navigation }: Props) {
-  const { user } = useAuthContext();
+  const context = useAuthContext();
+  const { user } = context;
   const [chats, setChats] = useState<Chat[]>();
   const exitViewHeightAnim = useRef(new Animated.Value(0)).current;
   const exitViewOpacityAnim = useRef(new Animated.Value(0)).current;
@@ -31,24 +35,43 @@ export default function ContactScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     const fetchChats = async () => {
-      const _chats = (
-        await DataStore.query(ChatUser, (chatuser) =>
-          chatuser.userID("eq", user?.id ?? "")
-        )
-      ).map((chatUser) => chatUser.chat);
+      if (!chats) {
+        const _chats = (
+          await DataStore.query(ChatUser, (chatuser) =>
+            chatuser.userID("eq", user?.id ?? "")
+          )
+        ).map((chatUser) => chatUser.chat);
 
-      if (_chats.length === 0) {
-        const headerTrojanChat = new Chat({
-          title: "Header_Trojan_Horse",
-        });
-        _chats.push(headerTrojanChat);
+        //adds a fake contact is there are none so that at least the header is rendered
+        if (_chats.length === 0) {
+          const headerTrojanChat = new Chat({
+            title: "Header_Trojan_Horse",
+          });
+          _chats.push(headerTrojanChat);
+        }
+
+        setChats(_chats);
       }
-
-      setChats(_chats);
     };
 
     fetchChats();
   }, []);
+
+  // /* -------------------------------------------------------------------------- */
+  // /*                                Subscriptions                               */
+  // /* -------------------------------------------------------------------------- */
+
+  // useEffect(() => {
+  //   if (chats) {
+  //     const subscription = contactSubscription(
+  //       context,
+  //       appendChats,
+  //       chats,
+  //       setChats
+  //     );
+  //     return () => subscription.unsubscribe();
+  //   }
+  // }, [chats]);
 
   /* -------------------------------------------------------------------------- */
   /*                       Render Flatlist Item Functions                       */
@@ -57,9 +80,11 @@ export default function ContactScreen({ route, navigation }: Props) {
   /* --------------------------------- Contact -------------------------------- */
 
   const renderContact = ({ index }: { index: number }) => {
-    const start: boolean = index === 0;
-    const noChats = start && chats![index].title === "Header_Trojan_Horse";
-    const hangingChat: boolean = index % 2 == 0 && index == chats!.length - 1;
+    const start = index === 0;
+    const end = index === chats!.length - 1;
+    const evenChat = index % 2 === 0;
+    const noChats = chats![index].title === "Header_Trojan_Horse";
+    const hangingChat = end && index % 2 === 0;
 
     const HeaderComponent = () => {
       return (
@@ -90,7 +115,7 @@ export default function ContactScreen({ route, navigation }: Props) {
     return (
       <>
         {start && <HeaderComponent />}
-        {!noChats && (hangingChat ? <HangingChat /> : <ChatPair />)}
+        {!noChats && evenChat && (hangingChat ? <HangingChat /> : <ChatPair />)}
       </>
     );
   };
@@ -121,7 +146,6 @@ export default function ContactScreen({ route, navigation }: Props) {
       <StatusBar hidden />
       <FlatList
         style={styles.FlatList}
-        numColumns={1}
         data={chats}
         renderItem={renderContact}
         keyExtractor={(item) => (typeof item == "string" ? item : item.id)}

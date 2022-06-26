@@ -1,4 +1,5 @@
 import { User } from "../../src/models";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 /* -------------------------------------------------------------------------- */
 /*                                 Action Enum                                */
@@ -34,6 +35,7 @@ function authReducer(state: AppState, action: UserAction) {
 
   switch (type) {
     case UserActionCase.setUser:
+      AsyncStorage.setItem("currentUser", JSON.stringify(payload));
       return {
         ...state,
         user: payload,

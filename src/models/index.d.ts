@@ -8,7 +8,7 @@ type ChatMetaData = {
   readOnlyFields: "createdAt" | "updatedAt";
 };
 
-type MessageMetaData = {
+type UserMetaData = {
   readOnlyFields: "createdAt" | "updatedAt";
 };
 
@@ -16,7 +16,7 @@ type ChatUserMetaData = {
   readOnlyFields: "createdAt" | "updatedAt";
 };
 
-type UserMetaData = {
+type MessageMetaData = {
   readOnlyFields: "createdAt" | "updatedAt";
 };
 
@@ -33,7 +33,7 @@ export declare class Chat {
   readonly eventDescription?: string | null;
   readonly eventLocation?: string | null;
   readonly limit?: number | null;
-  readonly lastMessage?: Message | null;
+  readonly lastMessage?: string | null;
   readonly chatCreator?: User | null;
   readonly Members?: (ChatUser | null)[] | null;
   readonly Messages?: (Message | null)[] | null;
@@ -43,13 +43,12 @@ export declare class Chat {
   readonly isCoordinationChat?: boolean | null;
   readonly isEventChat?: boolean | null;
   readonly isActive?: boolean | null;
-  readonly membersCount?: nymber;
+  readonly membersCount?: number | null;
   readonly parentChat1ID?: string | null;
   readonly parentChat2ID?: string | null;
   readonly editedEventID?: string | null;
   readonly createdAt?: string | null;
   readonly updatedAt?: string | null;
-  readonly chatLastMessageId?: string | null;
   readonly chatChatCreatorId?: string | null;
   readonly chatEventChatsId?: string | null;
   constructor(init: ModelInit<Chat, ChatMetaData>);
@@ -61,34 +60,24 @@ export declare class Chat {
   ): Chat;
 }
 
-export declare class Message {
+export declare class User {
   readonly id: string;
-  readonly marginTop?: number;
-  readonly rerender?: Boolean;
-  readonly eventChatID?: string | null;
-  readonly messageBody?: string | null;
-  readonly announcementBody?: string | null;
-  readonly imageUrl?: string | null;
-  readonly chatID?: string | null;
-  readonly chatuserID?: string | null;
-  readonly chatUsers?: (ChatUserMessage | null)[] | null;
-  readonly likes?: number | null;
-  readonly link?: string | null;
-  readonly isMandatory?: boolean | null;
-  readonly imageHeight?: number | null;
-  readonly imageWidth?: number | null;
-  readonly isAccepted?: boolean | null;
-  readonly dateSuggestion?: string | null;
-  readonly remindDate?: string | null;
+  readonly name: string;
+  readonly phoneNumber: string;
+  readonly profileImageUrl?: string | null;
+  readonly venmoHandle?: string | null;
+  readonly badgeCount?: string | null;
+  readonly chats?: (ChatUser | null)[] | null;
+  readonly expoPushToken?: string | null;
   readonly createdAt?: string | null;
   readonly updatedAt?: string | null;
-  constructor(init: ModelInit<Message, MessageMetaData>);
+  constructor(init: ModelInit<User, UserMetaData>);
   static copyOf(
-    source: Message,
+    source: User,
     mutator: (
-      draft: MutableModel<Message, MessageMetaData>
-    ) => MutableModel<Message, MessageMetaData> | void
-  ): Message;
+      draft: MutableModel<User, UserMetaData>
+    ) => MutableModel<User, UserMetaData> | void
+  ): User;
 }
 
 export declare class ChatUser {
@@ -116,30 +105,40 @@ export declare class ChatUser {
   ): ChatUser;
 }
 
-export declare class User {
+export declare class Message {
   readonly id: string;
-  readonly name: string;
-  readonly phoneNumber: string;
-  readonly profileImageUrl?: string | null;
-  readonly venmoHandle?: string | null;
-  readonly badgeCount?: string | null;
-  readonly chats?: (ChatUser | null)[] | null;
-  readonly expoPushToken?: string | null;
+  readonly marginTop?: number | null;
+  readonly rerender?: boolean | null;
+  readonly eventChatID?: string | null;
+  readonly messageBody?: string | null;
+  readonly announcementBody?: string | null;
+  readonly imageUrl?: string | null;
+  readonly chatID?: string | null;
+  readonly chatuserID?: string | null;
+  readonly chatUsers?: (ChatUserMessage | null)[] | null;
+  readonly likes?: number | null;
+  readonly link?: string | null;
+  readonly isMandatory?: boolean | null;
+  readonly imageHeight?: number | null;
+  readonly imageWidth?: number | null;
+  readonly isAccepted?: boolean | null;
+  readonly dateSuggestion?: string | null;
+  readonly remindDate?: string | null;
   readonly createdAt?: string | null;
   readonly updatedAt?: string | null;
-  constructor(init: ModelInit<User, UserMetaData>);
+  constructor(init: ModelInit<Message, MessageMetaData>);
   static copyOf(
-    source: User,
+    source: Message,
     mutator: (
-      draft: MutableModel<User, UserMetaData>
-    ) => MutableModel<User, UserMetaData> | void
-  ): User;
+      draft: MutableModel<Message, MessageMetaData>
+    ) => MutableModel<Message, MessageMetaData> | void
+  ): Message;
 }
 
 export declare class ChatUserMessage {
   readonly id: string;
-  readonly message: Message;
   readonly chatUser: ChatUser;
+  readonly message: Message;
   readonly createdAt?: string | null;
   readonly updatedAt?: string | null;
   constructor(init: ModelInit<ChatUserMessage, ChatUserMessageMetaData>);

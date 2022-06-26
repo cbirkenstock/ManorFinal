@@ -1,22 +1,25 @@
 import { DataStore, SortDirection } from "aws-amplify";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import {
+  Dimensions,
   FlatList,
   KeyboardAvoidingView,
   StatusBar,
   StyleSheet,
+  View,
 } from "react-native";
 import MessageBubble from "../../components/Message/MessageBubble/MessageBubble";
 import MediaMessage from "../../components/Message/MediaMessage/MediaMessage";
+import ContactImage from "../../components/Message/ContactImage";
 import MessageBar from "../../components/MessageBar/MessageBar";
+import ContactNameLabel from "../../components/Message/ContactNameLabel";
 import Colors from "../../constants/Colors";
 import useAppContext from "../../hooks/useAppContext";
 import { ChatScreenProps as Props } from "../../navigation/NavTypes";
-import { Message } from "../../src/models";
+import { ChatUser, Message } from "../../src/models";
 import EventMessage from "../../components/Message/EventMessage/EventMessage";
 import { messageSubscription } from "../../managers/SubscriptionManager";
 import { appendMessage } from "../../managers/MessageManager";
-import { animate } from "../../managers/AnimationManager";
 
 export default function ChatScreen({ route }: Props) {
   const context = useAppContext();
@@ -25,6 +28,7 @@ export default function ChatScreen({ route }: Props) {
     setChat,
     chatUser,
     setChatUser,
+    members,
     setMembers,
     messages,
     setMessages,
@@ -39,10 +43,27 @@ export default function ChatScreen({ route }: Props) {
     setChatUser(route.params?.chatUser);
     setChat(route.params?.chat);
 
-    if (route.params?.members) {
-      setMembers(route.params?.members);
-    }
+    route.params?.members
+      ? setMembers(route.params?.members)
+      : fetchMembers().then(async (members) => setMembers(members));
   }, []);
+
+  /* -------------------------------------------------------------------------- */
+  /*                                Fetch Members                               */
+  /* -------------------------------------------------------------------------- */
+
+  /*
+  I am using the route param here instead of waiting for global variable because
+  I don't want to have to wait for update to chat to start members call -- it would also 
+  require additional useEffect based on chat being set  
+  */
+  const fetchMembers = async () => {
+    const members = DataStore.query(ChatUser, (chatUser) =>
+      chatUser.chatID("eq", route.params?.chat.id)
+    );
+
+    return members;
+  };
 
   /* -------------------------------------------------------------------------- */
   /*                               Fetch Messages                               */
@@ -91,12 +112,28 @@ export default function ChatScreen({ route }: Props) {
   /* -------------------------------------------------------------------------- */
 
   const renderMessage = ({ item }: { item: Message }) => {
-    if (item.messageBody) {
-      return <MessageBubble message={item} />;
-    } else if (item.imageUrl) {
-      return <MediaMessage message={item} />;
-    } else {
+    const isMe = item.chatuserID === chatUser?.id;
+    const sender = members.find((member) => member.id === item.chatuserID);
+
+    if (item.eventChatID) {
       return <EventMessage message={item} />;
+    } else {
+      return (
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: isMe ? "flex-end" : "flex-start",
+            marginTop: item.marginTop ?? 1,
+          }}
+        >
+          {!isMe && <ContactImage profileImageUrl={sender?.profileImageUrl} />}
+          <View style={{ maxWidth: item.messageBody ? "68%" : undefined }}>
+            {!isMe && <ContactNameLabel contactName={sender?.nickname} />}
+            {item.messageBody && <MessageBubble message={item} />}
+            {item.imageUrl && <MediaMessage message={item} />}
+          </View>
+        </View>
+      );
     }
   };
 
@@ -137,11 +174,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     marginVertical: 0,
-    backgroundColor: Colors.manorWarmBlack,
+    backgroundColor: Colors.manorChatScreenBlack,
     justifyContent: "space-between",
   },
 
   messageFlatlist: {
+    paddingHorizontal: 5,
     marginBottom: 5,
   },
 

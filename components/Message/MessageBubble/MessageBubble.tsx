@@ -1,9 +1,8 @@
-import React, { useEffect, useRef } from "react";
-import { Text, Pressable, Animated, View } from "react-native";
+import React from "react";
+import { Text, Pressable } from "react-native";
 import { Message } from "../../../src/models";
 import useAppContext from "../../../hooks/useAppContext";
 import { styles } from "./styles";
-import { animate } from "../../../managers/AnimationManager";
 
 interface MessageBubbleProps {
   message: Message;
@@ -23,7 +22,6 @@ export default function MessageBubble(props: MessageBubbleProps) {
       style={[
         styles.messageBubble,
         isMe ? styles.bubbleOutgoing : styles.bubbleIncoming,
-        { marginTop: message.marginTop },
       ]}
     >
       <Text style={styles.textMessageFont}>{message.messageBody}</Text>

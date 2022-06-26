@@ -2,7 +2,6 @@ import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
   messageBubble: {
-    maxWidth: "68%",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 7,
@@ -15,7 +14,6 @@ export const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "rgba(92, 106, 239, 1)",
     alignSelf: "flex-end",
-    marginRight: 5,
   },
 
   bubbleIncoming: {
@@ -23,7 +21,6 @@ export const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "rgba(82, 82, 82, 1)",
     alignSelf: "flex-start",
-    marginLeft: 40,
   },
 
   venmo: {

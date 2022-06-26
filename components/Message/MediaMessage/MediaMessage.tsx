@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Pressable, View, Image } from "react-native";
 import { Message } from "../../../src/models";
 import useAppContext from "../../../hooks/useAppContext";
-import CacheImage from "../../CacheImage";
+import CacheImage from "../../CustomPrimitives/CacheImage";
 import { resizeImage } from "../../../managers/MediaManager";
 import { styles } from "./styles";
+import SignedImage from "../../CustomPrimitives/SignedImage";
 
 interface MediaMessageProps {
   message: Message;
@@ -38,21 +39,14 @@ export default function MediaMessage(props: MediaMessageProps) {
       <View
         style={[
           styles.imageBackground,
-          isMe ? styles.imageOutgoing : styles.imageIncoming,
           {
             height: imageHeight,
             width: imageWidth,
-            marginTop: message.marginTop,
           },
         ]}
       >
         {isLocal ? (
-          <Image
-            style={{ flex: 1 }}
-            source={{
-              uri: message.imageUrl!,
-            }}
-          />
+          <Image style={{ flex: 1 }} source={{ uri: message.imageUrl ?? "" }} />
         ) : (
           <CacheImage
             source={message.imageUrl!}

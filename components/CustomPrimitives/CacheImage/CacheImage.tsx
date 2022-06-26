@@ -1,17 +1,11 @@
 import React, { useEffect, useState } from "react";
-import {
-  Alert,
-  Image,
-  ImageProps,
-  View,
-  ActivityIndicator,
-} from "react-native";
+import { Alert, Image, ImageProps, View } from "react-native";
 import * as FileSystem from "expo-file-system";
-import { fetchSignedUrl } from "../../managers/MediaManager";
+import { fetchSignedUrl } from "../../../managers/MediaManager";
 
 interface CachImageProps extends Omit<ImageProps, "source"> {
-  cacheKey: string;
-  source: string;
+  cacheKey: string | undefined | null;
+  source: string | undefined | null;
 }
 
 export default function CacheImage(props: CachImageProps) {
@@ -24,24 +18,30 @@ export default function CacheImage(props: CachImageProps) {
     Else it is cached and then rendered
   */
   useEffect(() => {
+    let unmounted = false;
+
     async function loadImg() {
-      const _cachePath = `${FileSystem.cacheDirectory}.${cacheKey}`;
-      const imgInfo = await findImageInCache(_cachePath);
-      if (imgInfo.exists) {
-        setCachePath(_cachePath);
-      } else {
-        const signedUrl = await fetchSignedUrl(source);
-        const cached = await cacheImage(signedUrl, _cachePath);
-        if (cached.path) {
-          setCachePath(cached.path);
+      if (cacheKey && source) {
+        const _cachePath = `${FileSystem.cacheDirectory}.${cacheKey}`;
+        const imgInfo = await findImageInCache(_cachePath);
+        if (imgInfo.exists) {
+          !unmounted && setCachePath(_cachePath);
         } else {
-          Alert.alert(`Couldn't load Image!`);
+          const signedUrl = await fetchSignedUrl(source);
+          const cached = await cacheImage(signedUrl, _cachePath);
+          if (cached.path) {
+            !unmounted && setCachePath(cached.path);
+          } else {
+            Alert.alert(`Couldn't load Image!`);
+          }
         }
       }
     }
+
     loadImg();
+
     return () => {
-      setCachePath("");
+      unmounted = true;
     };
   }, []);
 
@@ -91,7 +91,11 @@ export default function CacheImage(props: CachImageProps) {
 
   return (
     <>
-      {cachePath ? <Image source={{ uri: cachePath }} style={style} /> : null}
+      {cachePath ? (
+        <Image source={{ uri: cachePath }} style={style} />
+      ) : (
+        <View style={style} />
+      )}
     </>
   );
 }

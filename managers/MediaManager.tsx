@@ -1,9 +1,5 @@
 import * as ImagePicker from "expo-image-picker";
-import {
-  manipulateAsync,
-  SaveFormat,
-  ImageResult,
-} from "expo-image-manipulator";
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import { Dimensions, Platform } from "react-native";
 import { Storage } from "aws-amplify";
 import "react-native-get-random-values";
@@ -16,6 +12,15 @@ export enum PickImageRequestEnum {
   setProfileImage,
   setChatUserImage,
 }
+
+export type ImageData = {
+  fullQualityImageUri: string;
+  type: "image" | "video" | undefined;
+  uri: string;
+  width: number;
+  height: number;
+  base64?: string | undefined;
+};
 
 export const requestCameraPermissions = async () => {
   if (Platform.OS !== "web") {
@@ -31,6 +36,41 @@ export const requestCameraPermissions = async () => {
   }
 };
 
+const getImageWidthAndQuality = (request: PickImageRequestEnum) => {
+  switch (request) {
+    case PickImageRequestEnum.sendChatImage:
+      return { width: 700, quality: 0.3 };
+    case PickImageRequestEnum.setProfileImage:
+      return { width: 185, quality: 0.3 };
+    case PickImageRequestEnum.setChatImage:
+      return { width: 185, quality: 0.3 };
+    case PickImageRequestEnum.setChatUserImage:
+      return { width: 90, quality: 0.3 };
+  }
+};
+
+const manipulatePhoto = async (
+  metaData: ImagePicker.ImageInfo,
+  request: PickImageRequestEnum
+) => {
+  const manipulatedPhoto = await manipulateAsync(
+    metaData.uri,
+    [
+      {
+        resize: {
+          width: getImageWidthAndQuality(request).width,
+        },
+      },
+    ],
+    {
+      compress: getImageWidthAndQuality(request).quality,
+      format: SaveFormat.JPEG,
+    }
+  );
+
+  return manipulatedPhoto;
+};
+
 export const pickMedia = async (request: PickImageRequestEnum) => {
   const metaData = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ImagePicker.MediaTypeOptions.All,
@@ -43,28 +83,7 @@ export const pickMedia = async (request: PickImageRequestEnum) => {
     const fullQualityImageUri = metaData.uri;
     try {
       const manipResultMetaData =
-        type == "image"
-          ? await manipulateAsync(
-              metaData.uri,
-              [
-                {
-                  resize: {
-                    width:
-                      request === PickImageRequestEnum.sendChatImage
-                        ? metaData.width > 700
-                          ? 700
-                          : metaData.width
-                        : 175,
-                  },
-                },
-              ],
-              {
-                compress:
-                  request === PickImageRequestEnum.sendChatImage ? 0.3 : 0.6,
-                format: SaveFormat.JPEG,
-              }
-            )
-          : metaData;
+        type === "image" ? await manipulatePhoto(metaData, request) : metaData;
 
       const imageData = {
         ...manipResultMetaData,
@@ -88,8 +107,12 @@ export const fetchMediaBlob = async (imageDataUri: string) => {
   return blob;
 };
 
-export const uploadMedia = async (type: "image" | "video", blob: Blob) => {
-  const { key } = await Storage.put(`${uuidv4()}.jpg`, blob, {
+export const uploadMedia = async (
+  type: "image" | "video",
+  blob: Blob,
+  uniqueKey?: string
+) => {
+  const { key } = await Storage.put(`${uniqueKey ?? uuidv4()}.jpg`, blob, {
     contentType: type,
   });
 

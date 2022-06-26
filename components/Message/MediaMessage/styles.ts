@@ -7,13 +7,4 @@ export const styles = StyleSheet.create({
     borderRadius: 15,
     overflow: "hidden",
   },
-  imageOutgoing: {
-    alignSelf: "flex-end",
-    marginRight: 5,
-  },
-
-  imageIncoming: {
-    alignSelf: "flex-start",
-    marginLeft: 40,
-  },
 });

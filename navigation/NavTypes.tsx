@@ -5,6 +5,7 @@ import {
   OuterAppStackParamList,
   InnerAppStackParamList,
 } from "./Stacks/AppStack";
+import { RouteProp } from "@react-navigation/native";
 
 /* -------------------------------------------------------------------------- */
 /*                                Auth Screens                                */
@@ -44,14 +45,31 @@ export type ChatScreenProps = NativeStackScreenProps<
   "ChatScreen"
 >;
 
+export type UsersScreenProps = NativeStackScreenProps<
+  InnerAppStackParamList,
+  "UsersScreen"
+>;
+
 /* -------------------------- useNavigation Imports ------------------------- */
 
-export type InnerContactScreenNavigationProp = NativeStackNavigationProp<
+export type InnerContactScreenNavigationProps = NativeStackNavigationProp<
   InnerAppStackParamList,
   "ContactNav"
 >;
 
-export type OuterContactScreenNavigationProp = NativeStackNavigationProp<
+export type OuterContactScreenNavigationProps = NativeStackNavigationProp<
   OuterAppStackParamList,
   "ContactNav"
 >;
+
+export type OuterUsersScreenNavigationProps = NativeStackNavigationProp<
+  OuterAppStackParamList,
+  "ContactNav"
+>;
+
+/* ---------------------------- UseRoute Imports ---------------------------- */
+
+// export type InnerUsersScreenRouteProps = RouteProp<
+//   InnerAppStackParamList,
+//   "ContactNav"
+// >;

@@ -1,4 +1,4 @@
-import { Chat, ChatUser, Message, User } from "../../../src/models";
+import { Chat, Message } from "../../../src/models";
 import EventBox from "./SubComponents/EventBox";
 import AttendeesView from "./SubComponents/AttendeesView";
 import SpotsLeftView from "./SubComponents/SpotsLeftView";
@@ -44,13 +44,15 @@ export default function EventMessage(props: EventMessageProps) {
   */
   return (
     <>
-      {eventChat?.membersCount > 3 && <AttendeesView eventChat={eventChat} />}
+      {(eventChat?.membersCount ?? 0) > 3 && (
+        <AttendeesView eventChat={eventChat} />
+      )}
       {eventChat && <EventBox eventChat={eventChat} />}
       {eventChat?.limit && (
         <SpotsLeftView
           message={message}
           limit={eventChat?.limit}
-          membersCount={eventChat.membersCount}
+          membersCount={eventChat.membersCount ?? 0}
         />
       )}
     </>
