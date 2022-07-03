@@ -26,9 +26,11 @@ type ChatUserMessageMetaData = {
 
 export declare class Chat {
   readonly id: string;
-  readonly title: string;
+  readonly title?: string;
   readonly chatImageUrl?: string | null;
   readonly breadCrumb?: string | null;
+  readonly displayUserName?: string | null;
+  readonly displayUserProfileImageUrl?: string | null;
   readonly eventDateTime?: string | null;
   readonly eventDescription?: string | null;
   readonly eventLocation?: string | null;

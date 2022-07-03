@@ -1,9 +1,7 @@
-import { useNavigation } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
 import { Text, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
-// import ChatInfoScreen from "../../screens/ChatInfoScreen";
+import ChatInfoScreen from "../../screens/AppScreens/ChatInfoScreen";
 // import ChatScreen from "../../screens/ChatScreen";
 import ContactScreen from "../../screens/AppScreens/ContactScreen";
 import ProfileScreen from "../../screens/AppScreens/ProfileScreen";
@@ -14,8 +12,13 @@ import UsersScreen, { ChatEnum } from "../../screens/AppScreens/UsersScreen";
 // import GoogleMapsScreen from "../../screens/GoogleMapsScreen";
 import Colors from "../../constants/Colors";
 import { AppProvider } from "../Providers/AppProvider";
-import { Chat, ChatUser } from "../../src/models";
+import { Chat, ChatUser, User } from "../../src/models";
 import { NavigatorScreenParams } from "@react-navigation/native";
+import {
+  createStackNavigator,
+  TransitionPresets,
+} from "@react-navigation/stack";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 export type InnerAppStackParamList = {
   ContactNav: undefined;
@@ -26,7 +29,9 @@ export type InnerAppStackParamList = {
     chat: Chat;
     chatUser: ChatUser;
     members: ChatUser[] | undefined;
+    displayUser: User | undefined;
   };
+  ChatInfoScreen: { displayUser: User | undefined };
   UsersScreen: { chatType: ChatEnum };
 };
 
@@ -35,11 +40,9 @@ export type OuterAppStackParamList = {
   ChatNav: NavigatorScreenParams<InnerAppStackParamList>;
 };
 
-const InnerStack = createNativeStackNavigator<InnerAppStackParamList>();
+const InnerStack = createStackNavigator<InnerAppStackParamList>();
 
 export const AppStack = () => {
-  // const navigation = useNavigation();
-
   const ContactNav = () => {
     return (
       <InnerStack.Navigator>
@@ -67,6 +70,7 @@ export const AppStack = () => {
             name="UsersScreen"
             component={UsersScreen}
             options={{
+              headerLeft: () => null,
               headerTitle: "",
               headerBackTitleVisible: false,
               headerTintColor: Colors.manorPurple,
@@ -74,6 +78,7 @@ export const AppStack = () => {
                 backgroundColor: Colors.manorBackgroundGray,
               },
               headerShadowVisible: false,
+              ...TransitionPresets.ModalTransition,
             }}
           />
         </InnerStack.Group>
@@ -93,14 +98,14 @@ export const AppStack = () => {
                 headerShown: false,
               })}
             />
-            {/* <Stack.Screen
+            <InnerStack.Screen
               name="ChatInfoScreen"
               component={ChatInfoScreen}
               options={{
-                headerShown: true,
+                headerShown: false,
                 title: "",
               }}
-            /> */}
+            />
           </InnerStack.Group>
           {/* <Stack.Group screenOptions={{ presentation: "modal" }}>
             <Stack.Screen name="WebModalScreen" component={WebModalScreen} />

@@ -11,6 +11,7 @@ import { OuterContactScreenNavigationProps } from "../../navigation/NavTypes";
 import CacheImage from "../CustomPrimitives/CacheImage";
 import DefaultContactImage from "../DefaultContactImage";
 import { styles } from "./styles";
+import { extractDisplayUser } from "../../managers/ChatManager";
 
 interface ContactProps {
   contact: Chat;
@@ -23,7 +24,7 @@ export default function Contact(props: ContactProps) {
 
   const [members, setMembers] = useState<ChatUser[]>([]);
   const [displayUser, setDisplayUser] = useState<User | undefined>();
-  const [currentChatUser, setCurrentChatUser] = useState<
+  const [contactChatUser, setContactChatUser] = useState<
     ChatUser | undefined
   >();
 
@@ -41,15 +42,15 @@ export default function Contact(props: ContactProps) {
     ).subscribe((msg) => {
       const chatUser = msg.element;
 
-      if (msg.model === ChatUser && msg.opType === "INSERT") {
+      if (msg.opType === "INSERT") {
         const newMembers = [...members, msg.element];
         setMembers(newMembers);
-      } else if (msg.model === ChatUser && msg.opType === "UPDATE") {
+      } else if (msg.opType === "UPDATE") {
         if (
           contact?.id == chatUser?.chat?.id &&
           user?.id == chatUser?.user?.id
         ) {
-          setCurrentChatUser(chatUser);
+          setContactChatUser(chatUser);
         }
       }
     });
@@ -65,13 +66,10 @@ export default function Contact(props: ContactProps) {
 
   useEffect(() => {
     if (!contact?.isGroupChat) {
-      const otherChatUser = members.find(
-        (chatUser) => chatUser.user.id !== user?.id
-      );
-
-      otherChatUser && setDisplayUser(otherChatUser.user);
+      const _displayUser = extractDisplayUser(contact, user ?? undefined);
+      _displayUser && setDisplayUser(_displayUser);
     }
-  }, [members]);
+  }, []);
 
   /* -------------------------- Set Current ChatUser -------------------------- */
 
@@ -81,7 +79,7 @@ export default function Contact(props: ContactProps) {
     DataStore.query(ChatUser, (chatUser) =>
       chatUser.userID("eq", user?.id ?? "").chatID("eq", contact?.id)
     ).then((chatUserArray) => {
-      !unmounted && chatUserArray[0] && setCurrentChatUser(chatUserArray[0]);
+      !unmounted && chatUserArray[0] && setContactChatUser(chatUserArray[0]);
     });
 
     return () => {
@@ -94,7 +92,7 @@ export default function Contact(props: ContactProps) {
   useEffect(() => {
     let unmounted = false;
 
-    if (!contact?.isGroupChat || !contact?.chatImageUrl) {
+    if (!contact?.chatImageUrl) {
       DataStore.query(ChatUser, (chatUser) =>
         chatUser.chatID("eq", contact?.id)
       ).then((members) => {
@@ -111,14 +109,15 @@ export default function Contact(props: ContactProps) {
   /*                                Nav Function                                */
   /* -------------------------------------------------------------------------- */
 
-  const onPress = () => {
-    if (currentChatUser) {
+  const openChat = () => {
+    if (contactChatUser) {
       navigation.navigate("ChatNav", {
         screen: "ChatScreen",
         params: {
           chat: contact,
-          chatUser: currentChatUser,
-          members: members.length > 0 ? members : undefined,
+          chatUser: contactChatUser,
+          members: members,
+          displayUser: displayUser,
         },
       });
     }
@@ -134,12 +133,12 @@ export default function Contact(props: ContactProps) {
 
   const ContactIcon = () => {
     return (
-      <TouchableOpacity style={styles.container} onPress={onPress}>
+      <TouchableOpacity style={styles.container} onPress={openChat}>
         <View
           style={[
             styles.newMessageView,
             {
-              shadowColor: currentChatUser?.hasUnreadMessage
+              shadowColor: contactChatUser?.hasUnreadMessage
                 ? Colors.manorLightBlue
                 : "black",
             },
@@ -150,17 +149,11 @@ export default function Contact(props: ContactProps) {
               <DefaultContactImage members={members} />
             </View>
           ) : (
-            <Image
+            <CacheImage
+              source={contact?.chatImageUrl ?? displayUser?.profileImageUrl!}
+              cacheKey={contact?.chatImageUrl ?? displayUser?.profileImageUrl!}
               style={styles.contactImage}
-              source={{
-                uri: "https://thumbs.dreamstime.com/b/logo-show-text-template-show-vintage-marquee-light-show-sign-typography-d-render-61801158.jpg",
-              }}
             />
-            // <CacheImage
-            //   source={contact?.chatImageUrl ?? displayUser?.profileImageUrl!}
-            //   cacheKey={contact?.chatImageUrl ?? displayUser?.profileImageUrl!}
-            //   style={styles.contactImage}
-            // />
           )}
         </View>
         <Text

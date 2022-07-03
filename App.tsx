@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Amplify from "@aws-amplify/core";
 import config from "./src/aws-exports.js";

@@ -8,8 +8,8 @@ import {
   PickImageRequestEnum,
   fetchMediaBlob,
   uploadMedia,
+  manipulatePhoto,
 } from "../../managers/MediaManager";
-
 import {
   FlatList,
   TouchableOpacity,
@@ -19,7 +19,6 @@ import {
 } from "react-native";
 import SectionInput, {
   SectionInputProps,
-  SectionInputEnum,
 } from "../../components/SectionInput/SectionInput";
 import SectionButton, {
   SectionButtonProps,
@@ -27,13 +26,30 @@ import SectionButton, {
 import { ImageData } from "../../managers/MediaManager";
 import { DataStore } from "aws-amplify";
 import { User } from "../../src/models";
+import {
+  updateUserProfileImageUrl,
+  updateUserVenmoHandle,
+} from "../../managers/UserManager";
+import SignedImage from "../../components/CustomPrimitives/SignedImage";
 
 export default function ProfileScreen() {
-  const { user, setUser } = useAuthContext();
+  const { user, setUser, signOut } = useAuthContext();
   const [profileImageUrl, setProfileImageUrl] = useState<string>(
     user?.profileImageUrl ?? ""
   );
-  const { signOut } = useAuthContext();
+  const isLocal = profileImageUrl.includes("file:///");
+
+  /* -------------------------------------------------------------------------- */
+  /*                              Section Functions                             */
+  /* -------------------------------------------------------------------------- */
+
+  /* ------------------------------ Section Input ----------------------------- */
+
+  const updateVenmoHandle = async (currentInfo: string) => {
+    const updatedUser = await updateUserVenmoHandle(user, currentInfo);
+
+    updatedUser && setUser(updatedUser);
+  };
 
   /* -------------------------------------------------------------------------- */
   /*                              Section Constants                             */
@@ -42,16 +58,21 @@ export default function ProfileScreen() {
   /* ------------------------------ Section Input ----------------------------- */
 
   const profileSectionInputs: SectionInputProps[] = [
-    { caption: SectionInputEnum.name, info: user?.name, editable: false },
     {
-      caption: SectionInputEnum.phone,
+      caption: "Name",
+      info: user?.name,
+      editable: false,
+    },
+    {
+      caption: "Phone",
       info: user?.phoneNumber,
       editable: false,
     },
     {
-      caption: SectionInputEnum.venmoHandle,
+      caption: "Venmo Handle",
       info: user?.venmoHandle ?? "Input Venmo Handle",
       editable: true,
+      onSubmit: updateVenmoHandle,
     },
   ];
 
@@ -69,35 +90,34 @@ export default function ProfileScreen() {
   /*                              Set Profile Photo                             */
   /* -------------------------------------------------------------------------- */
 
+  //set profile Image
   const setProfileImage = async () => {
+    const upToDateUser = await DataStore.query(User, user?.id ?? "");
     const imageData = await pickMedia(PickImageRequestEnum.setProfileImage);
 
-    if (user && imageData && imageData.type) {
+    if (imageData && upToDateUser) {
       const blob = await fetchMediaBlob(imageData.uri);
       const key = await uploadMedia(imageData.type, blob);
-      const upToDateUser = await DataStore.query(User, user.id);
 
-      if (upToDateUser) {
-        const updatedUser = await DataStore.save(
-          User.copyOf(upToDateUser, (_updatedUser) => {
-            _updatedUser.profileImageUrl = key;
-          })
-        );
-
-        setProfileImageUrl(imageData.fullQualityImageUri);
-        setUser(updatedUser);
-        return { imageData, key };
-      }
+      const updatedUser = await updateUserProfileImageUrl(upToDateUser, key);
+      updatedUser && setUser(updatedUser);
+      return { imageData, key };
     }
   };
 
-  const setPotentialChatUserImage = async (
-    imageData: ImageData,
-    key: string
-  ) => {
-    if (user && imageData && imageData.type) {
-      const blob = await fetchMediaBlob(imageData.uri);
-      await uploadMedia(imageData.type, blob, `${key}-reducedSizeVersion`);
+  //create smaller image in order to use as chatUser image to save space & decrease load time
+  const setChatUserImage = async (imageData: ImageData, key: string) => {
+    if (user) {
+      const reducedSizeImageData = await manipulatePhoto(
+        imageData.fullQualityImageMetaData,
+        PickImageRequestEnum.setChatUserImage
+      );
+      const blob = await fetchMediaBlob(reducedSizeImageData.uri);
+      await uploadMedia(
+        imageData.type,
+        blob,
+        `${key.split(".")[0]}-reducedSizeVersion`
+      );
     }
   };
 
@@ -124,7 +144,7 @@ export default function ProfileScreen() {
   return (
     <LinearGradient
       style={styles.container}
-      colors={[Colors.manorPurple, "#171717"]}
+      colors={[Colors.manorPurple, Colors.manorBackgroundGray]}
       start={[1, 1]}
       end={[0.9, 0.85]}
     >
@@ -132,8 +152,7 @@ export default function ProfileScreen() {
         <TouchableOpacity
           onPress={async () => {
             const results = await setProfileImage();
-            results &&
-              setPotentialChatUserImage(results.imageData, results.key);
+            results && setChatUserImage(results.imageData, results.key);
           }}
         >
           <CacheImage

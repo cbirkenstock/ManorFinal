@@ -14,7 +14,6 @@ interface MediaMessageProps {
 export default function MediaMessage(props: MediaMessageProps) {
   const { message } = props;
   const { chatUser } = useAppContext();
-  const isMe = message.chatuserID === chatUser?.id;
   const isLocal = message.imageUrl?.includes("file:///");
   const [imageHeight, setImageHeight] = useState<number>();
   const [imageWidth, setImageWidth] = useState<number>();

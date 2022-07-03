@@ -7,16 +7,27 @@ import { styles } from "./styles";
 
 export interface SectionButtonProps extends Omit<PressableProps, "style"> {
   caption: string;
+  startAdornment?: JSX.Element;
+  endAdornment?: JSX.Element;
   buttonStyle?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
 }
 
 export default function SectionButton(props: SectionButtonProps) {
-  const { caption, buttonStyle, textStyle, ...rest } = props;
+  const {
+    caption,
+    startAdornment,
+    endAdornment,
+    buttonStyle,
+    textStyle,
+    ...rest
+  } = props;
 
   return (
     <Pressable style={[styles.container, buttonStyle]} {...rest}>
+      {startAdornment}
       <Text style={[styles.text, textStyle]}>{caption}</Text>
+      {endAdornment}
     </Pressable>
   );
 }

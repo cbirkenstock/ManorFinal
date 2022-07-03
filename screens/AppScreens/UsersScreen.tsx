@@ -13,17 +13,12 @@ import {
 } from "react-native";
 import { FlatList, TouchableOpacity } from "react-native-gesture-handler";
 import Colors from "../../constants/Colors";
-// import {
-//   OuterUsersScreenNavigationProps as NavProps,
-//   InnerUsersScreenRouteProps as RouteProps,
-// } from "../../navigation/NavTypes";
 import { UsersScreenProps as Props } from "../../navigation/NavTypes";
 import { User } from "../../src/models";
 import SearchedContact from "../../components/SearchedContact/SearchedContact";
 import SingleNameContact from "../../components/SingleNameContact";
 import { createGroupChat } from "../../managers/ChatManager";
 import useAuthContext from "../../hooks/useAuthContext";
-import { useNavigation, useRoute } from "@react-navigation/native";
 
 export enum ChatEnum {
   direct,
@@ -35,8 +30,6 @@ export enum ChatEnum {
 }
 
 export default function UsersScreen({ route, navigation }: Props) {
-  // const navigation = useNavigation<NavProps>();
-  // const route = useRoute<RouteProps>();
   const { user } = useAuthContext();
 
   let searchedUsers: User[] | undefined = undefined;
@@ -92,8 +85,6 @@ export default function UsersScreen({ route, navigation }: Props) {
           headerRight: () => (
             <CreateButton
               onPress={async () => {
-                let members = chosenUsers;
-                user && members?.push(user);
                 const results = await createGroupChat(
                   isCoreChat,
                   title,
@@ -103,6 +94,8 @@ export default function UsersScreen({ route, navigation }: Props) {
                 );
 
                 if (results) {
+                  navigation.goBack();
+                  // @ts-ignore
                   navigation.navigate("ChatNav", {
                     screen: "ChatScreen",
                     params: {
@@ -149,7 +142,7 @@ export default function UsersScreen({ route, navigation }: Props) {
   };
 
   /*
-  I do it like this becuase whuile it rerenders on every changeText, it only calls
+  I do it like this becuase while it rerenders on every changeText, it only calls
   from the database when necessary which should drastically increase speed, if not 
   solve the rerender problem 
    */
@@ -339,10 +332,11 @@ const styles = StyleSheet.create({
 
   createButtonContainer: {
     backgroundColor: Colors.manorBlueGray,
-    borderRadius: 40,
-    height: 40,
-    width: 70,
+    height: 45,
     marginTop: 15,
+    borderRadius: 50,
+    width: 70,
+    marginRight: "7%",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -350,6 +344,6 @@ const styles = StyleSheet.create({
   createButtonText: {
     color: Colors.manorPurple,
     fontWeight: "500",
-    fontSize: 15,
+    fontSize: 16,
   },
 });

@@ -14,7 +14,7 @@ export const schema = {
           name: "title",
           isArray: false,
           type: "String",
-          isRequired: true,
+          isRequired: false,
           attributes: [],
         },
         chatImageUrl: {
@@ -26,6 +26,20 @@ export const schema = {
         },
         breadCrumb: {
           name: "breadCrumb",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
+        displayUserName: {
+          name: "displayUserName",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
+        displayUserProfileImageUrl: {
+          name: "displayUserProfileImageUrl",
           isArray: false,
           type: "String",
           isRequired: false,
@@ -376,6 +390,7 @@ export const schema = {
           isRequired: true,
           attributes: [],
         },
+
         chat: {
           name: "chat",
           isArray: false,

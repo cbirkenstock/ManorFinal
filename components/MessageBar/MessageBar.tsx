@@ -47,7 +47,7 @@ export default function MessageBar() {
 
     if (imageData && imageData.type) {
       const newLocalMessage = createMediaMessageComponent(
-        imageData.fullQualityImageUri,
+        imageData.fullQualityImageMetaData.uri,
         imageData.height,
         imageData.width,
         context

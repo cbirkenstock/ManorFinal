@@ -45,6 +45,11 @@ export type ChatScreenProps = NativeStackScreenProps<
   "ChatScreen"
 >;
 
+export type ChatInfoScreenProps = NativeStackScreenProps<
+  InnerAppStackParamList,
+  "ChatInfoScreen"
+>;
+
 export type UsersScreenProps = NativeStackScreenProps<
   InnerAppStackParamList,
   "UsersScreen"

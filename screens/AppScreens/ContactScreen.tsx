@@ -8,14 +8,13 @@ import {
   StyleSheet,
   Pressable,
   View,
-  Dimensions,
 } from "react-native";
 import Colors from "../../constants/Colors";
 import Header from "../../components/Header";
 import Contact from "../../components/Contact";
 import useAuthContext from "../../hooks/useAuthContext";
 import { ContactScreenProps as Props } from "../../navigation/NavTypes";
-import { Chat, ChatUser } from "../../src/models";
+import { Chat, ChatUser, User } from "../../src/models";
 import { animateTwoSequence } from "../../managers/AnimationManager";
 import { dropDown } from "../../constants/Dropdown";
 import DropdownItem, { DropdownItemProps } from "../../components/DropdownItem";
@@ -24,7 +23,7 @@ import { appendChats } from "../../managers/ChatManager";
 
 export default function ContactScreen({ route, navigation }: Props) {
   const context = useAuthContext();
-  const { user } = context;
+  const { user, setUser } = context;
   const [chats, setChats] = useState<Chat[]>();
   const exitViewHeightAnim = useRef(new Animated.Value(0)).current;
   const exitViewOpacityAnim = useRef(new Animated.Value(0)).current;
@@ -42,7 +41,7 @@ export default function ContactScreen({ route, navigation }: Props) {
           )
         ).map((chatUser) => chatUser.chat);
 
-        //adds a fake contact is there are none so that at least the header is rendered
+        //adds a fake contact if there are none so that at least the header is rendered
         if (_chats.length === 0) {
           const headerTrojanChat = new Chat({
             title: "Header_Trojan_Horse",
@@ -57,21 +56,19 @@ export default function ContactScreen({ route, navigation }: Props) {
     fetchChats();
   }, []);
 
-  // /* -------------------------------------------------------------------------- */
-  // /*                                Subscriptions                               */
-  // /* -------------------------------------------------------------------------- */
+  /* -------------------------------------------------------------------------- */
+  /*                                Subscriptions                               */
+  /* -------------------------------------------------------------------------- */
 
-  // useEffect(() => {
-  //   if (chats) {
-  //     const subscription = contactSubscription(
-  //       context,
-  //       appendChats,
-  //       chats,
-  //       setChats
-  //     );
-  //     return () => subscription.unsubscribe();
-  //   }
-  // }, [chats]);
+  useEffect(() => {
+    const subscription = contactSubscription(
+      context,
+      appendChats,
+      chats ?? [],
+      setChats
+    );
+    return () => subscription.unsubscribe();
+  }, []);
 
   /* -------------------------------------------------------------------------- */
   /*                       Render Flatlist Item Functions                       */
@@ -97,7 +94,7 @@ export default function ContactScreen({ route, navigation }: Props) {
 
     const HangingChat = () => {
       return (
-        <View style={{ width: "50%", flexDirection: "row" }}>
+        <View style={styles.hangingChatContainer}>
           <Contact contact={chats![index]} />
         </View>
       );
@@ -105,7 +102,7 @@ export default function ContactScreen({ route, navigation }: Props) {
 
     const ChatPair = () => {
       return (
-        <View style={{ width: "100%", flexDirection: "row" }}>
+        <View style={styles.chatPairContainer}>
           <Contact contact={chats![index]} />
           <Contact contact={chats![index + 1]} />
         </View>
@@ -190,6 +187,16 @@ const styles = StyleSheet.create({
 
   FlatList: {
     flex: 1,
+  },
+
+  chatPairContainer: {
+    width: "100%",
+    flexDirection: "row",
+  },
+
+  hangingChatContainer: {
+    width: "50%",
+    flexDirection: "row",
   },
 
   exitView: {

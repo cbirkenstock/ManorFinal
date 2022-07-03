@@ -4,6 +4,7 @@ import {
   Dimensions,
   FlatList,
   KeyboardAvoidingView,
+  Pressable,
   StatusBar,
   StyleSheet,
   View,
@@ -20,8 +21,11 @@ import { ChatUser, Message } from "../../src/models";
 import EventMessage from "../../components/Message/EventMessage/EventMessage";
 import { messageSubscription } from "../../managers/SubscriptionManager";
 import { appendMessage } from "../../managers/MessageManager";
+import { Navigation } from "react-native-feather";
+import DefaultContactImage from "../../components/DefaultContactImage";
+import SignedImage from "../../components/CustomPrimitives/SignedImage";
 
-export default function ChatScreen({ route }: Props) {
+export default function ChatScreen({ navigation, route }: Props) {
   const context = useAppContext();
   const {
     chat,
@@ -33,6 +37,7 @@ export default function ChatScreen({ route }: Props) {
     messages,
     setMessages,
   } = context;
+
   const chatcontextUpdated = chat?.id === route.params?.chat.id;
 
   /* -------------------------------------------------------------------------- */
@@ -40,13 +45,19 @@ export default function ChatScreen({ route }: Props) {
   /* -------------------------------------------------------------------------- */
 
   useEffect(() => {
+    /*
+    set messages to empty in case you open a new chat from chatInfo, in which case you 
+    don't want to show the old messages
+    */
+    setMessages([]);
+
     setChatUser(route.params?.chatUser);
     setChat(route.params?.chat);
 
     route.params?.members
       ? setMembers(route.params?.members)
       : fetchMembers().then(async (members) => setMembers(members));
-  }, []);
+  }, [route.params?.chat]);
 
   /* -------------------------------------------------------------------------- */
   /*                                Fetch Members                               */
@@ -157,20 +168,26 @@ export default function ChatScreen({ route }: Props) {
         keyExtractor={(message) => message.id}
         renderItem={renderMessage}
       />
+      <Pressable
+        style={styles.ChatInfoButton}
+        onPress={() =>
+          navigation.navigate("ChatInfoScreen", {
+            displayUser: route.params?.displayUser,
+          })
+        }
+      >
+        {route.params.displayUser ? (
+          <SignedImage source={route.params.displayUser.profileImageUrl} />
+        ) : (
+          <DefaultContactImage members={members} />
+        )}
+      </Pressable>
       <MessageBar />
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  absolute: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    left: 0,
-    bottom: 0,
-  },
-
   container: {
     flex: 1,
     marginVertical: 0,
@@ -186,21 +203,21 @@ const styles = StyleSheet.create({
   pinMessageFlatlist: {
     position: "absolute",
     top: 0,
-    left: 0,
-    right: 0,
+    width: "100%",
   },
 
-  eventMaker: {
-    width: "80",
-  },
-
-  exitButton: {
+  ChatInfoButton: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "black",
-    opacity: 0.9,
+    top: "5%",
+    right: "2.5%",
+    height: 60,
+    width: 60,
+    backgroundColor: Colors.manorBlueGray,
+    borderRadius: 50,
+    justifyContent: "center",
+    shadowColor: "#423f3f",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.75,
+    shadowRadius: 5,
   },
 });

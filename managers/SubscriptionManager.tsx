@@ -3,9 +3,40 @@ import { AppInitialStateProps } from "../navigation/InitialStates/AppInitialStat
 import { AuthInitialStateProps } from "../navigation/InitialStates/AuthInitialState";
 import { Chat, ChatUser, Message } from "../src/models";
 
+/* -------------------------------------------------------------------------- */
+/*                               Function Types                               */
+/* -------------------------------------------------------------------------- */
+
+/* ----------------------------- Message Handler ---------------------------- */
+
+type MessageSubscriptionHandler = (
+  message: Message,
+  context: AppInitialStateProps
+) => void;
+
+/* ----------------------------- Contact Handler ---------------------------- */
+
+type ContactSubscriptionHandler = (
+  newChat: Chat,
+  chats: Chat[],
+  setChats: (value: React.SetStateAction<Chat[] | undefined>) => void
+) => void;
+
+/* ---------------------------- Set Chats Handler --------------------------- */
+
+type SetChatsHandler = (
+  value: React.SetStateAction<Chat[] | undefined>
+) => void;
+
+/* -------------------------------------------------------------------------- */
+/*                                Subscriptions                               */
+/* -------------------------------------------------------------------------- */
+
+/* --------------------------------- Message -------------------------------- */
+
 export const messageSubscription = (
   context: AppInitialStateProps,
-  handler: (message: Message, context: AppInitialStateProps) => void
+  handler: MessageSubscriptionHandler
 ) => {
   const { chat, chatUser } = context;
 
@@ -23,15 +54,13 @@ export const messageSubscription = (
   return subscription;
 };
 
+/* --------------------------------- Contact -------------------------------- */
+
 export const contactSubscription = (
   context: AuthInitialStateProps,
-  handler: (
-    newChat: Chat,
-    chats: Chat[],
-    setChats: (value: React.SetStateAction<Chat[] | undefined>) => void
-  ) => void,
+  handler: ContactSubscriptionHandler,
   chats: Chat[],
-  setChats: (value: React.SetStateAction<Chat[] | undefined>) => void
+  setChats: SetChatsHandler
 ) => {
   const { user } = context;
 

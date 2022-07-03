@@ -2,7 +2,7 @@ import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 
 import { AppStack } from "./Stacks/AppStack";
 import { AuthStack } from "./Stacks/AuthStack";
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 
 import useAuthContext from "../hooks/useAuthContext";
 import React from "react";
