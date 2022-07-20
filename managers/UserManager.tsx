@@ -7,7 +7,7 @@ export const updateUserVenmoHandle = async (
 ) => {
   const upToDateUser = await DataStore.query(User, user?.id ?? "");
 
-  if (user && upToDateUser) {
+  if (upToDateUser) {
     const updatedUser = await DataStore.save(
       User.copyOf(upToDateUser, (updatedUser) => {
         updatedUser.venmoHandle = venmoHandle;
@@ -24,9 +24,9 @@ export const updateUserProfileImageUrl = async (
 ) => {
   const upToDateUser = await DataStore.query(User, user?.id ?? "");
 
-  if (user && upToDateUser) {
+  if (upToDateUser) {
     const updatedUser = await DataStore.save(
-      User.copyOf(user, (updatedUser) => {
+      User.copyOf(upToDateUser, (updatedUser) => {
         updatedUser.profileImageUrl = profileImageUrl;
       })
     );

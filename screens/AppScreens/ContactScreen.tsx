@@ -14,16 +14,15 @@ import Header from "../../components/Header";
 import Contact from "../../components/Contact";
 import useAuthContext from "../../hooks/useAuthContext";
 import { ContactScreenProps as Props } from "../../navigation/NavTypes";
-import { Chat, ChatUser, User } from "../../src/models";
+import { Chat, ChatUser } from "../../src/models";
 import { animateTwoSequence } from "../../managers/AnimationManager";
 import { dropDown } from "../../constants/Dropdown";
 import DropdownItem, { DropdownItemProps } from "../../components/DropdownItem";
 import { contactSubscription } from "../../managers/SubscriptionManager";
-import { appendChats } from "../../managers/ChatManager";
 
 export default function ContactScreen({ route, navigation }: Props) {
   const context = useAuthContext();
-  const { user, setUser } = context;
+  const { user } = context;
   const [chats, setChats] = useState<Chat[]>();
   const exitViewHeightAnim = useRef(new Animated.Value(0)).current;
   const exitViewOpacityAnim = useRef(new Animated.Value(0)).current;
@@ -37,7 +36,7 @@ export default function ContactScreen({ route, navigation }: Props) {
       if (!chats) {
         const _chats = (
           await DataStore.query(ChatUser, (chatuser) =>
-            chatuser.userID("eq", user?.id ?? "")
+            chatuser.userID("eq", user?.id ?? "").isOfActiveChat("eq", true)
           )
         ).map((chatUser) => chatUser.chat);
 
@@ -61,14 +60,10 @@ export default function ContactScreen({ route, navigation }: Props) {
   /* -------------------------------------------------------------------------- */
 
   useEffect(() => {
-    const subscription = contactSubscription(
-      context,
-      appendChats,
-      chats ?? [],
-      setChats
-    );
+    const subscription = contactSubscription(context, chats ?? [], setChats);
+    //const a = testSubscription();
     return () => subscription.unsubscribe();
-  }, []);
+  }, [chats]);
 
   /* -------------------------------------------------------------------------- */
   /*                       Render Flatlist Item Functions                       */
@@ -145,7 +140,7 @@ export default function ContactScreen({ route, navigation }: Props) {
         style={styles.FlatList}
         data={chats}
         renderItem={renderContact}
-        keyExtractor={(item) => (typeof item == "string" ? item : item.id)}
+        keyExtractor={(item) => (typeof item == "string" ? item : item?.id)}
         showsVerticalScrollIndicator={false}
       />
       <Animated.View

@@ -5,20 +5,18 @@ import {
   SafeAreaView,
   TextInput,
   SectionList,
-  FlatList,
   SectionListData,
   Text,
 } from "react-native";
 import useAppContext from "../../hooks/useAppContext";
 import useAuthContext from "../../hooks/useAuthContext";
 import { ChatInfoScreenProps as Props } from "../../navigation/NavTypes";
-import { Chat, ChatUser, Message, User } from "../../src/models";
+import { ChatUser, Message } from "../../src/models";
 import Colors from "../../constants/Colors";
-import { DataStore, SortDirection } from "aws-amplify";
+import { DataStore } from "aws-amplify";
 import SectionButton, {
   SectionButtonProps,
 } from "../../components/SectionButton/SectionButton";
-import { SectionInputProps } from "../../components/SectionInput/SectionInput";
 import SignedImage from "../../components/CustomPrimitives/SignedImage";
 import DefaultContactImage from "../../components/DefaultContactImage";
 import { FontAwesome, Ionicons, MaterialIcons } from "@expo/vector-icons";
@@ -26,21 +24,63 @@ import {
   checkForPreExistingDMChat,
   createDMChat,
 } from "../../managers/ChatManager";
+import { ChatEnum } from "./UsersScreen";
+import EventCard from "../../components/EventCard/EventCard";
+import { FlatList } from "react-native-gesture-handler";
 
 export type ChatInfoDataType = {
   title: string | undefined;
-  data: SectionButtonProps[];
+  data: ReadonlyArray<SectionButtonProps | Message>;
   horizontal?: boolean;
 };
 
 export default function ProfileScreen({ navigation, route }: Props) {
-  const { chat, members } = useAppContext();
+  const { chat, members, chatUser, setChatUser } = useAppContext();
   const { user } = useAuthContext();
   const { displayUser } = route.params;
+  const [eventMessages, setEventMessages] = useState<Message[]>([]);
+
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(
+    chatUser?.notificationsEnabled ?? true
+  );
 
   /* -------------------------------------------------------------------------- */
   /*                          Settings Button functions                         */
   /* -------------------------------------------------------------------------- */
+
+  /* ---------------------------- Go To Add Members --------------------------- */
+
+  const goToAddMembers = () => {
+    navigation.navigate("UsersScreen", { chatType: ChatEnum.addMembers });
+  };
+
+  /* -------------------------- Toggle Notifications -------------------------- */
+
+  const toggleNotifications = () => {
+    setNotificationsEnabled(!notificationsEnabled);
+  };
+
+  useEffect(() => {
+    const updateChatUser = () => {
+      if (chatUser && notificationsEnabled != chatUser.notificationsEnabled) {
+        DataStore.save(
+          ChatUser.copyOf(chatUser, (updatedChatUser) => {
+            updatedChatUser.notificationsEnabled = notificationsEnabled;
+          })
+        ).then((newChatUser) => {
+          setChatUser(newChatUser);
+        });
+      }
+    };
+
+    return () => updateChatUser();
+  }, []);
+
+  /* -------------------------- Go To Add Group Event ------------------------- */
+
+  const goToAddGroupEvent = () => {
+    navigation.navigate("UsersScreen", { chatType: ChatEnum.event });
+  };
 
   /* -------------------------------- Go To DM -------------------------------- */
 
@@ -65,22 +105,34 @@ export default function ProfileScreen({ navigation, route }: Props) {
         const results = await createDMChat(user, member.user);
 
         if (results) {
+          const { chat, chatUser, members } = results!;
+
           navigation.navigate("ChatScreen", {
-            chat: results?.chat,
-            chatUser: results?.chatUser,
+            chat: chat,
+            chatUser: chatUser,
             displayUser: member.user,
-            members: results?.members,
+            members: members,
           });
         }
       }
     }
   };
 
-  /* ------------------------------- Add Members ------------------------------ */
-
   /* -------------------------------------------------------------------------- */
   /*                                Data Constant                               */
   /* -------------------------------------------------------------------------- */
+
+  useEffect(() => {
+    const fetchEventMessages = async () => {
+      const _eventMessages = await DataStore.query(Message, (message) =>
+        message.chatID("eq", chat?.id ?? "").isEventMessage("eq", true)
+      );
+
+      setEventMessages(_eventMessages);
+    };
+
+    fetchEventMessages();
+  }, []);
 
   const data: ChatInfoDataType[] = [
     {
@@ -97,9 +149,10 @@ export default function ProfileScreen({ navigation, route }: Props) {
               style={{ marginRight: "3%" }}
             />
           ),
+          onPress: goToAddMembers,
         },
         {
-          caption: "Notifications:",
+          caption: `Notifications: ${notificationsEnabled ? "On" : "Off"}`,
           textStyle: { color: Colors.manorPurple },
           startAdornment: (
             <Ionicons
@@ -109,6 +162,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
               style={{ marginRight: "3%" }}
             />
           ),
+          onPress: toggleNotifications,
         },
         {
           caption: "Add Group Event",
@@ -121,8 +175,14 @@ export default function ProfileScreen({ navigation, route }: Props) {
               style={{ marginRight: "3%" }}
             />
           ),
+          onPress: goToAddGroupEvent,
         },
       ],
+    },
+    {
+      title: "Events",
+      data: eventMessages,
+      horizontal: true,
     },
     {
       title: "Members",
@@ -154,39 +214,72 @@ export default function ProfileScreen({ navigation, route }: Props) {
   /*                              Render Functions                              */
   /* -------------------------------------------------------------------------- */
 
-  /* ------------------------------ Section List ------------------------------ */
+  /* ----------------------------- Section Header ----------------------------- */
 
-  const renderSectionHeader = ({
-    section,
-  }: {
-    section: SectionListData<SectionButtonProps, ChatInfoDataType>;
-  }) => {
-    return section.horizontal ? (
-      <></>
-    ) : (
-      <Text style={styles.header}>{section.title}</Text>
-    );
+  const renderSectionHeader = (
+    section: SectionListData<SectionButtonProps | Message, ChatInfoDataType>
+  ) => {
+    if (section.data.length > 0) {
+      return <Text style={styles.header}>{section.title}</Text>;
+    } else {
+      return null;
+    }
   };
 
-  const renderData = ({
+  /* ------------------------------- Event Card ------------------------------- */
+
+  const renderEventCard = ({
+    index,
     item,
-    section,
   }: {
-    item: SectionButtonProps;
-    section: SectionListData<SectionButtonProps, ChatInfoDataType>;
+    index: number;
+    item: Message;
   }) => {
-    if (!section.horizontal) {
+    return <EventCard index={index} eventMessage={item} />;
+  };
+
+  const renderEventCardFlatlist = (
+    index: number,
+    section: SectionListData<SectionButtonProps | Message, ChatInfoDataType>
+  ) => {
+    if (index === 0) {
+      const eventMessageItems = section.data as Message[];
+
       return (
-        <SectionButton
-          caption={item.caption}
-          startAdornment={item.startAdornment}
-          textStyle={item.textStyle}
-          buttonStyle={item.buttonStyle}
-          onPress={item.onPress}
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={eventMessageItems}
+          keyExtractor={(eventMessage) => eventMessage.id}
+          renderItem={renderEventCard}
         />
       );
     } else {
       return null;
+    }
+  };
+
+  /* ----------------------------- Section Button ----------------------------- */
+
+  const renderSectionButton = (item: SectionButtonProps) => {
+    return (
+      <SectionButton
+        caption={item.caption}
+        startAdornment={item.startAdornment}
+        textStyle={item.textStyle}
+        buttonStyle={item.buttonStyle}
+        onPress={item.onPress}
+      />
+    );
+  };
+
+  /* ------------------------------- Extract Key ------------------------------ */
+
+  const extractKey = (item: SectionButtonProps | Message) => {
+    if ((item as SectionButtonProps).caption) {
+      return (item as SectionButtonProps).caption;
+    } else {
+      return (item as Message).id;
     }
   };
 
@@ -213,26 +306,28 @@ export default function ProfileScreen({ navigation, route }: Props) {
         <View style={{ flexShrink: 1 }}>
           <TextInput
             editable={chat ? false : true}
-            style={styles.text}
+            style={styles.title}
             placeholder={chat?.title ?? displayUser?.name}
             placeholderTextColor={"white"}
             multiline={true}
             maxLength={30}
-            // onChangeText={(value) => {
-            //   setTitle(value);
-            // }}
             returnKeyType="done"
-            // onSubmitEditing={() => {
-            //   updateChatTitle();
-            // }}
           />
         </View>
       </View>
       <SectionList
+        showsVerticalScrollIndicator={false}
+        style={styles.sectionList}
         sections={data}
-        keyExtractor={(item, index) => item.caption + index}
-        renderSectionHeader={renderSectionHeader}
-        renderItem={renderData}
+        keyExtractor={(item) => extractKey(item)}
+        renderSectionHeader={({ section }) => renderSectionHeader(section)}
+        renderItem={({ index, item, section }) => {
+          if ((item as SectionButtonProps).caption) {
+            return renderSectionButton(item as SectionButtonProps);
+          } else {
+            return renderEventCardFlatlist(index, section);
+          }
+        }}
       />
     </SafeAreaView>
   );
@@ -243,11 +338,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "black",
   },
-  item: {
-    backgroundColor: "#f9c2ff",
-    padding: 20,
-    marginVertical: 8,
-  },
   header: {
     fontSize: 20,
     fontWeight: "600",
@@ -255,9 +345,6 @@ const styles = StyleSheet.create({
     backgroundColor: "black",
     color: "white",
     marginBottom: 3,
-  },
-  title: {
-    fontSize: 24,
   },
   rowContainer: {
     marginTop: 10,
@@ -276,40 +363,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.manorBlueGray,
   },
 
-  text: {
+  title: {
     fontSize: 28,
     color: "white",
     marginLeft: 15,
     fontWeight: "bold",
   },
-  rowBack: {
-    alignSelf: "center",
-    alignItems: "center",
-    backgroundColor: "#242323",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingLeft: 15,
-    width: "97%",
-    height: 51.8,
-    borderRadius: 10,
-  },
-  backRightBtn: {
-    alignItems: "center",
-    bottom: 0,
-    justifyContent: "center",
-    position: "absolute",
-    top: 0,
-    width: 150,
-  },
-  // backRightBtnLeft: {
-  //   backgroundColor: "#242323",
-  //   right: 75,
-  //   width: 150,
-  // },
-  backRightBtnRight: {
-    backgroundColor: Colors.manorPurple,
-    right: 0,
-    borderTopRightRadius: 10,
-    borderBottomRightRadius: 10,
-  },
+  sectionList: { paddingHorizontal: "1%" },
 });

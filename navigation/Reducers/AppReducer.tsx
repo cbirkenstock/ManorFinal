@@ -13,7 +13,13 @@ export enum AppActionCase {
   setChat = "setChat",
   setMembers = "setMembers",
   setChatUser = "setChatUser",
-  setNewEventLocation = "setNewEventLocation",
+  setEventTitle = "setEventTitle",
+  setEventDateTime = "setEventDateTime",
+  setEventLocation = "setNewEventLocation",
+  setAddEventChat = "setAddEventChat",
+  setEventCapacity = "setEventCapacity",
+  setEventDescription = "setEventDescription",
+  setIsForwardingEvent = "setIsForwardingEvent",
   setMessages = "setMessages",
 }
 
@@ -50,9 +56,38 @@ interface ChatUserAction {
   payload: ChatUser | null;
 }
 
-interface NewEventLocationAction {
-  type: AppActionCase.setNewEventLocation;
+interface EventTitleAction {
+  type: AppActionCase.setEventTitle;
   payload: string | null;
+}
+
+interface EventDateTimeAction {
+  type: AppActionCase.setEventDateTime;
+  payload: Date;
+}
+interface EventLocationAction {
+  type: AppActionCase.setEventLocation;
+  payload: string | null;
+}
+
+interface AddEventChatAction {
+  type: AppActionCase.setAddEventChat;
+  payload: boolean;
+}
+
+interface EventCapacityAction {
+  type: AppActionCase.setEventCapacity;
+  payload: string | null;
+}
+
+interface EventDescriptionAction {
+  type: AppActionCase.setEventDescription;
+  payload: string | null;
+}
+
+interface ForwardingEventAction {
+  type: AppActionCase.setIsForwardingEvent;
+  payload: boolean;
 }
 
 interface MessageAction {
@@ -64,7 +99,13 @@ type ActionTypes =
   | ChatAction
   | MembersAction
   | ChatUserAction
-  | NewEventLocationAction
+  | EventTitleAction
+  | EventDateTimeAction
+  | EventLocationAction
+  | AddEventChatAction
+  | EventCapacityAction
+  | EventDescriptionAction
+  | ForwardingEventAction
   | MessageAction;
 
 /* -------------------------------------------------------------------------- */
@@ -75,7 +116,13 @@ interface AppState {
   chat: Chat | null;
   members: ChatUser[];
   chatUser: ChatUser | null;
-  newEventLocation: string | null;
+  eventTitle: string | null;
+  eventDateTime: Date;
+  eventLocation: string | null;
+  addEventChat: boolean;
+  eventCapacity: string | null;
+  eventDescription: string | null;
+  isForwardingEvent: boolean;
   messages: Message[];
 }
 
@@ -102,10 +149,40 @@ function appReducer(state: AppState, action: ActionTypes) {
         ...state,
         chatUser: payload,
       };
-    case AppActionCase.setNewEventLocation:
+    case AppActionCase.setEventTitle:
       return {
         ...state,
-        newEventLocation: payload,
+        eventTitle: payload,
+      };
+    case AppActionCase.setEventDateTime:
+      return {
+        ...state,
+        eventDateTime: payload,
+      };
+    case AppActionCase.setEventLocation:
+      return {
+        ...state,
+        eventLocation: payload,
+      };
+    case AppActionCase.setAddEventChat:
+      return {
+        ...state,
+        addEventChat: payload,
+      };
+    case AppActionCase.setEventCapacity:
+      return {
+        ...state,
+        eventCapacity: payload,
+      };
+    case AppActionCase.setEventDescription:
+      return {
+        ...state,
+        eventDescription: payload,
+      };
+    case AppActionCase.setIsForwardingEvent:
+      return {
+        ...state,
+        isForwardingEvent: payload,
       };
     case AppActionCase.setMessages:
       return {

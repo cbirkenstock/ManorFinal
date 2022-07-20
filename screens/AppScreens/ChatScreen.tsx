@@ -1,7 +1,6 @@
 import { DataStore, SortDirection } from "aws-amplify";
 import React, { useEffect } from "react";
 import {
-  Dimensions,
   FlatList,
   KeyboardAvoidingView,
   Pressable,
@@ -21,9 +20,9 @@ import { ChatUser, Message } from "../../src/models";
 import EventMessage from "../../components/Message/EventMessage/EventMessage";
 import { messageSubscription } from "../../managers/SubscriptionManager";
 import { appendMessage } from "../../managers/MessageManager";
-import { Navigation } from "react-native-feather";
 import DefaultContactImage from "../../components/DefaultContactImage";
-import SignedImage from "../../components/CustomPrimitives/SignedImage";
+import CacheImage from "../../components/CustomPrimitives/CacheImage";
+import EventSuggestionMessage from "../../components/Message/EventSuggestionMessage/EventSuggestionMessage";
 
 export default function ChatScreen({ navigation, route }: Props) {
   const context = useAppContext();
@@ -57,7 +56,7 @@ export default function ChatScreen({ navigation, route }: Props) {
     route.params?.members
       ? setMembers(route.params?.members)
       : fetchMembers().then(async (members) => setMembers(members));
-  }, [route.params?.chat]);
+  }, [route.params]);
 
   /* -------------------------------------------------------------------------- */
   /*                                Fetch Members                               */
@@ -100,6 +99,7 @@ export default function ChatScreen({ navigation, route }: Props) {
             sort: (message) => message.createdAt(SortDirection.DESCENDING),
           }
         );
+
         setMessages(_messages);
       }
     };
@@ -126,8 +126,18 @@ export default function ChatScreen({ navigation, route }: Props) {
     const isMe = item.chatuserID === chatUser?.id;
     const sender = members.find((member) => member.id === item.chatuserID);
 
-    if (item.eventChatID) {
-      return <EventMessage message={item} />;
+    if (item.isEventMessage) {
+      return (
+        <View style={{ marginTop: item.marginTop ?? 1 }}>
+          <EventMessage message={item} />
+        </View>
+      );
+    } else if (item.eventDateTime) {
+      return (
+        <View style={{ marginTop: item.marginTop ?? 1 }}>
+          <EventSuggestionMessage message={item} />
+        </View>
+      );
     } else {
       return (
         <View
@@ -148,6 +158,10 @@ export default function ChatScreen({ navigation, route }: Props) {
     }
   };
 
+  useEffect(() => {
+    console.log("b", chatUser?.id);
+  }, [chatUser]);
+
   /* -------------------------------------------------------------------------- */
   /*                                   Render                                   */
   /* -------------------------------------------------------------------------- */
@@ -165,7 +179,7 @@ export default function ChatScreen({ navigation, route }: Props) {
         keyboardDismissMode={"on-drag"}
         showsVerticalScrollIndicator={false}
         data={messages}
-        keyExtractor={(message) => message.id}
+        keyExtractor={(message) => message?.id}
         renderItem={renderMessage}
       />
       <Pressable
@@ -173,16 +187,21 @@ export default function ChatScreen({ navigation, route }: Props) {
         onPress={() =>
           navigation.navigate("ChatInfoScreen", {
             displayUser: route.params?.displayUser,
+            eventMessages: [],
           })
         }
       >
         {route.params.displayUser ? (
-          <SignedImage source={route.params.displayUser.profileImageUrl} />
+          <CacheImage
+            cacheKey={route.params.displayUser.profileImageUrl}
+            source={route.params.displayUser.profileImageUrl}
+            style={{ flex: 1 }}
+          />
         ) : (
           <DefaultContactImage members={members} />
         )}
       </Pressable>
-      <MessageBar />
+      <MessageBar chat={chat ?? undefined} />
     </KeyboardAvoidingView>
   );
 }
@@ -219,5 +238,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.75,
     shadowRadius: 5,
+    overflow: "hidden",
   },
 });

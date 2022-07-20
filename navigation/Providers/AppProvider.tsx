@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer } from "react";
+import React, { createContext, useReducer } from "react";
 import appReducer, { AppActionCase } from "../Reducers/AppReducer";
 import { Chat, ChatUser, Message } from "../../src/models";
 import {
@@ -37,10 +37,52 @@ export const AppProvider = (props: AppProviderProps) => {
     });
   };
 
-  const setNewEventLocation = async (newEventLocation: string) => {
+  const setEventTitle = async (eventTitle: string) => {
     dispatch({
-      type: AppActionCase.setNewEventLocation,
+      type: AppActionCase.setEventTitle,
+      payload: eventTitle,
+    });
+  };
+
+  const setEventDateTime = async (eventDateTime: Date) => {
+    dispatch({
+      type: AppActionCase.setEventDateTime,
+      payload: eventDateTime,
+    });
+  };
+
+  const setEventLocation = async (newEventLocation: string) => {
+    dispatch({
+      type: AppActionCase.setEventLocation,
       payload: newEventLocation,
+    });
+  };
+
+  const setAddEventChat = async (addEventChat: boolean) => {
+    dispatch({
+      type: AppActionCase.setAddEventChat,
+      payload: addEventChat,
+    });
+  };
+
+  const setEventCapacity = async (eventCapacity: string) => {
+    dispatch({
+      type: AppActionCase.setEventCapacity,
+      payload: eventCapacity,
+    });
+  };
+
+  const setEventDescription = async (eventDescription: string) => {
+    dispatch({
+      type: AppActionCase.setEventDescription,
+      payload: eventDescription,
+    });
+  };
+
+  const setIsForwardingEvent = async (isForwardingEvent: boolean) => {
+    dispatch({
+      type: AppActionCase.setIsForwardingEvent,
+      payload: isForwardingEvent,
     });
   };
 
@@ -55,12 +97,24 @@ export const AppProvider = (props: AppProviderProps) => {
     chat: state.chat,
     members: state.members,
     chatUser: state.chatUser,
-    newEventLocation: state.newEventLocation,
+    eventTitle: state.eventTitle,
+    eventDateTime: state.eventDateTime,
+    eventLocation: state.eventLocation,
+    addEventChat: state.addEventChat,
+    eventCapacity: state.eventCapacity,
+    eventDescription: state.eventDescription,
+    isForwardingEvent: state.isForwardingEvent,
     messages: state.messages,
     setChat,
     setMembers,
     setChatUser,
-    setNewEventLocation,
+    setEventTitle,
+    setEventDateTime,
+    setEventLocation,
+    setAddEventChat,
+    setEventCapacity,
+    setEventDescription,
+    setIsForwardingEvent,
     setMessages,
   };
 

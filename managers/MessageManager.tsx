@@ -1,6 +1,7 @@
 import { DataStore } from "aws-amplify";
 import { Chat, Message } from "../src/models";
 import { AppInitialStateProps } from "../navigation/InitialStates/AppInitialState";
+import { EventStatus } from "../components/Message/EventSuggestionMessage/EventSuggestionMessage";
 
 /* -------------------------------------------------------------------------- */
 /*                             Message Categories                             */
@@ -24,7 +25,7 @@ const getMarginTop = (context: AppInitialStateProps) => {
   const lastMessage = messages[0];
   const partOfGroup = lastMessage?.chatuserID === chatUser?.id;
 
-  if (!partOfGroup || lastMessage?.eventChatID) {
+  if (!partOfGroup || lastMessage?.eventChatID || lastMessage?.eventDateTime) {
     return 10;
   } else {
     return 1;
@@ -40,6 +41,8 @@ export const createTextMessageComponent = (
   context: AppInitialStateProps
 ) => {
   const { chat, chatUser } = context;
+
+  console.log("C", chatUser.id);
 
   const newMessage = new Message({
     messageBody: messageBody,
@@ -72,16 +75,47 @@ export const createMediaMessageComponent = (
   return newMessage;
 };
 
-export const createEventMessageComponent = (
-  eventChatID: string,
-  context: AppInitialStateProps
+export const createEventSuggestionComponent = (
+  context: AppInitialStateProps,
+  eventDateTime: string,
+  eventDescription?: string
 ) => {
   const { chat, chatUser } = context;
 
   const newMessage = new Message({
-    eventChatID: eventChatID,
+    suggestionStatus: "pending",
+    eventDateTime: eventDateTime,
+    eventDescription: eventDescription,
     chatuserID: chatUser?.id,
     chatID: chat?.id,
+    marginTop: 10,
+  });
+
+  return newMessage;
+};
+
+export const createEventMessageComponent = (
+  context: AppInitialStateProps,
+  eventTitle: string,
+  eventDateTime: Date,
+  eventDescription?: string,
+  eventLocation?: string,
+  eventCapacity?: number,
+  eventChatID?: string,
+  chatID?: string
+) => {
+  const { chat } = context;
+
+  const newMessage = new Message({
+    isEventMessage: true,
+    eventChatID: eventChatID,
+    eventTitle: eventTitle,
+    eventDateTime: eventDateTime.toISOString(),
+    eventDescription: eventDescription,
+    eventLocation: eventLocation,
+    eventCapacity: eventCapacity,
+    eventMembersCount: 0,
+    chatID: chatID ? chatID : chat?.id,
     marginTop: 10,
   });
 
@@ -120,6 +154,24 @@ export const appendMessage = (
   setMessages([newMessage, ...messages]);
 };
 
+export const updateEventMessageMembersCountInternally = (
+  messages: Message[],
+  eventMessage: Message
+) => {
+  const updatedMessages = messages.map((message) => {
+    if (message.id === eventMessage.id) {
+      return {
+        ...message,
+        eventMembersCount: eventMessage.eventMembersCount + 1,
+      } as Message;
+    } else {
+      return message;
+    }
+  });
+
+  return updatedMessages;
+};
+
 /* -------------------------------------------------------------------------- */
 /*                              Network Updating                              */
 /* -------------------------------------------------------------------------- */
@@ -141,4 +193,28 @@ export const updateLastMessage = async (
       })
     ).then(async (chat) => setChat(chat));
   }
+};
+
+export const updateEventMessageMembersCount = (
+  message: Message,
+  newEventMembersCount: number
+) => {
+  DataStore.save(
+    Message.copyOf(message, (updatedMessage) => {
+      updatedMessage.eventMembersCount = newEventMembersCount;
+    })
+  );
+};
+
+export const updatedMessageEventStatus = async (
+  message: Message,
+  accepted: Boolean
+) => {
+  DataStore.save(
+    Message.copyOf(message, (updatedMessage) => {
+      updatedMessage.suggestionStatus = accepted
+        ? EventStatus.accepted
+        : EventStatus.rejected;
+    })
+  );
 };

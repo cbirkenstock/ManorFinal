@@ -2,6 +2,7 @@ import { DataStore } from "aws-amplify";
 import { AppInitialStateProps } from "../navigation/InitialStates/AppInitialState";
 import { AuthInitialStateProps } from "../navigation/InitialStates/AuthInitialState";
 import { Chat, ChatUser, Message } from "../src/models";
+import { appendChat, removeChat } from "./ChatManager";
 
 /* -------------------------------------------------------------------------- */
 /*                               Function Types                               */
@@ -56,9 +57,14 @@ export const messageSubscription = (
 
 /* --------------------------------- Contact -------------------------------- */
 
+/*kinda a hack rn -- not sure hwy update getting called several times
+and also called after INSERT */
+const chatsIncludeSpecificChat = (chats: Chat[], specificChat: Chat) => {
+  return chats.map((chat) => chat.id).includes(specificChat.id);
+};
+
 export const contactSubscription = (
   context: AuthInitialStateProps,
-  handler: ContactSubscriptionHandler,
   chats: Chat[],
   setChats: SetChatsHandler
 ) => {
@@ -70,9 +76,31 @@ export const contactSubscription = (
     const chatUser = object.element;
 
     if (object.opType === "INSERT") {
-      DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chatID)).then(
-        (chat) => handler(chat[0], chats, setChats)
+      DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chat.id)).then(
+        (newChat) => {
+          if (!chatsIncludeSpecificChat(chats, newChat[0])) {
+            return appendChat(newChat[0], chats, setChats);
+          }
+        }
       );
+    } else if (object.opType === "UPDATE") {
+      if (chatUser.isOfActiveChat) {
+        DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chat.id)).then(
+          (activatedChat) => {
+            if (!chatsIncludeSpecificChat(chats, activatedChat[0])) {
+              return appendChat(activatedChat[0], chats, setChats);
+            }
+          }
+        );
+      } else {
+        DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chat.id)).then(
+          (deactivatedChat) => {
+            if (chatsIncludeSpecificChat(chats, deactivatedChat[0])) {
+              return removeChat(deactivatedChat[0], chats, setChats);
+            }
+          }
+        );
+      }
     }
   });
 

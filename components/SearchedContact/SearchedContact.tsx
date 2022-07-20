@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import { Text, Pressable, View, GestureResponderEvent } from "react-native";
 import { User, Chat } from "../../src/models";
 import SignedImage from "../CustomPrimitives/SignedImage";
+import DefaultContactImage from "../DefaultContactImage";
 import { styles } from "./styles";
 
 interface SearchContactProps {
@@ -32,7 +33,11 @@ export default function SearchedContact(props: SearchContactProps) {
   return (
     <Pressable style={styles.container} onPress={onPress}>
       <View style={styles.contactImageContainer}>
-        <SignedImage source={image} style={styles.contactImage} />
+        {image ? (
+          <SignedImage source={image} style={styles.contactImage} />
+        ) : (
+          <DefaultContactImage chat={contact as Chat} />
+        )}
       </View>
       <Text style={[styles.contactNameText, { marginTop: 5 }]}>
         {text.split(" ")[0]}

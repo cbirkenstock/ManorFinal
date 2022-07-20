@@ -1,60 +1,54 @@
-import { Chat, Message } from "../../../src/models";
+import { ChatUser, Message } from "../../../src/models";
 import EventBox from "./SubComponents/EventBox";
 import AttendeesView from "./SubComponents/AttendeesView";
 import SpotsLeftView from "./SubComponents/SpotsLeftView";
 import React, { useEffect, useState } from "react";
 import { DataStore } from "aws-amplify";
+import useAuthContext from "../../../hooks/useAuthContext";
 
 interface EventMessageProps {
   message: Message;
 }
 export default function EventMessage(props: EventMessageProps) {
   const { message } = props;
-  const [eventChat, setEventChat] = useState<Chat>();
+  const { user } = useAuthContext();
+  const [isMember, setIsMember] = useState<boolean>();
 
   /* -------------------------------------------------------------------------- */
-  /*                              Fetch Event Chat                              */
+  /*                           Is User Already Member                           */
   /* -------------------------------------------------------------------------- */
 
-  /*
-  useEffect for event chat is okay at this higher level becuase all sub components
-  rely on it as well meaning there is no unecessary extra rerendering as a result
-  */
   useEffect(() => {
-    const fetchEventChat = async () => {
-      const eventChat = (
-        await DataStore.query(Chat, (chat) =>
-          chat.id("eq", message.eventChatID!)
+    const isUserAlreadyMember = async () => {
+      const currentUserMember = (
+        await DataStore.query(ChatUser, (chatUser) =>
+          chatUser
+            .chatID("eq", message.eventChatID ?? "")
+            .userID("eq", user?.id ?? "")
         )
       )[0];
 
-      setEventChat(eventChat);
+      setIsMember(!!currentUserMember);
     };
 
-    fetchEventChat();
-  }, [message]);
+    isUserAlreadyMember();
+  }, []);
 
   /* -------------------------------------------------------------------------- */
   /*                                   Render                                   */
   /* -------------------------------------------------------------------------- */
 
-  /*
-  Event box is only rendered when event chat is certainly rendered because it's height
-  is hard coded so it will render before it's ready out of sync with other components
-  */
+  const hasCapacity = message.eventCapacity;
+  const hasAmpleEventMembers =
+    message.eventChatID && (message.eventMembersCount ?? 0) >= 3;
+
   return (
     <>
-      {(eventChat?.membersCount ?? 0) > 3 && (
-        <AttendeesView eventChat={eventChat} />
+      {hasCapacity && (
+        <SpotsLeftView eventMessage={message} isMember={isMember} />
       )}
-      {eventChat && <EventBox eventChat={eventChat} />}
-      {eventChat?.limit && (
-        <SpotsLeftView
-          message={message}
-          limit={eventChat?.limit}
-          membersCount={eventChat.membersCount ?? 0}
-        />
-      )}
+      <EventBox eventMessage={message} isMember={isMember} />
+      {hasAmpleEventMembers && <AttendeesView eventMessage={message} />}
     </>
   );
 }

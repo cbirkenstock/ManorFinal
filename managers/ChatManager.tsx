@@ -1,10 +1,9 @@
 import { DataStore } from "aws-amplify";
-import { UserMinus } from "react-native-feather";
-import { AppInitialStateProps } from "../navigation/InitialStates/AppInitialState";
 import { ChatUser } from "../src/models";
 import { Chat, User } from "../src/models";
+import { createChatUsers } from "./ChatUserManager";
 
-export const appendChats = (
+export const appendChat = (
   newChat: Chat,
   chats: Chat[],
   setChats: (value: React.SetStateAction<Chat[] | undefined>) => void
@@ -13,6 +12,14 @@ export const appendChats = (
     newChat,
     ...chats.filter((chat) => chat.title !== "Header_Trojan_Horse"),
   ]);
+};
+
+export const removeChat = (
+  removedChat: Chat,
+  chats: Chat[],
+  setChats: (value: React.SetStateAction<Chat[] | undefined>) => void
+) => {
+  setChats(chats.filter((chat) => chat.id !== removedChat.id));
 };
 
 /* -------------------------------------------------------------------------- */
@@ -52,6 +59,7 @@ const createBreadCrumbs = (user: User, otherUser: User) => {
   }
 };
 
+//this is in the breadcrumb section because it uses the breadcrumbs to extract the info
 export const extractDisplayUser = (chat: Chat, user?: User) => {
   if (user) {
     let position: number;
@@ -61,18 +69,24 @@ export const extractDisplayUser = (chat: Chat, user?: User) => {
     const profileImageUrlArray = chat.displayUserProfileImageUrl?.split("+");
 
     if (idArray && nameArray && profileImageUrlArray) {
-      user.id === idArray[0] ? (position = 0) : (position = 1);
+      user.id === idArray[0] ? (position = 1) : (position = 0);
 
       const displayUser = new User({
         name: nameArray[position],
         profileImageUrl: profileImageUrlArray[position],
-        phoneNumber: "0",
+        phoneNumber: "111 111 1111",
       });
 
       return displayUser;
     }
   }
 };
+
+/* -------------------------------------------------------------------------- */
+/*                                Create Chats                                */
+/* -------------------------------------------------------------------------- */
+
+/* ----------------------------- Create DM Chat ----------------------------- */
 
 export const createDMChat = async (user?: User, otherUser?: User) => {
   if (user && otherUser) {
@@ -81,49 +95,36 @@ export const createDMChat = async (user?: User, otherUser?: User) => {
         createBreadCrumbs(user, otherUser);
 
       const members = [otherUser, user];
-      let chatUserMembers: ChatUser[] = [];
 
-      const newChat = await DataStore.save(
-        new Chat({
-          breadCrumb: breadCrumb,
-          displayUserName: displayUserName,
-          displayUserProfileImageUrl: displayUserProfileImageUrl,
-          isGroupChat: false,
-          isActive: true,
-        })
-      );
+      const newChat = new Chat({
+        breadCrumb: breadCrumb,
+        displayUserName: displayUserName,
+        displayUserProfileImageUrl: displayUserProfileImageUrl,
+        isGroupChat: false,
+      });
 
-      for (const member of members) {
-        const newChatUser = await DataStore.save(
-          new ChatUser({
-            userID: member.id,
-            user: member,
-            chatID: newChat.id,
-            chat: newChat,
-            notificationsEnabled: true,
-            hasUnreadMessage: false,
-            unreadMessagesCount: 0,
-            nickname: user?.name ?? "choose Nickname",
-            profileImageUrl: user?.profileImageUrl ?? undefined,
-          })
-        );
+      const chatUserMembers = await createChatUsers(members, newChat);
 
-        chatUserMembers.push(newChatUser);
+      if (chatUserMembers) {
+        DataStore.save(newChat);
+
+        return {
+          chat: newChat,
+          chatUser: chatUserMembers[1],
+          members: chatUserMembers,
+        };
       }
-
-      return {
-        chat: newChat,
-        chatUser: chatUserMembers[1],
-        members: chatUserMembers,
-      };
     } catch (error) {
       console.log(error);
     }
   }
 };
 
+/* ------------------------------- Group Chat ------------------------------- */
+
 export const createGroupChat = async (
   isCoreChat: boolean,
+  isEventChat: boolean,
   title?: string,
   members?: User[],
   chatImageUrl?: string,
@@ -131,39 +132,126 @@ export const createGroupChat = async (
 ) => {
   if (title && currentUser && members) {
     members.push(currentUser);
-    let chatUserMembers: ChatUser[] = [];
 
-    const chat = await DataStore.save(
+    const newChat = await DataStore.save(
       new Chat({
         title: title,
         isCoreChat: isCoreChat,
+        isEventChat: isEventChat,
         chatImageUrl: chatImageUrl,
         isGroupChat: true,
       })
     );
 
-    for (const member of members) {
-      const chatUser = await DataStore.save(
-        new ChatUser({
-          userID: member.id,
-          user: member,
-          chatID: chat.id,
-          chat: chat,
-          nickname: member.name,
-          profileImageUrl: `${
-            member.profileImageUrl?.split(".")[0]
-          }-reducedSizeVersion.jpg`,
-          notificationsEnabled: true,
-        })
-      );
+    const chatUserMembers = await createChatUsers(
+      members,
+      newChat,
+      currentUser
+    );
 
-      chatUserMembers.push(chatUser);
+    if (chatUserMembers) {
+      return {
+        chat: newChat,
+        chatUser: chatUserMembers[chatUserMembers.length - 1],
+        members: chatUserMembers,
+      };
+    }
+  }
+};
+
+/* ---------------------------- Coordination Chat --------------------------- */
+
+export const createCoordinationChat = async (
+  chatOne?: Chat,
+  chatTwo?: Chat
+) => {
+  if (chatOne && chatTwo) {
+    const chatOneMembers = (
+      await DataStore.query(ChatUser, (chatUser) =>
+        chatUser.chatID("eq", chatOne.id).isAdmin("eq", true)
+      )
+    ).map((chatUser) => chatUser.user);
+
+    const chatTwoMembers = (
+      await DataStore.query(ChatUser, (chatUser) =>
+        chatUser.chatID("eq", chatTwo.id).isAdmin("eq", true)
+      )
+    ).map((chatUser) => chatUser.user);
+
+    let allMembers = [...chatOneMembers, ...chatTwoMembers];
+
+    const uniqueMembers = getUniqueMembers(allMembers);
+
+    const coordinationChat = new Chat({
+      title: `${chatOne.title}+${chatTwo.title}`,
+      isGroupChat: true,
+      isCoordinationChat: true,
+      parentChat1ID: chatOne.id,
+      parentChat2ID: chatTwo.id,
+    });
+
+    DataStore.save(coordinationChat);
+
+    const newMembers = await createChatUsers(uniqueMembers, coordinationChat);
+
+    return { coordinationChat, newMembers };
+  }
+};
+
+export const fetchExistingCoordinationChat = async (
+  chatOne?: Chat,
+  chatTwo?: Chat
+) => {
+  if (chatOne && chatTwo) {
+    const existingCoordinationChat = (
+      await DataStore.query(Chat, (chat) =>
+        chat
+          .or((chat) =>
+            chat.parentChat1ID("eq", chatOne.id).parentChat1ID("eq", chatTwo.id)
+          )
+          .or((chat) =>
+            chat.parentChat2ID("eq", chatOne.id).parentChat2ID("eq", chatTwo.id)
+          )
+          .isCoordinationChat("eq", true)
+      )
+    )[0];
+
+    return existingCoordinationChat;
+  }
+};
+
+const getUniqueMembers = (members: User[]) => {
+  const uniqueMembers = members.reduce((iteratedArray, currentMember) => {
+    if (!iteratedArray.map((member) => member.id).includes(currentMember.id)) {
+      iteratedArray.push(currentMember);
     }
 
-    return {
-      chat: chat,
-      chatUser: chatUserMembers[chatUserMembers.length - 1],
-      members: chatUserMembers,
-    };
+    return iteratedArray;
+  }, [] as User[]);
+
+  return uniqueMembers;
+};
+
+/* -------------------------------------------------------------------------- */
+/*                                 Add Members                                */
+/* -------------------------------------------------------------------------- */
+
+export const addMembers = async (
+  chat?: Chat,
+  chatID?: string,
+  chosenUsers?: User[]
+) => {
+  if (chosenUsers) {
+    if (chat) {
+      const newChatUsers = createChatUsers(chosenUsers, chat);
+      return newChatUsers;
+    } else if (chatID) {
+      const queriedChat = await DataStore.query(Chat, chatID);
+
+      if (queriedChat) {
+        const newChatUsers = createChatUsers(chosenUsers, queriedChat);
+        return newChatUsers;
+      }
+    }
   }
 };

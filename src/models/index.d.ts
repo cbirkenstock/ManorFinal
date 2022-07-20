@@ -31,6 +31,7 @@ export declare class Chat {
   readonly breadCrumb?: string | null;
   readonly displayUserName?: string | null;
   readonly displayUserProfileImageUrl?: string | null;
+  readonly displayUserVenmoHandle?: string | null;
   readonly eventDateTime?: string | null;
   readonly eventDescription?: string | null;
   readonly eventLocation?: string | null;
@@ -44,7 +45,6 @@ export declare class Chat {
   readonly isCoreChat?: boolean | null;
   readonly isCoordinationChat?: boolean | null;
   readonly isEventChat?: boolean | null;
-  readonly isActive?: boolean | null;
   readonly membersCount?: number | null;
   readonly parentChat1ID?: string | null;
   readonly parentChat2ID?: string | null;
@@ -88,6 +88,7 @@ export declare class ChatUser {
   readonly user: User;
   readonly chatID: string;
   readonly chat: Chat;
+  readonly isOfActiveChat: boolean;
   readonly notificationsEnabled: boolean;
   readonly nickname?: string | null;
   readonly hasUnreadMessage?: boolean | null;
@@ -111,7 +112,15 @@ export declare class Message {
   readonly id: string;
   readonly marginTop?: number | null;
   readonly rerender?: boolean | null;
+  readonly isEventMessage?: boolean | null;
   readonly eventChatID?: string | null;
+  readonly eventTitle?: string | null;
+  readonly eventDateTime?: string | null;
+  readonly eventDescription?: string | null;
+  readonly eventLocation?: string | null;
+  readonly suggestionStatus?: String | null;
+  readonly eventCapacity?: Int | null;
+  readonly eventMembersCount?: Int | null;
   readonly messageBody?: string | null;
   readonly announcementBody?: string | null;
   readonly imageUrl?: string | null;

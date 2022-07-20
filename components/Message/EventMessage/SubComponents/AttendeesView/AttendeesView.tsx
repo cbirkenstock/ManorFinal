@@ -2,16 +2,17 @@ import { DataStore } from "aws-amplify";
 import React, { useEffect, useState } from "react";
 import { Dimensions, FlatList } from "react-native";
 import useAuthContext from "../../../../../hooks/useAuthContext";
-import { Chat, ChatUser, User } from "../../../../../src/models";
+import { Chat, ChatUser, Message, User } from "../../../../../src/models";
 import SingleNameContact from "../../../../SingleNameContact";
+import EventMessage from "../../EventMessage";
 import { styles } from "./styles";
 
 interface AttendeesViewProps {
-  eventChat: Chat | undefined;
+  eventMessage: Message;
 }
 
 export default function AttendeesView(props: AttendeesViewProps) {
-  const { eventChat } = props;
+  const { eventMessage: message } = props;
   const { user } = useAuthContext();
   const [attendees, setAttendees] = useState<User[]>([user!]);
 
@@ -29,20 +30,21 @@ export default function AttendeesView(props: AttendeesViewProps) {
   /* -------------------------------------------------------------------------- */
 
   useEffect(() => {
-    const fetchEventMembers = async () => {
-      if (eventChat) {
-        const eventMembers = (
-          await DataStore.query(ChatUser, (chatUser) =>
-            chatUser.chatID("eq", eventChat.id)
+    const fetchEventMembers = () => {
+      DataStore.query(Chat, message.eventChatID!)
+        .then((eventChat) =>
+          DataStore.query(ChatUser, (chatUser) =>
+            chatUser.chatID("eq", eventChat?.id ?? "")
           )
-        ).map((eventChatUser) => eventChatUser.user);
-
-        setAttendees(eventMembers);
-      }
+        )
+        .then((eventChatMembers) =>
+          eventChatMembers.map((eventChatMember) => eventChatMember.user)
+        )
+        .then(setAttendees);
     };
 
     fetchEventMembers();
-  }, [eventChat]);
+  }, [message]);
 
   /* -------------------------------------------------------------------------- */
   /*                                   Render                                   */

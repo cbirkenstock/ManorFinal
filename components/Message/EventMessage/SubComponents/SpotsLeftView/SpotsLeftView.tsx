@@ -6,23 +6,21 @@ import { Message } from "../../../../../src/models";
 import { styles } from "./styles";
 
 interface SpotsLeftViewProps {
-  message: Message;
-  limit: number;
-  membersCount: number;
+  eventMessage: Message;
+  isMember: Boolean | undefined;
 }
 
 export default function SpotsLeftView(props: SpotsLeftViewProps) {
   const { chatUser } = useAppContext();
-  const { message, limit, membersCount } = props;
-  const isMe = chatUser?.id !== message.chatuserID;
+  const { eventMessage, isMember } = props;
 
   /* -------------------------------------------------------------------------- */
   /*                            Spots Left Calculator                           */
   /* -------------------------------------------------------------------------- */
 
   let spotsLeft: number;
-  if (limit > membersCount) {
-    spotsLeft = limit - membersCount;
+  if (eventMessage.eventCapacity > eventMessage.eventMembersCount) {
+    spotsLeft = eventMessage.eventCapacity - eventMessage.eventMembersCount;
   } else {
     spotsLeft = 0;
   }
@@ -33,7 +31,7 @@ export default function SpotsLeftView(props: SpotsLeftViewProps) {
 
   return (
     <View style={styles.spotsLeftContainer}>
-      {limit ? (
+      {eventMessage.eventCapacity ? (
         <>
           <Text
             style={[
@@ -46,7 +44,9 @@ export default function SpotsLeftView(props: SpotsLeftViewProps) {
           <Text style={styles.fillerText}>Spots Left!</Text>
         </>
       ) : null}
-      {isMe ? <Text style={styles.fillerText}>Click to Join Event</Text> : null}
+      {!isMember && spotsLeft > 0 ? (
+        <Text style={styles.fillerText}>Click to Join Event</Text>
+      ) : null}
     </View>
   );
 }

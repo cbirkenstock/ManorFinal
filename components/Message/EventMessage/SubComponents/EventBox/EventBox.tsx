@@ -1,49 +1,32 @@
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useState } from "react";
-import { TouchableOpacity, View, Text } from "react-native";
+import React from "react";
+import { TouchableOpacity, View, Text, Alert } from "react-native";
 import Colors from "../../../../../constants/Colors";
-import { Chat } from "../../../../../src/models";
+import { Message } from "../../../../../src/models";
 import { months } from "../../../../../constants/Months";
 import { styles } from "./styles";
+import { formatTime } from "../../../../../managers/DateTimeManager";
+import { getEventTitle } from "../../../../../managers/EventManager";
+import useAppContext from "../../../../../hooks/useAppContext";
+import { addMembers } from "../../../../../managers/ChatManager";
+import useAuthContext from "../../../../../hooks/useAuthContext";
+import {
+  updateEventMessageMembersCountInternally,
+  updateEventMessageMembersCount,
+} from "../../../../../managers/MessageManager";
 
 interface EventMessageProps {
-  eventChat: Chat | undefined;
+  eventMessage: Message;
+  isMember: Boolean | undefined;
 }
 
 export default function EventBox(props: EventMessageProps) {
-  const { eventChat } = props;
-  const [dateTime, setDateTime] = useState<Date>();
-
-  /* -------------------------------------------------------------------------- */
-  /*                               Fetch dateTime                               */
-  /* -------------------------------------------------------------------------- */
-
-  useEffect(() => {
-    if (eventChat?.eventDateTime) {
-      const newDate = new Date(eventChat?.eventDateTime);
-
-      setDateTime(newDate);
-    }
-  }, [eventChat]);
-
-  /* -------------------------------------------------------------------------- */
-  /*                                 Format Time                                */
-  /* -------------------------------------------------------------------------- */
-
-  const formatTime = (dateTime?: Date) => {
-    if (dateTime) {
-      let hours = dateTime.getUTCHours();
-      const minutes = dateTime.getUTCMinutes();
-      let period = "AM";
-
-      if (hours > 12) {
-        hours = hours - 12;
-        period = "PM";
-      }
-
-      return `${hours}:${minutes} ${period}`;
-    }
-  };
+  const { eventMessage, isMember } = props;
+  const { user } = useAuthContext();
+  const { chat, messages, setMessages } = useAppContext();
+  const dateTime = eventMessage.eventDateTime
+    ? new Date(eventMessage.eventDateTime)
+    : new Date();
 
   /* -------------------------------------------------------------------------- */
   /*                               Sub-Components                               */
@@ -55,7 +38,14 @@ export default function EventBox(props: EventMessageProps) {
     return (
       <View style={styles.dateIconContainer}>
         <LinearGradient
-          colors={[Colors.manorPurple, Colors.manorBackgroundGray]}
+          colors={[
+            isMember
+              ? Colors.manorGreen
+              : eventMessage.eventMembersCount === eventMessage.eventCapacity
+              ? Colors.manorRed
+              : Colors.manorPurple,
+            Colors.manorBackgroundGray,
+          ]}
           start={[0, 0]}
           end={[0, 1]}
           style={styles.dateIconLinearGradient}
@@ -78,16 +68,19 @@ export default function EventBox(props: EventMessageProps) {
         style={[
           styles.eventInformationContainer,
           {
-            justifyContent: eventChat?.eventDescription
+            justifyContent: eventMessage?.eventDescription
               ? "space-between"
               : "center",
           },
         ]}
       >
-        <Text style={styles.eventInfoTitleText}>{eventChat?.title}</Text>
-        {eventChat?.eventDescription ? (
+        <Text style={styles.eventInfoTitleText}>
+          {getEventTitle(eventMessage, chat ?? undefined)}
+        </Text>
+
+        {eventMessage?.eventDescription ? (
           <Text style={styles.eventInfoEventDescription}>
-            {eventChat?.eventDescription}
+            {eventMessage?.eventDescription}
           </Text>
         ) : null}
       </View>
@@ -95,11 +88,54 @@ export default function EventBox(props: EventMessageProps) {
   };
 
   /* -------------------------------------------------------------------------- */
+  /*                        Event Message Clicked Handler                       */
+  /* -------------------------------------------------------------------------- */
+
+  /* ----------------------- Fetch Event Member User IDs ---------------------- */
+
+  /* ------------------------------- Join Event ------------------------------- */
+
+  const joinEvent = () => {
+    const updatedMessages = updateEventMessageMembersCountInternally(
+      messages,
+      eventMessage
+    );
+    setMessages(updatedMessages);
+    addMembers(
+      undefined,
+      eventMessage.eventChatID ?? undefined,
+      user ? [user] : undefined
+    );
+    updateEventMessageMembersCount(
+      eventMessage,
+      eventMessage.eventMembersCount + 1
+    );
+  };
+
+  /* ------------------------------ Event Clicked ----------------------------- */
+
+  const EventMessageClicked = async () => {
+    if (isMember) {
+      Alert.alert("Already Joined", "You've already joined this event.", [
+        { text: "Ok", style: "cancel" },
+      ]);
+    } else {
+      Alert.alert("Join Event?", "", [
+        { text: "Join", onPress: joinEvent },
+        { text: "Cancel", style: "cancel" },
+      ]);
+    }
+  };
+
+  /* -------------------------------------------------------------------------- */
   /*                                   Render                                   */
   /* -------------------------------------------------------------------------- */
 
   return (
-    <TouchableOpacity>
+    <TouchableOpacity
+      disabled={!eventMessage.eventChatID}
+      onPress={EventMessageClicked}
+    >
       <View style={styles.eventBox}>
         <DateIcon />
         <EventInformation />

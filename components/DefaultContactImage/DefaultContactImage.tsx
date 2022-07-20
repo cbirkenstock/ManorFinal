@@ -1,16 +1,51 @@
-import React from "react";
-import { ChatUser } from "../../src/models";
+import React, { useEffect, useState } from "react";
+import { Chat, ChatUser } from "../../src/models";
 import { View } from "react-native";
 import CacheImage from "../CustomPrimitives/CacheImage/CacheImage";
+import { DataStore } from "aws-amplify";
 
 interface DefaultContactImageProps {
-  members: ChatUser[];
+  members?: ChatUser[];
+  chat?: Chat;
 }
 
 export default function DefaultContactImage(props: DefaultContactImageProps) {
-  const { members } = props;
-  const membersCount = members.length;
-  const formattedMembers = members;
+  const { members, chat } = props;
+
+  const [membersCount, setMembersCount] = useState<number>(0);
+  const [formattedMembers, setFormattedMembers] = useState<ChatUser[]>([]);
+
+  useEffect(() => {
+    setMembersCount(members?.length ?? 0);
+    setFormattedMembers(members ?? []);
+  }, [members]);
+
+  /* -------------------------------------------------------------------------- */
+  /*                                Fetch Members                               */
+  /* -------------------------------------------------------------------------- */
+
+  useEffect(() => {
+    const fetchChatMembers = () => {
+      if (chat) {
+        DataStore.query(Chat, chat.id)
+          .then((coreChat) =>
+            DataStore.query(ChatUser, (chatUser) =>
+              chatUser.chatID("eq", coreChat?.id ?? "")
+            )
+          )
+          .then((members) => {
+            setFormattedMembers(members);
+            setMembersCount(members.length);
+          });
+      }
+    };
+
+    fetchChatMembers();
+  }, [chat]);
+
+  /* -------------------------------------------------------------------------- */
+  /*                                   Render                                   */
+  /* -------------------------------------------------------------------------- */
 
   switch (membersCount) {
     case 0:

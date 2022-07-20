@@ -8,8 +8,9 @@ export const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: Colors.manorBlueGray,
     paddingHorizontal: 10,
-    paddingVertical: 15,
+    paddingVertical: 10,
     justifyContent: "space-between",
+    alignItems: "center",
   },
 
   text: {

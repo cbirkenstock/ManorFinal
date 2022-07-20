@@ -18,21 +18,39 @@ import {
   fetchMediaBlob,
   uploadMedia,
 } from "../../managers/MediaManager";
+import { Chat } from "../../src/models";
+import Colors from "../../constants/Colors";
+import Dialog from "../Dialog/Dialog";
+import EventSuggestionForm from "../Dialog/DialogForms/EventSuggestionForm/EventSuggestionForm";
+import EventCreationForm from "../Dialog/DialogForms/EventCreationForm/EventCreationForm";
+import { updateChatUserOfActiveChatStatus } from "../../managers/ChatUserManager";
 
-export default function MessageBar() {
+interface MessageBarProps {
+  chat?: Chat;
+}
+
+export default function MessageBar(props: MessageBarProps) {
+  const { chat } = props;
+  const { members, isForwardingEvent, setIsForwardingEvent } = useAppContext();
   const context = useAppContext();
-  const [messageBody, setMessageBody] = useState("");
+  const [messageBody, setMessageBody] = useState<string>("");
 
   /* -------------------------------------------------------------------------- */
   /*                                Send Messages                               */
   /* -------------------------------------------------------------------------- */
 
   const sendTextMessage = async () => {
-    const newMessage = createTextMessageComponent(messageBody, context);
-    appendMessage(newMessage, context);
-    uploadMessage(newMessage);
-    updateLastMessage(newMessage, context);
-    setMessageBody("");
+    if (messageBody) {
+      const newMessage = createTextMessageComponent(messageBody, context);
+      appendMessage(newMessage, context);
+      uploadMessage(newMessage);
+      updateLastMessage(newMessage, context);
+      setMessageBody("");
+
+      if (chat?.isCoordinationChat) {
+        updateChatUserOfActiveChatStatus(members, true);
+      }
+    }
   };
 
   /*
@@ -67,6 +85,10 @@ export default function MessageBar() {
 
       uploadMedia(imageData.type, blob);
       uploadMessage(newDataMessage);
+
+      if (chat?.isCoordinationChat) {
+        updateChatUserOfActiveChatStatus(members, true);
+      }
     }
   };
 
@@ -83,14 +105,36 @@ export default function MessageBar() {
         >
           <FontAwesome5 name="camera-retro" size={25} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.TouchableOpacity, { marginRight: 5 }]}>
+        <TouchableOpacity
+          style={[styles.TouchableOpacity, { marginRight: 5 }]}
+          onPress={() => setIsForwardingEvent(true)}
+        >
           <FontAwesome5
-            name="calendar-alt"
-            size={26}
-            color="white"
+            name={chat?.isCoordinationChat ? "calendar-plus" : "calendar-alt"}
+            size={28}
+            color={chat?.isCoordinationChat ? Colors.manorPurple : "white"}
             style={{ marginBottom: 2 }}
           />
         </TouchableOpacity>
+
+        <Dialog
+          visible={isForwardingEvent}
+          onClose={() => setIsForwardingEvent(false)}
+          marginTop={"15%"}
+          width={350}
+          title={chat?.isCoordinationChat ? "Suggest Event" : "Create Event"}
+          helperText={
+            chat?.isCoordinationChat
+              ? "The other group will have the ability to see and approve it"
+              : undefined
+          }
+        >
+          {chat?.isCoordinationChat ? (
+            <EventSuggestionForm onSubmit={() => setIsForwardingEvent(false)} />
+          ) : (
+            <EventCreationForm />
+          )}
+        </Dialog>
         <TextInput
           style={styles.messageBar}
           placeholder={"Chat..."}

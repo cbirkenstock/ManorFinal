@@ -14,11 +14,17 @@ import {
 import { FlatList, TouchableOpacity } from "react-native-gesture-handler";
 import Colors from "../../constants/Colors";
 import { UsersScreenProps as Props } from "../../navigation/NavTypes";
-import { User } from "../../src/models";
+import { Chat, ChatUser, User } from "../../src/models";
 import SearchedContact from "../../components/SearchedContact/SearchedContact";
 import SingleNameContact from "../../components/SingleNameContact";
-import { createGroupChat } from "../../managers/ChatManager";
+import {
+  createCoordinationChat,
+  createGroupChat,
+  fetchExistingCoordinationChat,
+} from "../../managers/ChatManager";
 import useAuthContext from "../../hooks/useAuthContext";
+import useAppContext from "../../hooks/useAppContext";
+import { addMembers } from "../../managers/ChatManager";
 
 export enum ChatEnum {
   direct,
@@ -31,15 +37,22 @@ export enum ChatEnum {
 
 export default function UsersScreen({ route, navigation }: Props) {
   const { user } = useAuthContext();
+  const { chat, chatUser, members } = useAppContext();
 
   let searchedUsers: User[] | undefined = undefined;
+  let searchedCoreChats: Chat[] | undefined = undefined;
 
   const [title, setTitle] = useState<string>();
   const [isCoreChat, setIsCoreChat] = useState<boolean>(false);
   const [chatImageUrl, setChatImageUrl] = useState<string>();
   const [searchValue, setSearchValue] = useState<string>("");
   const [filteredUsers, setFilteredUsers] = useState<User[] | undefined>();
+  const [filteredCoreChats, setFilteredCoreChats] = useState<
+    Chat[] | undefined
+  >();
   const [chosenUsers, setChosenUsers] = useState<User[] | undefined>();
+
+  const isEvent = route.params?.chatType === ChatEnum.event;
 
   /* -------------------------------------------------------------------------- */
   /*                               Sub Components                               */
@@ -87,6 +100,7 @@ export default function UsersScreen({ route, navigation }: Props) {
               onPress={async () => {
                 const results = await createGroupChat(
                   isCoreChat,
+                  false,
                   title,
                   chosenUsers,
                   chatImageUrl,
@@ -110,18 +124,100 @@ export default function UsersScreen({ route, navigation }: Props) {
           ),
         });
         break;
-      case ChatEnum.event:
+      case ChatEnum.coordination:
         navigation.setOptions({
-          headerRight: () => <CreateButton onPress={undefined} />,
+          headerRight: () => <CreateButton onPress={() => {}} />,
         });
         break;
       case ChatEnum.addMembers:
         navigation.setOptions({
-          headerRight: () => <CreateButton onPress={undefined} />,
+          headerRight: () => (
+            <CreateButton
+              onPress={async () => {
+                const newChatUsers = await addMembers(
+                  chat ?? undefined,
+                  undefined,
+                  chosenUsers
+                );
+                // @ts-ignore
+                navigation.navigate("ChatNav", {
+                  screen: "ChatScreen",
+                  params: {
+                    chat: chat,
+                    chatUser: chatUser,
+                    members: [...(newChatUsers ?? []), ...members],
+                  },
+                });
+              }}
+            />
+          ),
         });
         break;
     }
-  }, [title, chosenUsers]);
+  }, [title, chosenUsers, members, isCoreChat, chatImageUrl]);
+
+  const goToCoordinationChat = async (otherChat: Chat) => {
+    const existingCoordinationChat = await fetchExistingCoordinationChat(
+      chat ?? undefined,
+      otherChat
+    );
+
+    if (existingCoordinationChat) {
+      console.log("existing");
+      const _chatUser = (
+        await DataStore.query(ChatUser, (chatUser) =>
+          chatUser
+            .chatID("eq", existingCoordinationChat.id)
+            .userID("eq", user?.id ?? "")
+        )
+      )[0];
+      navigation.navigate("ChatScreen", {
+        chat: existingCoordinationChat,
+        chatUser: _chatUser,
+        members: undefined,
+        displayUser: undefined,
+      });
+    } else {
+      console.log("not existing");
+      const results = await createCoordinationChat(
+        chat ?? undefined,
+        otherChat
+      );
+
+      if (results) {
+        const { coordinationChat, newMembers } = results!;
+
+        const _chatUser = newMembers?.find(
+          (chatUser) => chatUser.user.id === user?.id
+        );
+
+        console.log("a", _chatUser?.id);
+
+        if (_chatUser) {
+          navigation.navigate("ChatScreen", {
+            chat: coordinationChat,
+            chatUser: _chatUser,
+            members: newMembers,
+            displayUser: undefined,
+          });
+        }
+      }
+    }
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /*                      Fetch & Fill Searched Core Chats                      */
+  /* -------------------------------------------------------------------------- */
+
+  const fetchSearchedCoreChats = async (searchValue: string) => {
+    const searchedCoreChats = (
+      await DataStore.query(Chat, (chat) =>
+        chat.title("contains", searchValue).isCoreChat("eq", true)
+      )
+    ).filter((searchedUser) => searchedUser.id !== chat?.id);
+
+    return searchedCoreChats;
+  };
 
   /* -------------------------------------------------------------------------- */
   /*                        Fetch & Filter Searched Users                       */
@@ -131,11 +227,20 @@ export default function UsersScreen({ route, navigation }: Props) {
     const searchedUsers = (
       await DataStore.query(User, (user) => user.name("contains", searchValue))
     ).filter((searchedUser) => {
+      const isMe = searchedUser.id === user?.id;
+      let alreadyInGroup = false;
+
       const chosenUserIDs = chosenUsers?.map((user) => user.id);
-      return (
-        !chosenUserIDs?.includes(searchedUser.id) &&
-        searchedUser.id !== user?.id
-      );
+      const memberIDs = members?.map((member) => member.user.id);
+
+      if (
+        chosenUserIDs?.includes(searchedUser.id) ||
+        memberIDs?.includes(searchedUser.id)
+      ) {
+        alreadyInGroup = true;
+      }
+
+      return !isMe && !alreadyInGroup;
     });
 
     return searchedUsers;
@@ -146,7 +251,6 @@ export default function UsersScreen({ route, navigation }: Props) {
   from the database when necessary which should drastically increase speed, if not 
   solve the rerender problem 
    */
-
   useEffect(() => {
     const getSearchedUsers = async () => {
       if (searchValue === "") {
@@ -167,21 +271,46 @@ export default function UsersScreen({ route, navigation }: Props) {
       }
     };
 
-    getSearchedUsers();
+    const getSearchedCoreChats = async () => {
+      if (searchValue === "") {
+        searchedCoreChats = undefined;
+        setFilteredCoreChats([]);
+      } else {
+        if (searchedCoreChats) {
+          const _filteredCoreChats = searchedCoreChats.filter((chat) =>
+            chat.title?.includes(searchValue)
+          );
+
+          setFilteredCoreChats(_filteredCoreChats);
+        } else {
+          const _searchedCoreChats = await fetchSearchedCoreChats(searchValue);
+          searchedCoreChats = _searchedCoreChats;
+          setFilteredCoreChats(_searchedCoreChats);
+        }
+      }
+    };
+
+    isEvent ? getSearchedCoreChats() : getSearchedUsers();
   }, [searchValue]);
 
   /* -------------------------------------------------------------------------- */
   /*                           User Clicked Functions                           */
   /* -------------------------------------------------------------------------- */
 
+  const updateChosenUsers = (user: User) => {
+    const _chosenUsers = chosenUsers ? [...chosenUsers, user] : [user];
+    setChosenUsers(_chosenUsers);
+    setSearchValue("");
+  };
+
   /* ----------------------------- SearchedContact ---------------------------- */
 
   const searchedContactPressed = (user: User) => {
     switch (route.params?.chatType) {
       case ChatEnum.group:
-        const _chosenUsers = chosenUsers ? [...chosenUsers, user] : [user];
-        setChosenUsers(_chosenUsers);
-        setSearchValue("");
+        updateChosenUsers(user);
+      case ChatEnum.addMembers:
+        updateChosenUsers(user);
     }
   };
 
@@ -199,11 +328,20 @@ export default function UsersScreen({ route, navigation }: Props) {
   /*                              Render Functions                              */
   /* -------------------------------------------------------------------------- */
 
-  const renderSearchedContact = ({ item }: { item: User }) => {
+  const renderSearchedUser = ({ item }: { item: User }) => {
     return (
       <SearchedContact
         contact={item}
         onPress={() => searchedContactPressed(item)}
+      />
+    );
+  };
+
+  const renderSearchedCoreChat = ({ item }: { item: Chat }) => {
+    return (
+      <SearchedContact
+        contact={item}
+        onPress={() => goToCoordinationChat(item)}
       />
     );
   };
@@ -214,7 +352,7 @@ export default function UsersScreen({ route, navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      {route.params?.chatType === (ChatEnum.group || ChatEnum.event) && (
+      {route.params?.chatType === ChatEnum.group && (
         <TextInput
           style={styles.searchBar}
           placeholder={"Title..."}
@@ -274,8 +412,8 @@ export default function UsersScreen({ route, navigation }: Props) {
         style={styles.searchedNamesFlatlist}
         numColumns={3}
         keyboardShouldPersistTaps={"handled"}
-        data={filteredUsers}
-        renderItem={renderSearchedContact}
+        data={isEvent ? filteredCoreChats : filteredUsers}
+        renderItem={isEvent ? renderSearchedCoreChat : renderSearchedUser}
         showsVerticalScrollIndicator={false}
       />
     </View>

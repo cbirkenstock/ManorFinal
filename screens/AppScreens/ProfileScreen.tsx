@@ -30,7 +30,6 @@ import {
   updateUserProfileImageUrl,
   updateUserVenmoHandle,
 } from "../../managers/UserManager";
-import SignedImage from "../../components/CustomPrimitives/SignedImage";
 
 export default function ProfileScreen() {
   const { user, setUser, signOut } = useAuthContext();

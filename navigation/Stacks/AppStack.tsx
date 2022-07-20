@@ -9,10 +9,10 @@ import ChatScreen from "../../screens/AppScreens/ChatScreen";
 // import UnreachedMembersScreen from "../../screens/UnreachedMembersScreen";
 import UsersScreen, { ChatEnum } from "../../screens/AppScreens/UsersScreen";
 // import WebModalScreen from "../../screens/WebModelScreen";
-// import GoogleMapsScreen from "../../screens/GoogleMapsScreen";
+import GoogleMapsScreen from "../../screens/AppScreens/GoogleMapsScreen";
 import Colors from "../../constants/Colors";
 import { AppProvider } from "../Providers/AppProvider";
-import { Chat, ChatUser, User } from "../../src/models";
+import { Chat, ChatUser, Message, User } from "../../src/models";
 import { NavigatorScreenParams } from "@react-navigation/native";
 import {
   createStackNavigator,
@@ -31,8 +31,14 @@ export type InnerAppStackParamList = {
     members: ChatUser[] | undefined;
     displayUser: User | undefined;
   };
-  ChatInfoScreen: { displayUser: User | undefined };
+  ChatInfoScreen: {
+    displayUser: User | undefined;
+    eventMessages: Message[] | undefined;
+  };
   UsersScreen: { chatType: ChatEnum };
+  GoogleMapsScreen: {
+    link: string | undefined;
+  };
 };
 
 export type OuterAppStackParamList = {
@@ -45,7 +51,7 @@ const InnerStack = createStackNavigator<InnerAppStackParamList>();
 export const AppStack = () => {
   const ContactNav = () => {
     return (
-      <InnerStack.Navigator>
+      <InnerStack.Navigator detachInactiveScreens={false}>
         <InnerStack.Group>
           <InnerStack.Screen
             name="ContactScreen"
@@ -54,12 +60,11 @@ export const AppStack = () => {
               headerShown: false,
             })}
           />
-        </InnerStack.Group>
-        <InnerStack.Group screenOptions={{ presentation: "modal" }}>
           <InnerStack.Screen
             name="ProfileScreen"
             component={ProfileScreen}
             options={{
+              presentation: "modal",
               headerShown: false,
               title: "",
               headerBackTitleVisible: true,
@@ -89,7 +94,7 @@ export const AppStack = () => {
   const ChatNav = () => {
     return (
       <AppProvider>
-        <InnerStack.Navigator>
+        <InnerStack.Navigator detachInactiveScreens={false}>
           <InnerStack.Group>
             <InnerStack.Screen
               name="ChatScreen"
@@ -107,13 +112,31 @@ export const AppStack = () => {
               }}
             />
           </InnerStack.Group>
-          {/* <Stack.Group screenOptions={{ presentation: "modal" }}>
-            <Stack.Screen name="WebModalScreen" component={WebModalScreen} />
-            <Stack.Screen
+          <InnerStack.Screen
+            name="UsersScreen"
+            component={UsersScreen}
+            options={{
+              headerLeft: () => null,
+              headerTitle: "",
+              headerBackTitleVisible: false,
+              headerTintColor: Colors.manorPurple,
+              headerStyle: {
+                backgroundColor: Colors.manorBackgroundGray,
+              },
+              headerShadowVisible: false,
+              ...TransitionPresets.ModalTransition,
+            }}
+          />
+          <InnerStack.Group screenOptions={{ presentation: "modal" }}>
+            {/* <InnerStack.Screen name="WebModalScreen" component={WebModalScreen} /> */}
+            <InnerStack.Screen
               name="GoogleMapsScreen"
               component={GoogleMapsScreen}
+              options={{
+                headerShown: false,
+              }}
             />
-            <Stack.Screen
+            {/* <Stack.Screen
               name="UnreachedMembersScreen"
               component={UnreachedMembersScreen}
               options={{
@@ -133,8 +156,8 @@ export const AppStack = () => {
                 ),
                 headerTintColor: Colors.manorPurple,
               }}
-            />
-          </Stack.Group> */}
+            /> */}
+          </InnerStack.Group>
         </InnerStack.Navigator>
       </AppProvider>
     );

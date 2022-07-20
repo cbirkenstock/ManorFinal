@@ -7,8 +7,8 @@ import { styles } from "./styles";
 
 export interface SectionButtonProps extends Omit<PressableProps, "style"> {
   caption: string;
-  startAdornment?: JSX.Element;
-  endAdornment?: JSX.Element;
+  startAdornment?: React.ReactNode;
+  endAdornment?: React.ReactNode;
   buttonStyle?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
 }

@@ -5,6 +5,7 @@ type Chat @model @auth(rules: [{ allow: public }]) {
   breadCrumb: String
   displayUserName: String
   displayUserProfileImageUrl: String
+  displayUserVenmoHandle: String
   eventDateTime: AWSDateTime
   eventDescription: String
   eventLocation: String
@@ -18,7 +19,6 @@ type Chat @model @auth(rules: [{ allow: public }]) {
   isCoreChat: Boolean
   isCoordinationChat: Boolean
   isEventChat: Boolean
-  isActive: Boolean
   membersCount: Int
   parentChat1ID: String
   parentChat2ID: String
@@ -31,6 +31,7 @@ type ChatUser @model @auth(rules: [{ allow: public }]) {
   chatID: ID! @index(name: "customByChat")
   user: User! @belongsTo(fields: ["userID"])
   chat: Chat! @belongsTo(fields: ["chatID"])
+  isOfActiveChat: Boolean!
   notificationsEnabled: Boolean!
   nickname: String
   hasUnreadMessage: Boolean
@@ -56,7 +57,15 @@ type Message @model @auth(rules: [{ allow: public }]) {
   id: ID!
   marginTop: Int
   rerender: Boolean
+  isEventMessage: Boolean
   eventChatID: String
+  eventTitle: String
+  eventDateTime: AWSDateTime
+  eventDescription: String
+  eventLocation: String
+  eventCapacity: Int
+  eventMembersCount: Int
+  suggestionStatus: String
   messageBody: String
   announcementBody: String
   imageUrl: String

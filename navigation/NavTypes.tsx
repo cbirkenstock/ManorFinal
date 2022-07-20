@@ -55,6 +55,11 @@ export type UsersScreenProps = NativeStackScreenProps<
   "UsersScreen"
 >;
 
+export type GoogleMapsScreenProps = NativeStackScreenProps<
+  InnerAppStackParamList,
+  "GoogleMapsScreen"
+>;
+
 /* -------------------------- useNavigation Imports ------------------------- */
 
 export type InnerContactScreenNavigationProps = NativeStackNavigationProp<
@@ -69,6 +74,16 @@ export type OuterContactScreenNavigationProps = NativeStackNavigationProp<
 
 export type OuterUsersScreenNavigationProps = NativeStackNavigationProp<
   OuterAppStackParamList,
+  "ContactNav"
+>;
+
+export type InnerCreateEventFormNavigationProps = NativeStackNavigationProp<
+  InnerAppStackParamList,
+  "ContactNav"
+>;
+
+export type InnerEventCardNavigationProps = NativeStackNavigationProp<
+  InnerAppStackParamList,
   "ContactNav"
 >;
 

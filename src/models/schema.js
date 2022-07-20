@@ -45,6 +45,13 @@ export const schema = {
           isRequired: false,
           attributes: [],
         },
+        displayUserVenmoHandle: {
+          name: "displayUserVenmoHandle",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
         eventDateTime: {
           name: "eventDateTime",
           isArray: false,
@@ -159,13 +166,6 @@ export const schema = {
         },
         isEventChat: {
           name: "isEventChat",
-          isArray: false,
-          type: "Boolean",
-          isRequired: false,
-          attributes: [],
-        },
-        isActive: {
-          name: "isActive",
           isArray: false,
           type: "Boolean",
           isRequired: false,
@@ -390,7 +390,6 @@ export const schema = {
           isRequired: true,
           attributes: [],
         },
-
         chat: {
           name: "chat",
           isArray: false,
@@ -403,6 +402,13 @@ export const schema = {
             connectionType: "BELONGS_TO",
             targetName: "chatID",
           },
+        },
+        isOfActiveChat: {
+          name: "isOfActiveChat",
+          isArray: false,
+          type: "Boolean",
+          isRequired: true,
+          attributes: [],
         },
         notificationsEnabled: {
           name: "notificationsEnabled",
@@ -542,6 +548,13 @@ export const schema = {
           isRequired: false,
           attributes: [],
         },
+        isEventMessage: {
+          name: "isEventMessage",
+          isArray: false,
+          type: "Boolean",
+          isRequired: false,
+          attributes: [],
+        },
         eventChatID: {
           name: "eventChatID",
           isArray: false,
@@ -549,6 +562,56 @@ export const schema = {
           isRequired: false,
           attributes: [],
         },
+        eventTitel: {
+          name: "eventTitle",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
+        eventDateTime: {
+          name: "eventDateTime",
+          isArray: false,
+          type: "AWSDateTime",
+          isRequired: false,
+          attributes: [],
+        },
+        eventDescription: {
+          name: "eventDescription",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
+        eventLocation: {
+          name: "eventLocation",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
+        eventCapacity: {
+          name: "eventCapacity",
+          isArray: false,
+          type: "Int",
+          isRequired: false,
+          attributes: [],
+        },
+        eventMembersCount: {
+          name: "eventMembersCount",
+          isArray: false,
+          type: "Int",
+          isRequired: false,
+          attributes: [],
+        },
+        suggestionStatus: {
+          name: "suggestionStatus",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
+
         messageBody: {
           name: "messageBody",
           isArray: false,

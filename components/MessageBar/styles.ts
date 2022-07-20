@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+import Colors from "../../constants/Colors";
 
 export const styles = StyleSheet.create({
   container: {
@@ -13,14 +14,14 @@ export const styles = StyleSheet.create({
 
   messageBar: {
     minHeight: 37.5,
-    borderColor: "white",
-    borderWidth: 1,
+    backgroundColor: Colors.manorBlueGray,
     borderRadius: 37.5 / 2,
     paddingHorizontal: 15,
-    fontSize: 16,
+    paddingVertical: 5,
+    fontSize: 18,
     color: "white",
     flex: 1,
-    paddingTop: 7.5,
+    paddingTop: 8.5,
   },
 
   TouchableOpacity: {
