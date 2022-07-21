@@ -804,6 +804,13 @@ export const schema = {
             targetName: "messageID",
           },
         },
+        reminderDate: {
+          name: "reminderDate",
+          isArray: false,
+          type: "AWSDateTime",
+          isRequired: false,
+          attributes: [],
+        },
         createdAt: {
           name: "createdAt",
           isArray: false,

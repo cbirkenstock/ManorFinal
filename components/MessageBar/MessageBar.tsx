@@ -24,6 +24,7 @@ import Dialog from "../Dialog/Dialog";
 import EventSuggestionForm from "../Dialog/DialogForms/EventSuggestionForm/EventSuggestionForm";
 import EventCreationForm from "../Dialog/DialogForms/EventCreationForm/EventCreationForm";
 import { updateChatUserOfActiveChatStatus } from "../../managers/ChatUserManager";
+import AnnouncementCreationForm from "../Dialog/DialogForms/AnnouncementCreationForm/AnnouncementCreationForm";
 
 interface MessageBarProps {
   chat?: Chat;
@@ -132,7 +133,8 @@ export default function MessageBar(props: MessageBarProps) {
           {chat?.isCoordinationChat ? (
             <EventSuggestionForm onSubmit={() => setIsForwardingEvent(false)} />
           ) : (
-            <EventCreationForm />
+            <AnnouncementCreationForm />
+            // <EventCreationForm />
           )}
         </Dialog>
         <TextInput

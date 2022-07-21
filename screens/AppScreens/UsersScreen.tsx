@@ -163,7 +163,6 @@ export default function UsersScreen({ route, navigation }: Props) {
     );
 
     if (existingCoordinationChat) {
-      console.log("existing");
       const _chatUser = (
         await DataStore.query(ChatUser, (chatUser) =>
           chatUser
@@ -178,7 +177,6 @@ export default function UsersScreen({ route, navigation }: Props) {
         displayUser: undefined,
       });
     } else {
-      console.log("not existing");
       const results = await createCoordinationChat(
         chat ?? undefined,
         otherChat
@@ -190,8 +188,6 @@ export default function UsersScreen({ route, navigation }: Props) {
         const _chatUser = newMembers?.find(
           (chatUser) => chatUser.user.id === user?.id
         );
-
-        console.log("a", _chatUser?.id);
 
         if (_chatUser) {
           navigation.navigate("ChatScreen", {

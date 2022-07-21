@@ -23,6 +23,7 @@ import { appendMessage } from "../../managers/MessageManager";
 import DefaultContactImage from "../../components/DefaultContactImage";
 import CacheImage from "../../components/CustomPrimitives/CacheImage";
 import EventSuggestionMessage from "../../components/Message/EventSuggestionMessage/EventSuggestionMessage";
+import Announcement from "../../components/Announcement/Announcement";
 
 export default function ChatScreen({ navigation, route }: Props) {
   const context = useAppContext();
@@ -158,10 +159,6 @@ export default function ChatScreen({ navigation, route }: Props) {
     }
   };
 
-  useEffect(() => {
-    console.log("b", chatUser?.id);
-  }, [chatUser]);
-
   /* -------------------------------------------------------------------------- */
   /*                                   Render                                   */
   /* -------------------------------------------------------------------------- */
@@ -172,6 +169,7 @@ export default function ChatScreen({ navigation, route }: Props) {
       keyboardVerticalOffset={-42}
       enabled
     >
+      <Announcement />
       <StatusBar hidden={true} />
       <FlatList
         style={[styles.messageFlatlist]}

@@ -1,5 +1,5 @@
 import { DataStore } from "aws-amplify";
-import { Chat, Message } from "../src/models";
+import { Chat, ChatUser, ChatUserMessage, Message } from "../src/models";
 import { AppInitialStateProps } from "../navigation/InitialStates/AppInitialState";
 import { EventStatus } from "../components/Message/EventSuggestionMessage/EventSuggestionMessage";
 
@@ -41,8 +41,6 @@ export const createTextMessageComponent = (
   context: AppInitialStateProps
 ) => {
   const { chat, chatUser } = context;
-
-  console.log("C", chatUser.id);
 
   const newMessage = new Message({
     messageBody: messageBody,
@@ -123,15 +121,15 @@ export const createEventMessageComponent = (
 };
 
 export const createAnnouncementComponent = (
-  messageBody: string,
+  context: AppInitialStateProps,
+  announcementBody: string,
   isMandatory: boolean,
-  link: string,
-  context: AppInitialStateProps
+  link?: string
 ) => {
   const { chat, chatUser } = context;
 
   const newMessage = new Message({
-    messageBody: messageBody,
+    messageBody: announcementBody,
     isMandatory: isMandatory,
     link: link,
     chatuserID: chatUser?.id,
@@ -180,6 +178,19 @@ export const uploadMessage = (message: Message) => {
   DataStore.save(message);
 };
 
+export const uploadChatUserMessage = async (
+  members: ChatUser[],
+  announcement: Message
+) => {
+  for (const member of members) {
+    const a = await DataStore.save(
+      new ChatUserMessage({ chatUser: member, message: announcement })
+    );
+
+    console.log(a);
+  }
+};
+
 export const updateLastMessage = async (
   newMessage: Message,
   context: AppInitialStateProps
@@ -189,7 +200,8 @@ export const updateLastMessage = async (
   if (chat) {
     DataStore.save(
       Chat.copyOf(chat, (updatedChat) => {
-        updatedChat.lastMessage = newMessage.messageBody;
+        updatedChat.lastMessage =
+          newMessage.messageBody ?? newMessage.announcementBody;
       })
     ).then(async (chat) => setChat(chat));
   }

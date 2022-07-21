@@ -18,6 +18,7 @@ import { useNavigation } from "@react-navigation/native";
 import { InnerCreateEventFormNavigationProps } from "../../../../navigation/NavTypes";
 import { createGroupChat } from "../../../../managers/ChatManager";
 import useAuthContext from "../../../../hooks/useAuthContext";
+import FormCompletionButton from "../../../FormCompletionButton";
 
 export default function EventCreationForm() {
   const { user } = useAuthContext();
@@ -157,9 +158,7 @@ export default function EventCreationForm() {
           onChangeText={setEventDescription}
         />
       </View>
-      <Pressable style={styles.createEventButton} onPress={createEvent}>
-        <Text style={styles.createEventButtonText}>Create</Text>
-      </Pressable>
+      <FormCompletionButton text={"Create Event"} onPress={createEvent} />
     </>
   );
 }

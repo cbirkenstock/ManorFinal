@@ -150,6 +150,7 @@ export declare class ChatUserMessage {
   readonly id: string;
   readonly chatUser: ChatUser;
   readonly message: Message;
+  readonly reminderDate?: Date | null;
   readonly createdAt?: string | null;
   readonly updatedAt?: string | null;
   constructor(init: ModelInit<ChatUserMessage, ChatUserMessageMetaData>);

@@ -29,13 +29,13 @@ export const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "left",
     color: "white",
+    marginBottom: 7.5,
   },
 
   helperText: {
     fontSize: 15,
     fontWeight: "400",
     textAlign: "left",
-    marginTop: 7.5,
     marginBottom: 10,
     color: "white",
   },

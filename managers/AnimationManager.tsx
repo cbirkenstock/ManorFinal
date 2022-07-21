@@ -3,13 +3,14 @@ import { Animated } from "react-native";
 export const animate = (
   Anim: Animated.Value,
   toValue: number,
-  duration: number
+  duration: number,
+  callback?: () => void
 ) => {
   Animated.timing(Anim, {
     toValue: toValue,
     duration: duration,
     useNativeDriver: false,
-  }).start();
+  }).start(callback);
 };
 
 export const animateTwoSequence = (
