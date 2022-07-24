@@ -8,13 +8,13 @@ import {
   View,
   Text,
 } from "react-native";
-import { EventCardBackgrounds } from "../../constants/EventCardBackgrounds";
-import useAppContext from "../../hooks/useAppContext";
-import { getShortenedAddress } from "../../managers/AddressManager";
-import { formatDate, formatTime } from "../../managers/DateTimeManager";
-import { getEventTitle } from "../../managers/EventManager";
-import { InnerEventCardNavigationProps } from "../../navigation/NavTypes";
-import { Message } from "../../src/models";
+import { EventCardBackgrounds } from "../../../constants/EventCardBackgrounds";
+import useAppContext from "../../../hooks/useAppContext";
+import { getShortenedAddress } from "../../../managers/AddressManager";
+import { formatDate, formatTime } from "../../../managers/DateTimeManager";
+import { getEventTitle } from "../../../managers/EventManager";
+import { InnerEventCardNavigationProps } from "../../../navigation/NavTypes";
+import { Message } from "../../../src/models";
 
 interface EventCardProps {
   index: number;

@@ -1,41 +1,70 @@
+import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Image, Animated } from "react-native";
+import { View, Text, Animated } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
+import useAppContext from "../../hooks/useAppContext";
 import { animate } from "../../managers/AnimationManager";
+import { deletePendingAnnouncement } from "../../managers/MessageManager";
+import { InnerAnnouncementProps } from "../../navigation/NavTypes";
 import { styles } from "./styles";
 
-interface AnnouncementProps {
-  announcements: string[];
-}
+interface AnnouncementProps {}
 
 export default function Announcement(props: AnnouncementProps) {
-  const { announcements } = props;
+  const { pendingAnnouncements, setPendingAnnouncements } = useAppContext();
+  const navigation = useNavigation<InnerAnnouncementProps>();
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
-  const [messageIndex, setMessageIndex] = useState<number>(0);
+  const [pendingAnnouncementIndex, setPendingAnnouncementIndex] =
+    useState<number>(0);
 
-  const messages = [
-    "hello",
-    "goodbye",
-    "asdlkfa;slfkdja;lsdfjka;lsdgjk;alsdkjf;alskjf;alskdjfa;lskdjfa;lskdjfa;sldkfja;sdlkfja;sdklfja;slkdfja;lksfdj",
-    "see ya!",
-  ];
+  /* -------------------------------------------------------------------------- */
+  /*                      Unwrapped & Asbtracted Constants                      */
+  /* -------------------------------------------------------------------------- */
 
+  const { announcementBody, link, isMandatory } =
+    pendingAnnouncements[pendingAnnouncementIndex].message;
+
+  const isLastPendingAnnouncement =
+    !pendingAnnouncements[pendingAnnouncementIndex + 1]?.message
+      .announcementBody;
+
+  /* -------------------------------------------------------------------------- */
+  /*                                   Appear                                   */
+  /* -------------------------------------------------------------------------- */
+
+  /*
+  The reason we use a useEffect here is becuase not only does announcement now appear
+  right when the first announcement is received, but everytime one is deleted, 
+  the useEffect spots the change in the index and triggers the new one
+  to appear
+   */
   const appear = () => {
     animate(opacityAnim, 1, 1000);
   };
 
-  const disappearAndReplaceMessage = async () => {
-    if (messages[messageIndex + 1]) {
-      animate(opacityAnim, 0, 300, () => setMessageIndex(messageIndex + 1));
-    } else {
-      animate(opacityAnim, 0, 300);
-    }
-  };
-
   useEffect(() => {
     appear();
-  }, [messageIndex]);
+  }, [pendingAnnouncementIndex]);
+
+  /* -------------------------------------------------------------------------- */
+  /*                      Disappear, Delete, & Update Index                     */
+  /* -------------------------------------------------------------------------- */
+
+  const hideDeleteAndReplacePendingAnnouncement = async () => {
+    animate(opacityAnim, 0, 300, () => {
+      deletePendingAnnouncement(pendingAnnouncements[pendingAnnouncementIndex]);
+      if (!isLastPendingAnnouncement) {
+        setPendingAnnouncementIndex(pendingAnnouncementIndex + 1);
+      } else {
+        setPendingAnnouncements([]);
+      }
+    });
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /*                                   Render                                   */
+  /* -------------------------------------------------------------------------- */
 
   return (
     <Animated.View style={[styles.container, { opacity: opacityAnim }]}>
@@ -43,7 +72,10 @@ export default function Announcement(props: AnnouncementProps) {
         <View style={styles.contactImage} />
         <View style={styles.textWrapper}>
           <Text style={styles.announcementBody} numberOfLines={0}>
-            {messages[messageIndex]}
+            {
+              pendingAnnouncements[pendingAnnouncementIndex].message
+                .announcementBody
+            }
           </Text>
         </View>
       </View>
@@ -51,14 +83,24 @@ export default function Announcement(props: AnnouncementProps) {
         <TouchableOpacity
           style={styles.button}
           onPress={() => {
-            disappearAndReplaceMessage();
+            isMandatory ? () => {} : hideDeleteAndReplacePendingAnnouncement();
           }}
         >
           <Text style={styles.buttonText}>Hello</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, { marginLeft: 5 }]}>
-          <Text style={styles.buttonText}>Hello</Text>
-        </TouchableOpacity>
+        {link && (
+          <TouchableOpacity
+            style={[styles.button, { marginLeft: 5 }]}
+            onPress={() =>
+              navigation.navigate("GoogleFormsScreen", {
+                announcementMessage:
+                  pendingAnnouncements[pendingAnnouncementIndex],
+              })
+            }
+          >
+            <Text style={styles.buttonText}>Hello</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </Animated.View>
   );

@@ -20,7 +20,7 @@ type MessageMetaData = {
   readOnlyFields: "createdAt" | "updatedAt";
 };
 
-type ChatUserMessageMetaData = {
+type PendingAnnouncementMetaData = {
   readOnlyFields: "createdAt" | "updatedAt";
 };
 
@@ -95,7 +95,7 @@ export declare class ChatUser {
   readonly unreadMessagesCount?: number | null;
   readonly isAdmin?: boolean | null;
   readonly writtenMessages?: (Message | null)[] | null;
-  readonly messages?: (ChatUserMessage | null)[] | null;
+  readonly unreadAnnouncements?: (PendingAnnouncement | null)[] | null;
   readonly profileImageUrl?: string | null;
   readonly createdAt?: string | null;
   readonly updatedAt?: string | null;
@@ -122,11 +122,12 @@ export declare class Message {
   readonly eventCapacity?: Int | null;
   readonly eventMembersCount?: Int | null;
   readonly messageBody?: string | null;
+  readonly isAnnouncementMessage?: boolean | null;
   readonly announcementBody?: string | null;
   readonly imageUrl?: string | null;
   readonly chatID?: string | null;
   readonly chatuserID?: string | null;
-  readonly chatUsers?: (ChatUserMessage | null)[] | null;
+  readonly unreachedMembers?: (PendingAnnouncement | null)[] | null;
   readonly likes?: number | null;
   readonly link?: string | null;
   readonly isMandatory?: boolean | null;
@@ -146,18 +147,22 @@ export declare class Message {
   ): Message;
 }
 
-export declare class ChatUserMessage {
+export declare class PendingAnnouncement {
   readonly id: string;
+  readonly chatUserID: string;
   readonly chatUser: ChatUser;
+  readonly messageID: string;
   readonly message: Message;
-  readonly reminderDate?: Date | null;
+  readonly remindDate?: string | null;
   readonly createdAt?: string | null;
   readonly updatedAt?: string | null;
-  constructor(init: ModelInit<ChatUserMessage, ChatUserMessageMetaData>);
+  constructor(
+    init: ModelInit<PendingAnnouncement, PendingAnnouncementMetaData>
+  );
   static copyOf(
-    source: ChatUserMessage,
+    source: PendingAnnouncement,
     mutator: (
-      draft: MutableModel<ChatUserMessage, ChatUserMessageMetaData>
-    ) => MutableModel<ChatUserMessage, ChatUserMessageMetaData> | void
-  ): ChatUserMessage;
+      draft: MutableModel<PendingAnnouncement, PendingAnnouncementMetaData>
+    ) => MutableModel<PendingAnnouncement, PendingAnnouncementMetaData> | void
+  ): PendingAnnouncement;
 }

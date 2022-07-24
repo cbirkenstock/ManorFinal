@@ -60,6 +60,16 @@ export type GoogleMapsScreenProps = NativeStackScreenProps<
   "GoogleMapsScreen"
 >;
 
+export type GoogleFormsScreenProps = NativeStackScreenProps<
+  InnerAppStackParamList,
+  "GoogleFormsScreen"
+>;
+
+export type UnreachedMembersScreenProps = NativeStackScreenProps<
+  InnerAppStackParamList,
+  "UnreachedMembersScreen"
+>;
+
 /* -------------------------- useNavigation Imports ------------------------- */
 
 export type InnerContactScreenNavigationProps = NativeStackNavigationProp<
@@ -83,6 +93,11 @@ export type InnerCreateEventFormNavigationProps = NativeStackNavigationProp<
 >;
 
 export type InnerEventCardNavigationProps = NativeStackNavigationProp<
+  InnerAppStackParamList,
+  "ContactNav"
+>;
+
+export type InnerAnnouncementProps = NativeStackNavigationProp<
   InnerAppStackParamList,
   "ContactNav"
 >;

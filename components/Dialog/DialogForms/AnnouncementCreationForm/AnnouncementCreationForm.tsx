@@ -2,10 +2,9 @@ import React, { useState } from "react";
 import { View, TextInput, Alert } from "react-native";
 import Colors from "../../../../constants/Colors";
 import {
-  appendMessage,
   createAnnouncementComponent,
   updateLastMessage,
-  uploadChatUserMessage,
+  UploadPendingAnnouncements,
   uploadMessage,
 } from "../../../../managers/MessageManager";
 import useAppContext from "../../../../hooks/useAppContext";
@@ -13,10 +12,15 @@ import ToggleButton from "../../../ToggleButton";
 import { FontAwesome5 } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import FormCompletionButton from "../../../FormCompletionButton";
-import { DataStore } from "aws-amplify";
-import { ChatUserMessage } from "../../../../src/models";
 
-export default function AnnouncementCreationForm() {
+interface AnnouncementCreationFormProps {
+  onSubmit?: () => {};
+}
+
+export default function AnnouncementCreationForm(
+  props: AnnouncementCreationFormProps
+) {
+  const { onSubmit } = props;
   const context = useAppContext();
   const { members, chat } = context;
   const [announcementBody, setAnnouncementBody] = useState<string>();
@@ -34,7 +38,6 @@ export default function AnnouncementCreationForm() {
 
   const sendAnnouncement = () => {
     if (announcementBody) {
-      console.log("yeah");
       const newAnnouncement = createAnnouncementComponent(
         context,
         announcementBody,
@@ -42,7 +45,7 @@ export default function AnnouncementCreationForm() {
         link
       );
       uploadMessage(newAnnouncement);
-      uploadChatUserMessage(members, newAnnouncement);
+      UploadPendingAnnouncements(members, newAnnouncement);
       updateLastMessage(newAnnouncement, context);
       setAnnouncementBody("");
     }
@@ -112,7 +115,13 @@ export default function AnnouncementCreationForm() {
           }}
         />
       </View>
-      <FormCompletionButton text="Send" onPress={sendAnnouncement} />
+      <FormCompletionButton
+        text="Send"
+        onPress={() => {
+          sendAnnouncement();
+          onSubmit?.();
+        }}
+      />
     </View>
   );
 }

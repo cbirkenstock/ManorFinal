@@ -25,7 +25,7 @@ import {
   createDMChat,
 } from "../../managers/ChatManager";
 import { ChatEnum } from "./UsersScreen";
-import EventCard from "../../components/EventCard/EventCard";
+import EventCard from "../../components/Cards/EventCard/EventCard";
 import { FlatList } from "react-native-gesture-handler";
 
 export type ChatInfoDataType = {
@@ -35,10 +35,13 @@ export type ChatInfoDataType = {
 };
 
 export default function ProfileScreen({ navigation, route }: Props) {
-  const { chat, members, chatUser, setChatUser } = useAppContext();
+  const { chat, members, chatUser, setChatUser, pendingAnnouncements } =
+    useAppContext();
   const { user } = useAuthContext();
   const { displayUser } = route.params;
   const [eventMessages, setEventMessages] = useState<Message[]>([]);
+  const [firstThreeAnnouncementMessages, setFirstThreeAnnouncementMessages] =
+    useState<Message[]>([]);
 
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(
     chatUser?.notificationsEnabled ?? true
@@ -118,6 +121,14 @@ export default function ProfileScreen({ navigation, route }: Props) {
     }
   };
 
+  /* ------------------------- Go To Unreached Members ------------------------ */
+
+  const goToUnreachedMembers = (announcementMessage: Message) => {
+    navigation.navigate("UnreachedMembersScreen", {
+      announcementMessage: announcementMessage,
+    });
+  };
+
   /* -------------------------------------------------------------------------- */
   /*                                Data Constant                               */
   /* -------------------------------------------------------------------------- */
@@ -132,6 +143,23 @@ export default function ProfileScreen({ navigation, route }: Props) {
     };
 
     fetchEventMessages();
+  }, []);
+
+  useEffect(() => {
+    const fetchAllAnnouncements = async () => {
+      const _firstThreeAnnouncementMessages = await DataStore.query(
+        Message,
+        (message) =>
+          message
+            .chatID("eq", chat?.id ?? "")
+            .isAnnouncementMessage("eq", true),
+        { limit: 3 }
+      );
+
+      setFirstThreeAnnouncementMessages(_firstThreeAnnouncementMessages);
+    };
+
+    fetchAllAnnouncements();
   }, []);
 
   const data: ChatInfoDataType[] = [
@@ -205,6 +233,23 @@ export default function ProfileScreen({ navigation, route }: Props) {
       }),
     },
     {
+      title: "Announcements",
+      data: firstThreeAnnouncementMessages.map((announcementMessage) => {
+        return {
+          caption: announcementMessage.announcementBody ?? "",
+          buttonStyle: {
+            borderWidth: 2,
+            backgroundColor: "rgba(92, 106, 239, 0.25)",
+            borderColor: "rgba(92, 106, 239, 1)",
+          },
+          textStyle: {
+            fontWeight: "500",
+          },
+          onPress: () => goToUnreachedMembers(announcementMessage),
+        };
+      }),
+    },
+    {
       title: "Settings",
       data: [{ caption: "Leave Chat", textStyle: { color: "red" } }],
     },
@@ -212,7 +257,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
 
   /* -------------------------------------------------------------------------- */
   /*                              Render Functions                              */
-  /* -------------------------------------------------------------------------- */
+  /* --------------------------------------------------------------------- ----- */
 
   /* ----------------------------- Section Header ----------------------------- */
 
@@ -224,6 +269,20 @@ export default function ProfileScreen({ navigation, route }: Props) {
     } else {
       return null;
     }
+  };
+
+  /* ----------------------------- Section Button ----------------------------- */
+
+  const renderSectionButton = (item: SectionButtonProps) => {
+    return (
+      <SectionButton
+        caption={item.caption}
+        startAdornment={item.startAdornment}
+        textStyle={item.textStyle}
+        buttonStyle={[item.buttonStyle]}
+        onPress={item.onPress}
+      />
+    );
   };
 
   /* ------------------------------- Event Card ------------------------------- */
@@ -257,20 +316,6 @@ export default function ProfileScreen({ navigation, route }: Props) {
     } else {
       return null;
     }
-  };
-
-  /* ----------------------------- Section Button ----------------------------- */
-
-  const renderSectionButton = (item: SectionButtonProps) => {
-    return (
-      <SectionButton
-        caption={item.caption}
-        startAdornment={item.startAdornment}
-        textStyle={item.textStyle}
-        buttonStyle={item.buttonStyle}
-        onPress={item.onPress}
-      />
-    );
   };
 
   /* ------------------------------- Extract Key ------------------------------ */

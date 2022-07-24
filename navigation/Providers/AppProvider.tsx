@@ -1,6 +1,6 @@
 import React, { createContext, useReducer } from "react";
 import appReducer, { AppActionCase } from "../Reducers/AppReducer";
-import { Chat, ChatUser, Message } from "../../src/models";
+import { Chat, ChatUser, Message, PendingAnnouncement } from "../../src/models";
 import {
   AppInitialStateProps,
   initialState,
@@ -93,6 +93,15 @@ export const AppProvider = (props: AppProviderProps) => {
     });
   };
 
+  const setPendingAnnouncements = async (
+    announcements: PendingAnnouncement[]
+  ) => {
+    dispatch({
+      type: AppActionCase.setPendingAnnouncements,
+      payload: announcements,
+    });
+  };
+
   const value: AppInitialStateProps = {
     chat: state.chat,
     members: state.members,
@@ -105,6 +114,7 @@ export const AppProvider = (props: AppProviderProps) => {
     eventDescription: state.eventDescription,
     isForwardingEvent: state.isForwardingEvent,
     messages: state.messages,
+    pendingAnnouncements: state.pendingAnnouncements,
     setChat,
     setMembers,
     setChatUser,
@@ -116,6 +126,7 @@ export const AppProvider = (props: AppProviderProps) => {
     setEventDescription,
     setIsForwardingEvent,
     setMessages,
+    setPendingAnnouncements,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -1,4 +1,5 @@
-import { Chat, ChatUser, Message } from "../../src/models";
+import Announcement from "../../components/Announcement/Announcement";
+import { Chat, ChatUser, Message, PendingAnnouncement } from "../../src/models";
 
 /* -------------------------------------------------------------------------- */
 /*                                 Action Enum                                */
@@ -21,6 +22,7 @@ export enum AppActionCase {
   setEventDescription = "setEventDescription",
   setIsForwardingEvent = "setIsForwardingEvent",
   setMessages = "setMessages",
+  setPendingAnnouncements = "setPendingAnnouncements",
 }
 
 /* -------------------------------------------------------------------------- */
@@ -95,6 +97,11 @@ interface MessageAction {
   payload: Message[];
 }
 
+interface PendingAnnouncementAction {
+  type: AppActionCase.setPendingAnnouncements;
+  payload: PendingAnnouncement[];
+}
+
 type ActionTypes =
   | ChatAction
   | MembersAction
@@ -106,7 +113,8 @@ type ActionTypes =
   | EventCapacityAction
   | EventDescriptionAction
   | ForwardingEventAction
-  | MessageAction;
+  | MessageAction
+  | PendingAnnouncementAction;
 
 /* -------------------------------------------------------------------------- */
 /*                                 State Type                                 */
@@ -124,6 +132,7 @@ interface AppState {
   eventDescription: string | null;
   isForwardingEvent: boolean;
   messages: Message[];
+  pendingAnnouncements: PendingAnnouncement[];
 }
 
 /* -------------------------------------------------------------------------- */
@@ -188,6 +197,11 @@ function appReducer(state: AppState, action: ActionTypes) {
       return {
         ...state,
         messages: payload,
+      };
+    case AppActionCase.setPendingAnnouncements:
+      return {
+        ...state,
+        pendingAnnouncements: payload,
       };
     default:
       throw new Error(`No case for type ${type} found in AppReducer.`);

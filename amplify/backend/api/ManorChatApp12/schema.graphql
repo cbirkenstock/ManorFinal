@@ -38,8 +38,18 @@ type ChatUser @model @auth(rules: [{ allow: public }]) {
   unreadMessagesCount: Int
   isAdmin: Boolean
   writtenMessages: [Message] @hasMany(indexName: "byChatUser", fields: ["id"])
-  messages: [Message] @manyToMany(relationName: "ChatUserMessage")
+  unreadAnnouncements: [PendingAnnouncement]
+    @hasMany(indexName: "customByChatUser", fields: ["id"])
   profileImageUrl: String
+}
+
+type PendingAnnouncement @model @auth(rules: [{ allow: public }]) {
+  id: ID!
+  chatUserID: ID! @index(name: "customByChatUser")
+  messageID: ID!
+  chatUser: ChatUser! @belongsTo(fields: ["chatUserID"])
+  message: Message! @belongsTo(fields: ["messageID"])
+  remindDate: AWSDateTime
 }
 
 type User @model @auth(rules: [{ allow: public }]) {
@@ -67,11 +77,12 @@ type Message @model @auth(rules: [{ allow: public }]) {
   eventMembersCount: Int
   suggestionStatus: String
   messageBody: String
+  isAnnouncementMessage: Boolean
   announcementBody: String
   imageUrl: String
   chatID: ID @index(name: "byChat")
   chatuserID: ID @index(name: "byChatUser")
-  chatUsers: [ChatUser] @manyToMany(relationName: "ChatUserMessage")
+  unreachedMembers: [PendingAnnouncement] @hasMany(fields: ["id"])
   likes: Int
   link: AWSURL
   isMandatory: Boolean

@@ -1,14 +1,11 @@
 import React from "react";
-import { Text, TouchableOpacity } from "react-native";
-import { AntDesign } from "@expo/vector-icons";
 import ChatInfoScreen from "../../screens/AppScreens/ChatInfoScreen";
-// import ChatScreen from "../../screens/ChatScreen";
 import ContactScreen from "../../screens/AppScreens/ContactScreen";
 import ProfileScreen from "../../screens/AppScreens/ProfileScreen";
 import ChatScreen from "../../screens/AppScreens/ChatScreen";
-// import UnreachedMembersScreen from "../../screens/UnreachedMembersScreen";
+import UnreachedMembersScreen from "../../screens/AppScreens/UnreachedMembersScreen";
 import UsersScreen, { ChatEnum } from "../../screens/AppScreens/UsersScreen";
-// import WebModalScreen from "../../screens/WebModelScreen";
+import GoogleFormsScreen from "../../screens/AppScreens/GoogleFormsScreen";
 import GoogleMapsScreen from "../../screens/AppScreens/GoogleMapsScreen";
 import Colors from "../../constants/Colors";
 import { AppProvider } from "../Providers/AppProvider";
@@ -19,6 +16,7 @@ import {
   TransitionPresets,
 } from "@react-navigation/stack";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { Pressable, Text } from "react-native";
 
 export type InnerAppStackParamList = {
   ContactNav: undefined;
@@ -39,6 +37,8 @@ export type InnerAppStackParamList = {
   GoogleMapsScreen: {
     link: string | undefined;
   };
+  GoogleFormsScreen: { announcementMessage: Message };
+  UnreachedMembersScreen: { announcementMessage: Message };
 };
 
 export type OuterAppStackParamList = {
@@ -128,7 +128,10 @@ export const AppStack = () => {
             }}
           />
           <InnerStack.Group screenOptions={{ presentation: "modal" }}>
-            {/* <InnerStack.Screen name="WebModalScreen" component={WebModalScreen} /> */}
+            <InnerStack.Screen
+              name="GoogleFormsScreen"
+              component={GoogleFormsScreen}
+            />
             <InnerStack.Screen
               name="GoogleMapsScreen"
               component={GoogleMapsScreen}
@@ -136,7 +139,7 @@ export const AppStack = () => {
                 headerShown: false,
               }}
             />
-            {/* <Stack.Screen
+            <InnerStack.Screen
               name="UnreachedMembersScreen"
               component={UnreachedMembersScreen}
               options={{
@@ -156,7 +159,7 @@ export const AppStack = () => {
                 ),
                 headerTintColor: Colors.manorPurple,
               }}
-            /> */}
+            />
           </InnerStack.Group>
         </InnerStack.Navigator>
       </AppProvider>

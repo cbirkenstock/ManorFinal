@@ -1,4 +1,4 @@
-import { Chat, ChatUser, Message } from "../../src/models";
+import { Chat, ChatUser, Message, PendingAnnouncement } from "../../src/models";
 
 export interface AppInitialStateProps {
   chat: Chat | null;
@@ -12,6 +12,7 @@ export interface AppInitialStateProps {
   eventDescription: string | null;
   isForwardingEvent: boolean;
   messages: Message[];
+  pendingAnnouncements: PendingAnnouncement[];
   setChat: (chat: Chat) => Promise<void> | PromiseConstructor;
   setMembers: (members: ChatUser[]) => Promise<void> | PromiseConstructor;
   setChatUser: (chatUser: ChatUser) => Promise<void> | PromiseConstructor;
@@ -33,6 +34,9 @@ export interface AppInitialStateProps {
     isForwardingEvent: boolean
   ) => Promise<void> | PromiseConstructor;
   setMessages: (messages: Message[]) => Promise<void> | PromiseConstructor;
+  setPendingAnnouncements: (
+    announcements: PendingAnnouncement[]
+  ) => Promise<void> | PromiseConstructor;
 }
 
 export const initialState: AppInitialStateProps = {
@@ -47,6 +51,7 @@ export const initialState: AppInitialStateProps = {
   eventDescription: null,
   isForwardingEvent: false,
   messages: [],
+  pendingAnnouncements: [],
   setChat: () => Promise,
   setMembers: () => Promise,
   setChatUser: () => Promise,
@@ -58,4 +63,5 @@ export const initialState: AppInitialStateProps = {
   setEventDescription: () => Promise,
   setIsForwardingEvent: () => Promise,
   setMessages: () => Promise,
+  setPendingAnnouncements: () => Promise,
 };

@@ -1,7 +1,6 @@
 import { DataStore } from "aws-amplify";
-import { Chat, ChatUser, ChatUserMessage, Message } from "../src/models";
+import { Chat, ChatUser, Message, PendingAnnouncement } from "../src/models";
 import { AppInitialStateProps } from "../navigation/InitialStates/AppInitialState";
-import { EventStatus } from "../components/Message/EventSuggestionMessage/EventSuggestionMessage";
 
 /* -------------------------------------------------------------------------- */
 /*                             Message Categories                             */
@@ -129,8 +128,9 @@ export const createAnnouncementComponent = (
   const { chat, chatUser } = context;
 
   const newMessage = new Message({
-    messageBody: announcementBody,
+    announcementBody: announcementBody,
     isMandatory: isMandatory,
+    isAnnouncementMessage: true,
     link: link,
     chatuserID: chatUser?.id,
     chatID: chat?.id,
@@ -150,6 +150,19 @@ export const appendMessage = (
   const { messages, setMessages } = context;
 
   setMessages([newMessage, ...messages]);
+};
+
+export const removeAnnouncement = (
+  context: AppInitialStateProps,
+  answeredAnnouncement: Message
+) => {
+  const { pendingAnnouncements, setPendingAnnouncements } = context;
+
+  setPendingAnnouncements(
+    pendingAnnouncements.filter(
+      (pendingAnnouncement) => pendingAnnouncement.id != answeredAnnouncement.id
+    )
+  );
 };
 
 export const updateEventMessageMembersCountInternally = (
@@ -178,17 +191,26 @@ export const uploadMessage = (message: Message) => {
   DataStore.save(message);
 };
 
-export const uploadChatUserMessage = async (
+export const UploadPendingAnnouncements = (
   members: ChatUser[],
   announcement: Message
 ) => {
   for (const member of members) {
-    const a = await DataStore.save(
-      new ChatUserMessage({ chatUser: member, message: announcement })
+    DataStore.save(
+      new PendingAnnouncement({
+        chatUserID: member.id,
+        chatUser: member,
+        messageID: announcement.id,
+        message: announcement,
+      })
     );
-
-    console.log(a);
   }
+};
+
+export const deletePendingAnnouncement = (
+  answeredAnnouncement: PendingAnnouncement
+) => {
+  DataStore.delete(answeredAnnouncement);
 };
 
 export const updateLastMessage = async (
@@ -224,9 +246,7 @@ export const updatedMessageEventStatus = async (
 ) => {
   DataStore.save(
     Message.copyOf(message, (updatedMessage) => {
-      updatedMessage.suggestionStatus = accepted
-        ? EventStatus.accepted
-        : EventStatus.rejected;
+      updatedMessage.suggestionStatus = accepted ? "accepted" : "rejected";
     })
   );
 };

@@ -1,5 +1,5 @@
 import { DataStore, SortDirection } from "aws-amplify";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -16,10 +16,8 @@ import ContactNameLabel from "../../components/Message/ContactNameLabel";
 import Colors from "../../constants/Colors";
 import useAppContext from "../../hooks/useAppContext";
 import { ChatScreenProps as Props } from "../../navigation/NavTypes";
-import { ChatUser, Message } from "../../src/models";
+import { ChatUser, Message, PendingAnnouncement } from "../../src/models";
 import EventMessage from "../../components/Message/EventMessage/EventMessage";
-import { messageSubscription } from "../../managers/SubscriptionManager";
-import { appendMessage } from "../../managers/MessageManager";
 import DefaultContactImage from "../../components/DefaultContactImage";
 import CacheImage from "../../components/CustomPrimitives/CacheImage";
 import EventSuggestionMessage from "../../components/Message/EventSuggestionMessage/EventSuggestionMessage";
@@ -36,6 +34,8 @@ export default function ChatScreen({ navigation, route }: Props) {
     setMembers,
     messages,
     setMessages,
+    pendingAnnouncements,
+    setPendingAnnouncements,
   } = context;
 
   const chatcontextUpdated = chat?.id === route.params?.chat.id;
@@ -91,15 +91,17 @@ export default function ChatScreen({ navigation, route }: Props) {
   useEffect(() => {
     const fetchMessages = async () => {
       if (chatcontextUpdated && messages.length === 0) {
-        const _messages = await DataStore.query(
-          Message,
-          (message) => message.chatID("eq", chat.id),
-          {
-            page: 0,
-            limit: 30,
-            sort: (message) => message.createdAt(SortDirection.DESCENDING),
-          }
-        );
+        const _messages = (
+          await DataStore.query(
+            Message,
+            (message) => message.chatID("eq", chat.id),
+            {
+              page: 0,
+              limit: 30,
+              sort: (message) => message.createdAt(SortDirection.DESCENDING),
+            }
+          )
+        ).filter((message) => !message.announcementBody);
 
         setMessages(_messages);
       }
@@ -109,15 +111,40 @@ export default function ChatScreen({ navigation, route }: Props) {
   }, [chat]);
 
   /* -------------------------------------------------------------------------- */
-  /*                                Subscription                                */
+  /*                             Fetch Announcements                            */
   /* -------------------------------------------------------------------------- */
 
   useEffect(() => {
-    if (messages) {
-      const subscription = messageSubscription(context, appendMessage);
-      return () => subscription.unsubscribe();
-    }
-  }, [messages]);
+    const fetchAnnouncements = async () => {
+      if (chatcontextUpdated && pendingAnnouncements.length === 0) {
+        const _pendingAnnouncements = await DataStore.query(
+          PendingAnnouncement,
+          (pendingAnnouncement) =>
+            pendingAnnouncement.chatUserID("eq", chatUser?.id ?? ""),
+          {
+            sort: (announcement) =>
+              announcement.createdAt(SortDirection.ASCENDING),
+          }
+        );
+
+        setPendingAnnouncements(_pendingAnnouncements);
+      }
+    };
+
+    fetchAnnouncements();
+  }, [chat]);
+
+  /* -------------------------------------------------------------------------- */
+  /*                                Subscription                                */
+  /* -------------------------------------------------------------------------- */
+
+  // useEffect(() => {
+  //   DataStore.query(ChatUserMessage).then((messages) => console.log(messages));
+  //   if (messages) {
+  //     const subscription = messageSubscription(context, appendMessage);
+  //     return () => subscription.unsubscribe();
+  //   }
+  // }, [messages]);
 
   /* -------------------------------------------------------------------------- */
   /*                       Render Flatlist Item Functions                       */
@@ -169,7 +196,7 @@ export default function ChatScreen({ navigation, route }: Props) {
       keyboardVerticalOffset={-42}
       enabled
     >
-      <Announcement />
+      {pendingAnnouncements.length > 0 && <Announcement />}
       <StatusBar hidden={true} />
       <FlatList
         style={[styles.messageFlatlist]}

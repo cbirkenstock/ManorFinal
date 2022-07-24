@@ -459,11 +459,11 @@ export const schema = {
             associatedWith: "chatuserID",
           },
         },
-        messages: {
+        unreadAnnouncements: {
           name: "messages",
           isArray: true,
           type: {
-            model: "ChatUserMessage",
+            model: "PendingAnnouncement",
           },
           isRequired: false,
           attributes: [],
@@ -619,6 +619,13 @@ export const schema = {
           isRequired: false,
           attributes: [],
         },
+        isAnnouncementMessage: {
+          name: "isAnnouncementMessage",
+          isArray: false,
+          type: "Boolean",
+          isRequired: false,
+          attributes: [],
+        },
         announcementBody: {
           name: "announcementBody",
           isArray: false,
@@ -647,11 +654,11 @@ export const schema = {
           isRequired: false,
           attributes: [],
         },
-        chatUsers: {
+        unreachedMembers: {
           name: "chatUsers",
           isArray: true,
           type: {
-            model: "ChatUserMessage",
+            model: "PendingAnnouncement",
           },
           isRequired: false,
           attributes: [],
@@ -768,13 +775,20 @@ export const schema = {
         },
       ],
     },
-    ChatUserMessage: {
-      name: "ChatUserMessage",
+    PendingAnnouncement: {
+      name: "PendingAnnouncement",
       fields: {
         id: {
           name: "id",
           isArray: false,
           type: "ID",
+          isRequired: true,
+          attributes: [],
+        },
+        chatUserID: {
+          name: "chatUserID",
+          isArray: false,
+          type: "id",
           isRequired: true,
           attributes: [],
         },
@@ -791,6 +805,13 @@ export const schema = {
             targetName: "chatUserID",
           },
         },
+        messageID: {
+          name: "messageID",
+          isArray: false,
+          type: "id",
+          isRequired: true,
+          attributes: [],
+        },
         message: {
           name: "message",
           isArray: false,
@@ -804,8 +825,8 @@ export const schema = {
             targetName: "messageID",
           },
         },
-        reminderDate: {
-          name: "reminderDate",
+        remindDate: {
+          name: "remindDate",
           isArray: false,
           type: "AWSDateTime",
           isRequired: false,
@@ -829,7 +850,7 @@ export const schema = {
         },
       },
       syncable: true,
-      pluralName: "ChatUserMessages",
+      pluralName: "PendingAnnouncements",
       attributes: [
         {
           type: "model",
@@ -838,15 +859,19 @@ export const schema = {
         {
           type: "key",
           properties: {
-            name: "byChatUser",
+            name: "customByChatUser",
             fields: ["chatUserID"],
           },
         },
         {
-          type: "key",
+          type: "auth",
           properties: {
-            name: "byMessage",
-            fields: ["messageID"],
+            rules: [
+              {
+                allow: "public",
+                operations: ["create", "update", "delete", "read"],
+              },
+            ],
           },
         },
       ],
