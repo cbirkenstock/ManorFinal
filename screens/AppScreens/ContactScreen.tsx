@@ -1,4 +1,4 @@
-import { DataStore } from "aws-amplify";
+import { DataStore, SortDirection } from "aws-amplify";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -18,7 +18,19 @@ import { Chat, ChatUser } from "../../src/models";
 import { animateTwoSequence } from "../../managers/AnimationManager";
 import { dropDown } from "../../constants/Dropdown";
 import DropdownItem, { DropdownItemProps } from "../../components/DropdownItem";
-import { contactSubscription } from "../../managers/SubscriptionManager";
+import {
+  // getChatSubscription,
+  getContactSubscription,
+} from "../../managers/SubscriptionManager";
+import {
+  attachNotificationHandler,
+  fetchNotificationChat,
+  getPushNotificationPermissions,
+  setNotificationHandler,
+  setUpAndroidNotificationChanel,
+  updateUserExpoToken,
+} from "../../managers/NotificationManager";
+import * as Notifications from "expo-notifications";
 
 export default function ContactScreen({ route, navigation }: Props) {
   const context = useAuthContext();
@@ -31,14 +43,35 @@ export default function ContactScreen({ route, navigation }: Props) {
   /*                                 Fetch Chats                                */
   /* -------------------------------------------------------------------------- */
 
+  const sortChats = (chat1: Chat, chat2: Chat) => {
+    if (chat1.updatedAt && chat2.updatedAt) {
+      if (chat1.updatedAt > chat2.updatedAt) {
+        return -1;
+      } else {
+        return 1;
+      }
+    } else {
+      return 0;
+    }
+  };
+
   useEffect(() => {
     const fetchChats = async () => {
       if (!chats) {
         const _chats = (
-          await DataStore.query(ChatUser, (chatuser) =>
-            chatuser.userID("eq", user?.id ?? "").isOfActiveChat("eq", true)
+          await DataStore.query(
+            ChatUser,
+            (chatUser) =>
+              chatUser.userID("eq", user?.id ?? "").isOfActiveChat("eq", true),
+            {
+              sort: (chat) => {
+                return chat.updatedAt(SortDirection.ASCENDING);
+              },
+            }
           )
-        ).map((chatUser) => chatUser.chat);
+        )
+          .map((chatUser) => chatUser.chat)
+          .sort(sortChats);
 
         //adds a fake contact if there are none so that at least the header is rendered
         if (_chats.length === 0) {
@@ -56,13 +89,65 @@ export default function ContactScreen({ route, navigation }: Props) {
   }, []);
 
   /* -------------------------------------------------------------------------- */
+  /*                             Notification Set Up                            */
+  /* -------------------------------------------------------------------------- */
+
+  /* ---------------------- Notification Response Handler --------------------- */
+
+  const notificationRespondedTo = async (
+    response: Notifications.NotificationResponse
+  ) => {
+    const results = await fetchNotificationChat(response, user ?? undefined);
+
+    if (results?.chat && results.chatUser) {
+      // @ts-ignore
+      navigation.navigate("ChatNav", {
+        screen: "ChatScreen",
+        params: {
+          chat: results.chat,
+          chatUser: results.chatUser,
+          members: results.members,
+          displayUser: results.members,
+          chats: chats,
+          setChats: setChats,
+        },
+      });
+    }
+  };
+
+  /* -------------------------- Set Up Notifications -------------------------- */
+
+  useEffect(() => {
+    const setUpNotifications = async () => {
+      if (user) {
+        setUpAndroidNotificationChanel();
+
+        const notificationStatus = await getPushNotificationPermissions(user);
+
+        if (notificationStatus === "granted") {
+          updateUserExpoToken(user);
+          setNotificationHandler();
+          attachNotificationHandler(notificationRespondedTo);
+        }
+      }
+    };
+
+    setUpNotifications();
+  }, []);
+
+  /* -------------------------------------------------------------------------- */
   /*                                Subscriptions                               */
   /* -------------------------------------------------------------------------- */
 
   useEffect(() => {
-    const subscription = contactSubscription(context, chats ?? [], setChats);
-    //const a = testSubscription();
-    return () => subscription.unsubscribe();
+    const contactSubscription = getContactSubscription(
+      context,
+      chats ?? [],
+      setChats
+    );
+    return () => {
+      contactSubscription.unsubscribe();
+    };
   }, [chats]);
 
   /* -------------------------------------------------------------------------- */
@@ -90,7 +175,11 @@ export default function ContactScreen({ route, navigation }: Props) {
     const HangingChat = () => {
       return (
         <View style={styles.hangingChatContainer}>
-          <Contact contact={chats![index]} />
+          <Contact
+            contact={chats![index]}
+            chats={chats ?? []}
+            setChats={setChats}
+          />
         </View>
       );
     };
@@ -98,8 +187,16 @@ export default function ContactScreen({ route, navigation }: Props) {
     const ChatPair = () => {
       return (
         <View style={styles.chatPairContainer}>
-          <Contact contact={chats![index]} />
-          <Contact contact={chats![index + 1]} />
+          <Contact
+            contact={chats![index]}
+            chats={chats ?? []}
+            setChats={setChats}
+          />
+          <Contact
+            contact={chats![index + 1]}
+            chats={chats ?? []}
+            setChats={setChats}
+          />
         </View>
       );
     };
@@ -120,6 +217,8 @@ export default function ContactScreen({ route, navigation }: Props) {
         tab={item}
         exitViewHeightAnim={exitViewHeightAnim}
         exitViewOpacityAnim={exitViewOpacityAnim}
+        chats={chats ?? []}
+        setChats={setChats}
       />
     );
   };

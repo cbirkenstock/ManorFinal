@@ -42,7 +42,7 @@ export default function SignedImage(props: SignedImageProps) {
     return () => {
       unmounted = true;
     };
-  }, []);
+  }, [source]);
 
   /* -------------------------------------------------------------------------- */
   /*                                   Render                                   */

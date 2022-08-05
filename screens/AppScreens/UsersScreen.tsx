@@ -18,13 +18,22 @@ import { Chat, ChatUser, User } from "../../src/models";
 import SearchedContact from "../../components/SearchedContact/SearchedContact";
 import SingleNameContact from "../../components/SingleNameContact";
 import {
+  checkForPreExistingDMChat,
   createCoordinationChat,
+  createDMChat,
   createGroupChat,
   fetchExistingCoordinationChat,
 } from "../../managers/ChatManager";
 import useAuthContext from "../../hooks/useAuthContext";
 import useAppContext from "../../hooks/useAppContext";
 import { addMembers } from "../../managers/ChatManager";
+import { requestCameraPermissionsAsync } from "expo-image-picker";
+import {
+  fetchMediaBlob,
+  PickImageRequestEnum,
+  pickMedia,
+  uploadMedia,
+} from "../../managers/MediaManager";
 
 export enum ChatEnum {
   direct,
@@ -52,7 +61,7 @@ export default function UsersScreen({ route, navigation }: Props) {
   >();
   const [chosenUsers, setChosenUsers] = useState<User[] | undefined>();
 
-  const isEvent = route.params?.chatType === ChatEnum.event;
+  const isCoordination = route.params?.chatType === ChatEnum.coordination;
 
   /* -------------------------------------------------------------------------- */
   /*                               Sub Components                               */
@@ -90,6 +99,59 @@ export default function UsersScreen({ route, navigation }: Props) {
   /*                           Set Navigation Options                           */
   /* -------------------------------------------------------------------------- */
 
+  const HeaderRightButton = () => {
+    switch (route.params?.chatType) {
+      case ChatEnum.group:
+        return (
+          <CreateButton
+            onPress={async () => {
+              const results = await createGroupChat(
+                isCoreChat,
+                false,
+                title,
+                chosenUsers,
+                chatImageUrl,
+                user ?? undefined
+              );
+              if (results) {
+                navigation.goBack();
+                // @ts-ignore
+                navigation.navigate("ChatNav", {
+                  screen: "ChatScreen",
+                  params: {
+                    chat: results.chat,
+                    chatUser: results.chatUser,
+                    members: results.members,
+                  },
+                });
+              }
+            }}
+          />
+        );
+      case ChatEnum.addMembers:
+        return (
+          <CreateButton
+            onPress={async () => {
+              const newChatUsers = await addMembers(
+                chat ?? undefined,
+                undefined,
+                chosenUsers
+              );
+              // @ts-ignore
+              navigation.navigate("ChatNav", {
+                screen: "ChatScreen",
+                params: {
+                  chat: chat,
+                  chatUser: chatUser,
+                  members: [...(newChatUsers ?? []), ...members],
+                },
+              });
+            }}
+          />
+        );
+    }
+  };
+
   useEffect(() => {
     navigation.setOptions({});
     switch (route.params?.chatType) {
@@ -124,11 +186,6 @@ export default function UsersScreen({ route, navigation }: Props) {
           ),
         });
         break;
-      case ChatEnum.coordination:
-        navigation.setOptions({
-          headerRight: () => <CreateButton onPress={() => {}} />,
-        });
-        break;
       case ChatEnum.addMembers:
         navigation.setOptions({
           headerRight: () => (
@@ -153,6 +210,11 @@ export default function UsersScreen({ route, navigation }: Props) {
           ),
         });
         break;
+
+      case ChatEnum.coordination:
+        navigation.setOptions({
+          headerShown: false,
+        });
     }
   }, [title, chosenUsers, members, isCoreChat, chatImageUrl]);
 
@@ -175,6 +237,8 @@ export default function UsersScreen({ route, navigation }: Props) {
         chatUser: _chatUser,
         members: undefined,
         displayUser: undefined,
+        chats: route.params?.chats,
+        setChats: route.params?.setChats,
       });
     } else {
       const results = await createCoordinationChat(
@@ -195,9 +259,71 @@ export default function UsersScreen({ route, navigation }: Props) {
             chatUser: _chatUser,
             members: newMembers,
             displayUser: undefined,
+            chats: route.params?.chats,
+            setChats: route.params?.setChats,
           });
         }
       }
+    }
+  };
+
+  const goToDM = async (otherUser: User) => {
+    if (user) {
+      const existingChat = await checkForPreExistingDMChat(user, otherUser);
+
+      if (existingChat) {
+        const _chatUser = (
+          await DataStore.query(ChatUser, (chatUser) =>
+            chatUser.chatID("eq", existingChat.id).userID("eq", user.id)
+          )
+        )[0];
+
+        navigation.goBack();
+        // @ts-ignore
+        navigation.navigate("ChatNav", {
+          screen: "ChatScreen",
+          params: {
+            chat: existingChat,
+            chatUser: _chatUser,
+            displayUser: otherUser,
+            members: undefined,
+            chats: route.params?.chats,
+            setChats: route.params?.setChats,
+          },
+        });
+      } else {
+        const results = await createDMChat(user, otherUser);
+
+        if (results) {
+          const { chat, chatUser, members } = results!;
+
+          navigation.goBack();
+          // @ts-ignore
+          navigation.navigate("ChatNav", {
+            screen: "ChatScreen",
+            params: {
+              chat: chat,
+              chatUser: chatUser,
+              displayUser: otherUser,
+              members: members,
+              chats: route.params?.chats,
+              setChats: route.params?.setChats,
+            },
+          });
+        }
+      }
+    }
+  };
+
+  const selectGroupChatImage = async () => {
+    requestCameraPermissionsAsync();
+
+    const imageData = await pickMedia(PickImageRequestEnum.setChatImage);
+
+    if (imageData) {
+      const blob = await fetchMediaBlob(imageData.uri);
+      const key = await uploadMedia(imageData.type, blob);
+      setChatImageUrl(key);
     }
   };
 
@@ -286,7 +412,7 @@ export default function UsersScreen({ route, navigation }: Props) {
       }
     };
 
-    isEvent ? getSearchedCoreChats() : getSearchedUsers();
+    isCoordination ? getSearchedCoreChats() : getSearchedUsers();
   }, [searchValue]);
 
   /* -------------------------------------------------------------------------- */
@@ -305,8 +431,13 @@ export default function UsersScreen({ route, navigation }: Props) {
     switch (route.params?.chatType) {
       case ChatEnum.group:
         updateChosenUsers(user);
+        break;
       case ChatEnum.addMembers:
         updateChosenUsers(user);
+        break;
+      case ChatEnum.direct:
+        goToDM(user);
+        break;
     }
   };
 
@@ -348,9 +479,32 @@ export default function UsersScreen({ route, navigation }: Props) {
 
   return (
     <View style={styles.container}>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          marginTop: 10,
+        }}
+      >
+        <Text
+          style={{
+            color: "white",
+            fontSize: 35,
+            fontWeight: "700",
+          }}
+        >
+          {route.params?.chatType === ChatEnum.group
+            ? "Create Group"
+            : route.params?.chatType === ChatEnum.coordination
+            ? "New Group Event"
+            : "New DM"}
+        </Text>
+        {HeaderRightButton()}
+      </View>
       {route.params?.chatType === ChatEnum.group && (
         <TextInput
           style={styles.searchBar}
+          keyboardAppearance="dark"
           placeholder={"Title..."}
           placeholderTextColor={Colors.manorDarkWhite}
           onChangeText={(value) => setTitle(value)}
@@ -358,6 +512,7 @@ export default function UsersScreen({ route, navigation }: Props) {
       )}
       <TextInput
         style={styles.searchBar}
+        keyboardAppearance="dark"
         placeholder={"Search..."}
         placeholderTextColor={Colors.manorDarkWhite}
         onChangeText={(_searchValue) => {
@@ -373,6 +528,7 @@ export default function UsersScreen({ route, navigation }: Props) {
               backgroundColor: isCoreChat
                 ? Colors.manorGreen
                 : Colors.manorBlueGray,
+              flex: 0.4,
             }}
             onPress={() => setIsCoreChat(!isCoreChat)}
           />
@@ -382,8 +538,11 @@ export default function UsersScreen({ route, navigation }: Props) {
               backgroundColor: chatImageUrl
                 ? Colors.manorGreen
                 : Colors.manorBlueGray,
+              flex: 0.59,
             }}
-            onPress={() => {}}
+            onPress={() => {
+              selectGroupChatImage();
+            }}
           />
         </View>
       )}
@@ -408,8 +567,12 @@ export default function UsersScreen({ route, navigation }: Props) {
         style={styles.searchedNamesFlatlist}
         numColumns={3}
         keyboardShouldPersistTaps={"handled"}
-        data={isEvent ? filteredCoreChats : filteredUsers}
-        renderItem={isEvent ? renderSearchedCoreChat : renderSearchedUser}
+        //@ts-ignore
+        data={isCoordination ? filteredCoreChats : filteredUsers}
+        //@ts-ignore
+        renderItem={
+          isCoordination ? renderSearchedCoreChat : renderSearchedUser
+        }
         showsVerticalScrollIndicator={false}
       />
     </View>
@@ -419,7 +582,7 @@ export default function UsersScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: "3%",
+    padding: "4%",
     backgroundColor: Colors.manorBackgroundGray,
   },
 
@@ -427,7 +590,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "stretch",
-    marginVertical: "2%",
+    marginTop: 10,
   },
 
   chatOptionButton: {
@@ -448,17 +611,18 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: "2%",
     backgroundColor: Colors.manorBlueGray,
+    marginTop: 10,
   },
 
   searchedNamesFlatlist: {
-    marginVertical: 5,
+    marginTop: 20,
+    marginBottom: 5,
   },
 
   searchBar: {
     height: 37.5,
-    marginTop: 5,
-    marginBottom: 10,
-    fontSize: 20,
+    marginTop: 20,
+    fontSize: 22,
     color: "white",
     borderBottomWidth: 2,
     borderBottomColor: Colors.manorPurple,
@@ -466,18 +630,16 @@ const styles = StyleSheet.create({
 
   createButtonContainer: {
     backgroundColor: Colors.manorBlueGray,
-    height: 45,
-    marginTop: 15,
     borderRadius: 50,
-    width: 70,
-    marginRight: "7%",
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 15,
+    paddingVertical: 12,
   },
 
   createButtonText: {
     color: Colors.manorPurple,
-    fontWeight: "500",
+    fontWeight: "600",
     fontSize: 16,
   },
 });

@@ -43,7 +43,7 @@ export default function CacheImage(props: CachImageProps) {
     return () => {
       unmounted = true;
     };
-  }, []);
+  }, [source]);
 
   /*
     Checks if image is in cache and if it is returns info and error=false

@@ -1,4 +1,4 @@
-import { User } from "../../src/models";
+import { Chat, User } from "../../src/models";
 
 export interface AuthInitialStateProps {
   loading: boolean;
@@ -6,16 +6,17 @@ export interface AuthInitialStateProps {
   signUp: (
     name: string,
     phone: string,
-    password: string
+    password: string,
+    profileImageUrl: string
   ) => Promise<void> | PromiseConstructor;
   confirmSignUp: (
     phone: string,
     code: string
-  ) => Promise<void> | PromiseConstructor;
+  ) => Promise<any> | PromiseConstructor;
   signIn: (
     phone: string,
     password: string
-  ) => Promise<void> | PromiseConstructor;
+  ) => Promise<any> | PromiseConstructor;
   signOut: () => Promise<void> | PromiseConstructor;
   setUser: (user: User) => Promise<void> | PromiseConstructor;
 }

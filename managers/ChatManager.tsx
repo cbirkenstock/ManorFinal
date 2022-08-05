@@ -3,23 +3,15 @@ import { ChatUser } from "../src/models";
 import { Chat, User } from "../src/models";
 import { createChatUsers } from "./ChatUserManager";
 
-export const appendChat = (
-  newChat: Chat,
-  chats: Chat[],
-  setChats: (value: React.SetStateAction<Chat[] | undefined>) => void
-) => {
-  setChats([
+export const prependChat = (newChat: Chat, chats: Chat[]) => {
+  return [
     newChat,
     ...chats.filter((chat) => chat.title !== "Header_Trojan_Horse"),
-  ]);
+  ];
 };
 
-export const removeChat = (
-  removedChat: Chat,
-  chats: Chat[],
-  setChats: (value: React.SetStateAction<Chat[] | undefined>) => void
-) => {
-  setChats(chats.filter((chat) => chat.id !== removedChat.id));
+export const removeChat = (removedChat: Chat, chats: Chat[]) => {
+  return chats.filter((chat) => chat.id !== removedChat.id);
 };
 
 /* -------------------------------------------------------------------------- */
@@ -253,5 +245,27 @@ export const addMembers = async (
         return newChatUsers;
       }
     }
+  }
+};
+
+/* -------------------------------------------------------------------------- */
+/*                                Reorder Chats                               */
+/* -------------------------------------------------------------------------- */
+
+export const reOrderChats = (
+  updatedChat: Chat | undefined,
+  chats: Chat[] | undefined,
+  newMessage?: string
+) => {
+  if (updatedChat && chats) {
+    let newOrderChats = chats.filter((chat) => chat.id !== updatedChat?.id);
+
+    if (newMessage) {
+      updatedChat = { ...updatedChat, lastMessage: newMessage };
+    }
+
+    newOrderChats = [updatedChat, ...newOrderChats];
+
+    return newOrderChats;
   }
 };

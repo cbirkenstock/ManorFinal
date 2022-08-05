@@ -9,6 +9,7 @@ interface DialogProps extends ModalProps {
   height?: string | number;
   marginTop?: string | number;
   title?: string;
+  titleAlign?: "center" | "left";
   helperText?: string;
   onClose: () => void;
   children?: React.ReactNode;
@@ -19,10 +20,11 @@ export default function Dialog(props: DialogProps) {
     height,
     width = "70%",
     title,
+    titleAlign = "left",
     helperText,
     children,
     visible,
-    marginTop = "45%",
+    marginTop = "25%",
     onClose,
     ...rest
   } = props;
@@ -46,8 +48,14 @@ export default function Dialog(props: DialogProps) {
               },
             ]}
           >
-            <Text style={styles.title}>{title}</Text>
-            {helperText && <Text style={styles.helperText}>{helperText}</Text>}
+            <Text style={[styles.title, { textAlign: titleAlign }]}>
+              {title}
+            </Text>
+            {helperText && (
+              <Text style={[styles.helperText, { textAlign: titleAlign }]}>
+                {helperText}
+              </Text>
+            )}
             {children}
           </View>
         </Pressable>

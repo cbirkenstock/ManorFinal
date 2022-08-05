@@ -53,6 +53,7 @@ export default function MessageAllForm(props: MessageAllFormProps) {
         const newMessage = new Message({
           messageBody: messageToAll,
           chatuserID: DMChatUser?.id,
+          chatID: DMChat.id,
         });
 
         uploadMessage(newMessage);
@@ -76,6 +77,7 @@ export default function MessageAllForm(props: MessageAllFormProps) {
     <>
       <TextInput
         style={styles.messageInput}
+        keyboardAppearance="dark"
         autoFocus={true}
         placeholder={"Message"}
         placeholderTextColor={Colors.manorDarkWhite}

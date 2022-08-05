@@ -5,10 +5,9 @@ export const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "flex-end",
     minHeight: 37.5,
     marginBottom: 47.5,
-    width: "100%",
     paddingHorizontal: "1%",
   },
 
@@ -27,7 +26,7 @@ export const styles = StyleSheet.create({
   TouchableOpacity: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "transparent",
+
     paddingHorizontal: 10,
   },
 });

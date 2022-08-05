@@ -72,7 +72,7 @@ export default function EventSuggestionForm(props: EventSuggestionFormProps) {
           borderWidth: 2,
           borderColor: Colors.manorPurple,
           borderRadius: 10,
-          marginBottom: 20,
+          marginBottom: 10,
           height: 80,
         }}
       >
@@ -84,6 +84,7 @@ export default function EventSuggestionForm(props: EventSuggestionFormProps) {
             paddingHorizontal: 7,
             paddingVertical: 2,
           }}
+          keyboardAppearance="dark"
           multiline={true}
           placeholder={"Event Description..."}
           placeholderTextColor={"#E1D9D1"}

@@ -43,6 +43,7 @@ export default function SectionInput(props: SectionInputProps) {
         <TextInput
           placeholderTextColor={editable ? "white" : Colors.manorDarkWhite}
           style={styles.input}
+          keyboardAppearance="dark"
           placeholder={info}
           editable={editable}
           maxLength={numericKeyboard ? 4 : 30}

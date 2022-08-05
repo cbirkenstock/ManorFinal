@@ -19,7 +19,7 @@
       "function": {
         "ManorChatApp12PostConfirmation": {
           "deploymentBucketName": "amplify-manorchatapp12-staging-30821-deployment",
-          "s3Key": "amplify-builds/ManorChatApp12PostConfirmation-6f63493266614b493730-build.zip"
+          "s3Key": "amplify-builds/ManorChatApp12PostConfirmation-4c6463475070472f5467-build.zip"
         }
       }
     }

@@ -47,7 +47,6 @@ interface ChatAction {
   type: AppActionCase.setChat;
   payload: Chat | null;
 }
-
 interface MembersAction {
   type: AppActionCase.setMembers;
   payload: ChatUser[];

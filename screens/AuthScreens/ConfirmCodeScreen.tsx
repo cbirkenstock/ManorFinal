@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import useAuth from "../../hooks/useAuthContext";
+import { uploadMedia } from "../../managers/MediaManager";
 import { ConfirmCodeScreenProps as Props } from "../../navigation/NavTypes";
 
 export default function SignupScreen({ route, navigation }: Props) {
@@ -22,8 +23,14 @@ export default function SignupScreen({ route, navigation }: Props) {
 
   const openHomePage = async () => {
     if (phone && code && password) {
-      confirmSignUp(phone, code);
-      signIn(phone, password);
+      const confirmResult = await confirmSignUp(phone, code);
+
+      if (confirmResult === "SUCCESS") {
+        const signInResult = await signIn(phone, password);
+        if (signInResult === "SUCCESS") {
+          uploadMedia("image", route.params?.profileImageBlob);
+        }
+      }
     }
   };
 
@@ -35,17 +42,12 @@ export default function SignupScreen({ route, navigation }: Props) {
     >
       <SafeAreaView style={{ flex: 1 }}>
         <View style={loginStyles.ManorView}>
-          {/* <Image
-            style={loginStyles.logo}
-            source={{
-              uri: "https://manorchatapptestingbucketpublic.s3.amazonaws.com/GradientManorLogo.png",
-            }}
-          /> */}
           <Text style={loginStyles.text}>Manor</Text>
         </View>
         <View style={loginStyles.buttonContainer}>
           <TextInput
             style={loginStyles.input}
+            keyboardAppearance="dark"
             placeholder="Confirmation Code..."
             placeholderTextColor="#E1D9D1"
             onChangeText={(value) => {

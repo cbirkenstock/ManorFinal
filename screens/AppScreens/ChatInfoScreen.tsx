@@ -27,6 +27,7 @@ import {
 import { ChatEnum } from "./UsersScreen";
 import EventCard from "../../components/Cards/EventCard/EventCard";
 import { FlatList } from "react-native-gesture-handler";
+import CacheImage from "../../components/CustomPrimitives/CacheImage";
 
 export type ChatInfoDataType = {
   title: string | undefined;
@@ -54,7 +55,11 @@ export default function ProfileScreen({ navigation, route }: Props) {
   /* ---------------------------- Go To Add Members --------------------------- */
 
   const goToAddMembers = () => {
-    navigation.navigate("UsersScreen", { chatType: ChatEnum.addMembers });
+    navigation.navigate("UsersScreen", {
+      chatType: ChatEnum.addMembers,
+      chats: route.params?.chats,
+      setChats: route.params.setChats,
+    });
   };
 
   /* -------------------------- Toggle Notifications -------------------------- */
@@ -82,7 +87,11 @@ export default function ProfileScreen({ navigation, route }: Props) {
   /* -------------------------- Go To Add Group Event ------------------------- */
 
   const goToAddGroupEvent = () => {
-    navigation.navigate("UsersScreen", { chatType: ChatEnum.event });
+    navigation.navigate("UsersScreen", {
+      chatType: ChatEnum.coordination,
+      chats: route.params?.chats,
+      setChats: route.params?.setChats,
+    });
   };
 
   /* -------------------------------- Go To DM -------------------------------- */
@@ -103,6 +112,8 @@ export default function ProfileScreen({ navigation, route }: Props) {
           chatUser: _chatUser,
           displayUser: member.user,
           members: undefined,
+          chats: route.params?.chats,
+          setChats: route.params.setChats,
         });
       } else {
         const results = await createDMChat(user, member.user);
@@ -115,6 +126,8 @@ export default function ProfileScreen({ navigation, route }: Props) {
             chatUser: chatUser,
             displayUser: member.user,
             members: members,
+            chats: route.params?.chats,
+            setChats: route.params.setChats,
           });
         }
       }
@@ -218,8 +231,9 @@ export default function ProfileScreen({ navigation, route }: Props) {
         return {
           caption: member.nickname ?? "",
           startAdornment: (
-            <SignedImage
+            <CacheImage
               source={member.profileImageUrl}
+              cacheKey={member.profileImageUrl}
               style={{
                 height: 40,
                 width: 40,
@@ -352,6 +366,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
           <TextInput
             editable={chat ? false : true}
             style={styles.title}
+            keyboardAppearance="dark"
             placeholder={chat?.title ?? displayUser?.name}
             placeholderTextColor={"white"}
             multiline={true}

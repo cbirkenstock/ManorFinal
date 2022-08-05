@@ -26,7 +26,7 @@ type PendingAnnouncementMetaData = {
 
 export declare class Chat {
   readonly id: string;
-  readonly title?: string;
+  readonly title?: string | null;
   readonly chatImageUrl?: string | null;
   readonly breadCrumb?: string | null;
   readonly displayUserName?: string | null;
@@ -84,14 +84,15 @@ export declare class User {
 
 export declare class ChatUser {
   readonly id: string;
-  readonly userID: string;
   readonly user: User;
-  readonly chatID: string;
+  readonly userID: string;
   readonly chat: Chat;
+  readonly chatID: string;
   readonly isOfActiveChat: boolean;
   readonly notificationsEnabled: boolean;
   readonly nickname?: string | null;
   readonly hasUnreadMessage?: boolean | null;
+  readonly hasUnreadAnnouncement?: boolean | null;
   readonly unreadMessagesCount?: number | null;
   readonly isAdmin?: boolean | null;
   readonly writtenMessages?: (Message | null)[] | null;
@@ -118,9 +119,9 @@ export declare class Message {
   readonly eventDateTime?: string | null;
   readonly eventDescription?: string | null;
   readonly eventLocation?: string | null;
-  readonly suggestionStatus?: String | null;
-  readonly eventCapacity?: Int | null;
-  readonly eventMembersCount?: Int | null;
+  readonly eventCapacity?: number | null;
+  readonly eventMembersCount?: number | null;
+  readonly suggestionStatus?: string | null;
   readonly messageBody?: string | null;
   readonly isAnnouncementMessage?: boolean | null;
   readonly announcementBody?: string | null;
@@ -149,9 +150,8 @@ export declare class Message {
 
 export declare class PendingAnnouncement {
   readonly id: string;
-  readonly chatUserID: string;
   readonly chatUser: ChatUser;
-  readonly messageID: string;
+  readonly chatUserID: string;
   readonly message: Message;
   readonly remindDate?: string | null;
   readonly createdAt?: string | null;

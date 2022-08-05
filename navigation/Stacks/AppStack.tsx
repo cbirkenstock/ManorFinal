@@ -9,7 +9,13 @@ import GoogleFormsScreen from "../../screens/AppScreens/GoogleFormsScreen";
 import GoogleMapsScreen from "../../screens/AppScreens/GoogleMapsScreen";
 import Colors from "../../constants/Colors";
 import { AppProvider } from "../Providers/AppProvider";
-import { Chat, ChatUser, Message, User } from "../../src/models";
+import {
+  Chat,
+  ChatUser,
+  Message,
+  PendingAnnouncement,
+  User,
+} from "../../src/models";
 import { NavigatorScreenParams } from "@react-navigation/native";
 import {
   createStackNavigator,
@@ -28,16 +34,24 @@ export type InnerAppStackParamList = {
     chatUser: ChatUser;
     members: ChatUser[] | undefined;
     displayUser: User | undefined;
+    chats: Chat[];
+    setChats: (value: React.SetStateAction<Chat[] | undefined>) => void;
   };
   ChatInfoScreen: {
     displayUser: User | undefined;
     eventMessages: Message[] | undefined;
+    chats: Chat[];
+    setChats: (value: React.SetStateAction<Chat[] | undefined>) => void;
   };
-  UsersScreen: { chatType: ChatEnum };
+  UsersScreen: {
+    chatType: ChatEnum;
+    chats: Chat[];
+    setChats: (value: React.SetStateAction<Chat[] | undefined>) => void;
+  };
   GoogleMapsScreen: {
     link: string | undefined;
   };
-  GoogleFormsScreen: { announcementMessage: Message };
+  GoogleFormsScreen: { pendingAnnouncement: PendingAnnouncement };
   UnreachedMembersScreen: { announcementMessage: Message };
 };
 
@@ -75,14 +89,25 @@ export const AppStack = () => {
             name="UsersScreen"
             component={UsersScreen}
             options={{
-              headerLeft: () => null,
-              headerTitle: "",
-              headerBackTitleVisible: false,
-              headerTintColor: Colors.manorPurple,
-              headerStyle: {
-                backgroundColor: Colors.manorBackgroundGray,
-              },
-              headerShadowVisible: false,
+              headerShown: false,
+              // headerLeft: () => null,
+              // headerTitle: () => (
+              //   <Text
+              //     style={{
+              //       color: "white",
+              //       fontSize: 35,
+              //       fontWeight: "700",
+              //     }}
+              //   >
+              //     Create Group
+              //   </Text>
+              // ),
+              // headerBackTitleVisible: false,
+              // headerTintColor: Colors.manorPurple,
+              // headerStyle: {
+              //   backgroundColor: Colors.manorBackgroundGray,
+              // },
+              // headerShadowVisible: false,
               ...TransitionPresets.ModalTransition,
             }}
           />

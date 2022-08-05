@@ -4,7 +4,6 @@ const ddb = new aws.DynamoDB();
 const tableName = process.env.USERTABLE;
 
 exports.handler = async (event) => {
-  // event event.request.userAttributes.(sub, email, )
   // insert code to be executed by your lambda trigger
   //save new user to dynamoDB
 
@@ -34,6 +33,9 @@ exports.handler = async (event) => {
     createdAt: { S: now.toISOString() },
     name: { S: event.request.userAttributes.name },
     phoneNumber: { S: awsPhone },
+    profileImageUrl: {
+      S: event.request.userAttributes["custom:profileImageUrl"],
+    },
   };
 
   const params = {

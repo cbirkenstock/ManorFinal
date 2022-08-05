@@ -3,7 +3,6 @@ import Colors from "../../../constants/Colors";
 
 export const styles = StyleSheet.create({
   container: {
-    marginRight: 5,
     marginTop: 20,
     alignSelf: "flex-start",
   },

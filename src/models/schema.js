@@ -363,13 +363,6 @@ export const schema = {
           isRequired: true,
           attributes: [],
         },
-        userID: {
-          name: "userID",
-          isArray: false,
-          type: "id",
-          isRequired: true,
-          attributes: [],
-        },
         user: {
           name: "user",
           isArray: false,
@@ -383,11 +376,11 @@ export const schema = {
             targetName: "userID",
           },
         },
-        chatID: {
-          name: "chatID",
+        userID: {
+          name: "userID",
           isArray: false,
-          type: "id",
-          isRequired: true,
+          type: "String",
+          isRequired: false,
           attributes: [],
         },
         chat: {
@@ -402,6 +395,13 @@ export const schema = {
             connectionType: "BELONGS_TO",
             targetName: "chatID",
           },
+        },
+        chatID: {
+          name: "chatID",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
         },
         isOfActiveChat: {
           name: "isOfActiveChat",
@@ -426,6 +426,13 @@ export const schema = {
         },
         hasUnreadMessage: {
           name: "hasUnreadMessage",
+          isArray: false,
+          type: "Boolean",
+          isRequired: false,
+          attributes: [],
+        },
+        hasUnreadAnnouncement: {
+          name: "hasUnreadAnnouncement",
           isArray: false,
           type: "Boolean",
           isRequired: false,
@@ -460,7 +467,7 @@ export const schema = {
           },
         },
         unreadAnnouncements: {
-          name: "messages",
+          name: "unreadAnnouncements",
           isArray: true,
           type: {
             model: "PendingAnnouncement",
@@ -562,7 +569,7 @@ export const schema = {
           isRequired: false,
           attributes: [],
         },
-        eventTitel: {
+        eventTitle: {
           name: "eventTitle",
           isArray: false,
           type: "String",
@@ -611,7 +618,6 @@ export const schema = {
           isRequired: false,
           attributes: [],
         },
-
         messageBody: {
           name: "messageBody",
           isArray: false,
@@ -655,7 +661,7 @@ export const schema = {
           attributes: [],
         },
         unreachedMembers: {
-          name: "chatUsers",
+          name: "unreachedMembers",
           isArray: true,
           type: {
             model: "PendingAnnouncement",
@@ -785,13 +791,6 @@ export const schema = {
           isRequired: true,
           attributes: [],
         },
-        chatUserID: {
-          name: "chatUserID",
-          isArray: false,
-          type: "id",
-          isRequired: true,
-          attributes: [],
-        },
         chatUser: {
           name: "chatUser",
           isArray: false,
@@ -805,11 +804,11 @@ export const schema = {
             targetName: "chatUserID",
           },
         },
-        messageID: {
-          name: "messageID",
+        chatUserID: {
+          name: "chatUserID",
           isArray: false,
-          type: "id",
-          isRequired: true,
+          type: "String",
+          isRequired: false,
           attributes: [],
         },
         message: {
@@ -879,5 +878,5 @@ export const schema = {
   },
   enums: {},
   nonModels: {},
-  version: "f27dcfb699cf0b9d0f06f20b3376c619",
+  version: "5f410f22626370a9a32bd6afb4f2561b",
 };

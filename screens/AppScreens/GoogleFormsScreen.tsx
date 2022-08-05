@@ -20,8 +20,8 @@ export default function WebModalScreen({
   const checkIfCompleted = (link: string) => {
     const linkArray = link.split("/");
     if (linkArray.includes("formResponse") && !isDeleted) {
-      removeAnnouncement(context, route.params?.announcement);
-      deletePendingAnnouncement(route.params?.announcement);
+      removeAnnouncement(context, route.params?.pendingAnnouncement);
+      deletePendingAnnouncement(route.params?.pendingAnnouncement);
       setIsDeleted(true);
       navigation.goBack();
     }
@@ -30,7 +30,7 @@ export default function WebModalScreen({
   return (
     <WebView
       style={styles.container}
-      source={{ uri: route.params?.announcement.link! }}
+      source={{ uri: route.params?.pendingAnnouncement.message.link! }}
       onNavigationStateChange={(state) => {
         checkIfCompleted(state.url);
       }}

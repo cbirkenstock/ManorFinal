@@ -40,7 +40,7 @@ export const styles = StyleSheet.create({
 
   messagePreviewText: {
     color: Colors.manorDarkWhite,
-    fontSize: 20,
+    fontSize: 18,
     marginHorizontal: 3,
   },
 });

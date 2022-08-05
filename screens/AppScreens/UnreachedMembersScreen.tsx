@@ -1,7 +1,6 @@
 import "react-native-gesture-handler";
 import React, { useState, useEffect } from "react";
 import { StyleSheet, Text, View, FlatList, Pressable } from "react-native";
-import { Colors } from "react-native/Libraries/NewAppScreen";
 import SectionButton from "../../components/SectionButton";
 import { DataStore } from "aws-amplify";
 import { PendingAnnouncement, User } from "../../src/models";
@@ -9,6 +8,7 @@ import { UnreachedMembersScreenProps } from "../../navigation/NavTypes";
 import SignedImage from "../../components/CustomPrimitives/SignedImage";
 import Dialog from "../../components/Dialog";
 import MessageAllForm from "../../components/Dialog/DialogForms/MessageAllForm/MessageAllForm";
+import Colors from "../../constants/Colors";
 
 export default function UnreachedMembersScreen({
   route,

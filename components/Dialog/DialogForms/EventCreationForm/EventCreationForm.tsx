@@ -150,6 +150,7 @@ export default function EventCreationForm() {
       <View style={styles.descriptionView}>
         <TextInput
           style={styles.descriptionTextInput}
+          keyboardAppearance="dark"
           multiline={true}
           placeholder={"Event Description..."}
           placeholderTextColor={"#E1D9D1"}

@@ -1,4 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
+import { DataStore } from "aws-amplify";
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Animated } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
@@ -6,6 +7,9 @@ import useAppContext from "../../hooks/useAppContext";
 import { animate } from "../../managers/AnimationManager";
 import { deletePendingAnnouncement } from "../../managers/MessageManager";
 import { InnerAnnouncementProps } from "../../navigation/NavTypes";
+import { ChatUser } from "../../src/models";
+import CacheImage from "../CustomPrimitives/CacheImage";
+import SignedImage from "../CustomPrimitives/SignedImage";
 import { styles } from "./styles";
 
 interface AnnouncementProps {}
@@ -17,6 +21,7 @@ export default function Announcement(props: AnnouncementProps) {
 
   const [pendingAnnouncementIndex, setPendingAnnouncementIndex] =
     useState<number>(0);
+  const [chatUserSenders, setChatUserSenders] = useState<ChatUser[]>([]);
 
   /* -------------------------------------------------------------------------- */
   /*                      Unwrapped & Asbtracted Constants                      */
@@ -28,6 +33,36 @@ export default function Announcement(props: AnnouncementProps) {
   const isLastPendingAnnouncement =
     !pendingAnnouncements[pendingAnnouncementIndex + 1]?.message
       .announcementBody;
+
+  const chatUserSender =
+    chatUserSenders[pendingAnnouncementIndex]?.profileImageUrl;
+
+  /* -------------------------------------------------------------------------- */
+  /*                           Fetch ChatUser Senders                           */
+  /* -------------------------------------------------------------------------- */
+
+  useEffect(() => {
+    const fetchChatUserSenders = async () => {
+      let _chatUserSenders = [];
+
+      for (const pendingAnnouncemnt of pendingAnnouncements) {
+        const chatUserSenderID = pendingAnnouncemnt.message.chatuserID;
+
+        const chatUserSender = await DataStore.query(
+          ChatUser,
+          chatUserSenderID ?? ""
+        );
+
+        if (chatUserSender) {
+          _chatUserSenders.push(chatUserSender);
+        }
+      }
+
+      setChatUserSenders(_chatUserSenders);
+    };
+
+    fetchChatUserSenders();
+  }, []);
 
   /* -------------------------------------------------------------------------- */
   /*                                   Appear                                   */
@@ -69,13 +104,14 @@ export default function Announcement(props: AnnouncementProps) {
   return (
     <Animated.View style={[styles.container, { opacity: opacityAnim }]}>
       <View style={styles.topRow}>
-        <View style={styles.contactImage} />
+        <CacheImage
+          source={chatUserSender}
+          cacheKey={chatUserSender}
+          style={styles.contactImage}
+        />
         <View style={styles.textWrapper}>
           <Text style={styles.announcementBody} numberOfLines={0}>
-            {
-              pendingAnnouncements[pendingAnnouncementIndex].message
-                .announcementBody
-            }
+            {announcementBody}
           </Text>
         </View>
       </View>
@@ -86,19 +122,19 @@ export default function Announcement(props: AnnouncementProps) {
             isMandatory ? () => {} : hideDeleteAndReplacePendingAnnouncement();
           }}
         >
-          <Text style={styles.buttonText}>Hello</Text>
+          <Text style={styles.buttonText}>Got It!</Text>
         </TouchableOpacity>
         {link && (
           <TouchableOpacity
             style={[styles.button, { marginLeft: 5 }]}
             onPress={() =>
               navigation.navigate("GoogleFormsScreen", {
-                announcementMessage:
+                pendingAnnouncement:
                   pendingAnnouncements[pendingAnnouncementIndex],
               })
             }
           >
-            <Text style={styles.buttonText}>Hello</Text>
+            <Text style={styles.buttonText}>Open Link</Text>
           </TouchableOpacity>
         )}
       </View>

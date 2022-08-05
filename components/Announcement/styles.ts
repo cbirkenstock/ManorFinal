@@ -18,7 +18,7 @@ export const styles = StyleSheet.create({
   },
 
   contactImage: {
-    backgroundColor: "black",
+    backgroundColor: Colors.manorBlueGray,
     height: 50,
     width: 50,
     borderRadius: 25,
@@ -40,7 +40,16 @@ export const styles = StyleSheet.create({
     paddingTop: 10,
   },
 
-  button: { backgroundColor: "white", padding: 10, borderRadius: 10 },
+  button: {
+    backgroundColor: "white",
+    padding: 10,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 1,
+    elevation: 5,
+  },
 
   buttonText: { fontSize: 16 },
 });

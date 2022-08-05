@@ -1,6 +1,8 @@
 import { DataStore, SortDirection } from "aws-amplify";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
+  Keyboard,
+  Animated,
   FlatList,
   KeyboardAvoidingView,
   Pressable,
@@ -16,12 +18,27 @@ import ContactNameLabel from "../../components/Message/ContactNameLabel";
 import Colors from "../../constants/Colors";
 import useAppContext from "../../hooks/useAppContext";
 import { ChatScreenProps as Props } from "../../navigation/NavTypes";
-import { ChatUser, Message, PendingAnnouncement } from "../../src/models";
+import { Chat, ChatUser, Message, PendingAnnouncement } from "../../src/models";
 import EventMessage from "../../components/Message/EventMessage/EventMessage";
 import DefaultContactImage from "../../components/DefaultContactImage";
 import CacheImage from "../../components/CustomPrimitives/CacheImage";
 import EventSuggestionMessage from "../../components/Message/EventSuggestionMessage/EventSuggestionMessage";
 import Announcement from "../../components/Announcement/Announcement";
+import {
+  updateChatUserHasUnreadAnnouncements,
+  updateChatUserHasUnreadMessages,
+} from "../../managers/ChatUserManager";
+import { messageSubscription } from "../../managers/SubscriptionManager";
+import { appendMessage } from "../../managers/MessageManager";
+import { chatFlatlistButtons } from "../../constants/chatFlatlistButtonData";
+import { animate } from "../../managers/AnimationManager";
+import IconButton, {
+  IconButtonProps,
+} from "../../components/IconButton/IconButton";
+import Dialog from "../../components/Dialog";
+import AnnouncementCreationForm from "../../components/Dialog/DialogForms/AnnouncementCreationForm/AnnouncementCreationForm";
+import useAuthContext from "../../hooks/useAuthContext";
+import ImageView from "react-native-image-viewing";
 
 export default function ChatScreen({ navigation, route }: Props) {
   const context = useAppContext();
@@ -38,7 +55,16 @@ export default function ChatScreen({ navigation, route }: Props) {
     setPendingAnnouncements,
   } = context;
 
+  const { user } = useAuthContext();
+
+  const [chats, setChats] = useState<Chat[]>();
+  const [zoomImage, setZoomImage] = useState<{ uri: string }[]>([]);
+  const [isAnnouncementDialogVisible, setIsAnnouncementDialogVisible] =
+    useState<boolean>(false);
+
+  const heightAnim = useRef(new Animated.Value(0)).current;
   const chatcontextUpdated = chat?.id === route.params?.chat.id;
+  const chatScreenSetChats = route.params.setChats;
 
   /* -------------------------------------------------------------------------- */
   /*                             Set Proper Context                             */
@@ -51,12 +77,19 @@ export default function ChatScreen({ navigation, route }: Props) {
     */
     setMessages([]);
 
+    updateChatUserHasUnreadMessages([route.params?.chatUser], false);
+    updateChatUserHasUnreadAnnouncements([route.params?.chatUser], false);
+
     setChatUser(route.params?.chatUser);
     setChat(route.params?.chat);
 
     route.params?.members
       ? setMembers(route.params?.members)
       : fetchMembers().then(async (members) => setMembers(members));
+
+    route.params?.chats
+      ? setChats(route.params?.chats)
+      : fetchChats().then(setChats);
   }, [route.params]);
 
   /* -------------------------------------------------------------------------- */
@@ -74,6 +107,19 @@ export default function ChatScreen({ navigation, route }: Props) {
     );
 
     return members;
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /*                                 Fetch Chats                                */
+  /* -------------------------------------------------------------------------- */
+
+  const fetchChats = async () => {
+    const chats = (
+      await DataStore.query(ChatUser, (chatUser) =>
+        chatUser.userID("eq", user?.id ?? "")
+      )
+    ).map((chatUser) => chatUser.chat);
+    return chats;
   };
 
   /* -------------------------------------------------------------------------- */
@@ -135,16 +181,104 @@ export default function ChatScreen({ navigation, route }: Props) {
   }, [chat]);
 
   /* -------------------------------------------------------------------------- */
-  /*                                Subscription                                */
+  /*                                Subscriptions                               */
   /* -------------------------------------------------------------------------- */
 
-  // useEffect(() => {
-  //   DataStore.query(ChatUserMessage).then((messages) => console.log(messages));
-  //   if (messages) {
-  //     const subscription = messageSubscription(context, appendMessage);
-  //     return () => subscription.unsubscribe();
-  //   }
-  // }, [messages]);
+  /* -------------------------- Message Subscription -------------------------- */
+
+  useEffect(() => {
+    if (messages) {
+      const subscription = messageSubscription(context, appendMessage);
+      return () => subscription.unsubscribe();
+    }
+  }, [messages]);
+
+  /* ------------------------- Keyboard Subscriptions ------------------------- */
+
+  useEffect(() => {
+    Keyboard.addListener("keyboardWillShow", () => {
+      animate(heightAnim, 165, 300);
+    });
+  }, []);
+
+  useEffect(() => {
+    Keyboard.addListener("keyboardWillHide", () => {
+      animate(heightAnim, 0, 300);
+    });
+  }, []);
+
+  /* -------------------------------------------------------------------------- */
+  /*                               Sub-Components                               */
+  /* -------------------------------------------------------------------------- */
+
+  const ChatFlatlistButtons = () => {
+    return (
+      <View style={styles.chatFlatlistButtons}>
+        <Pressable
+          style={styles.ChatInfoButton}
+          onPress={() =>
+            navigation.navigate("ChatInfoScreen", {
+              displayUser: route.params?.displayUser,
+              eventMessages: [],
+              chats: route.params.chats,
+              setChats: route.params.setChats,
+            })
+          }
+        >
+          {route.params.displayUser ? (
+            <CacheImage
+              cacheKey={route.params.displayUser.profileImageUrl}
+              source={route.params.displayUser.profileImageUrl}
+              style={{ flex: 1 }}
+            />
+          ) : (
+            <DefaultContactImage members={members} />
+          )}
+        </Pressable>
+        <Animated.FlatList
+          style={{ marginTop: 7.5, height: heightAnim }}
+          scrollEnabled={false}
+          keyboardShouldPersistTaps="always"
+          keyExtractor={(item) => item.title}
+          data={chatFlatlistButtons}
+          renderItem={renderIconButton}
+        />
+      </View>
+    );
+  };
+
+  const AnnouncementDialog = () => {
+    return (
+      <Dialog
+        title="Add Announcement"
+        width={350}
+        visible={isAnnouncementDialogVisible}
+        children={
+          <AnnouncementCreationForm
+            onSubmit={() => {
+              setIsAnnouncementDialogVisible(false);
+            }}
+          />
+        }
+        onClose={() => {
+          setIsAnnouncementDialogVisible(false);
+        }}
+      />
+    );
+  };
+
+  const ZoomImageView = () => {
+    return (
+      <ImageView
+        images={zoomImage}
+        imageIndex={0}
+        visible={zoomImage.length == 0 ? false : true}
+        onRequestClose={() => {
+          setZoomImage([]);
+        }}
+      />
+    );
+  };
 
   /* -------------------------------------------------------------------------- */
   /*                       Render Flatlist Item Functions                       */
@@ -153,6 +287,7 @@ export default function ChatScreen({ navigation, route }: Props) {
   const renderMessage = ({ item }: { item: Message }) => {
     const isMe = item.chatuserID === chatUser?.id;
     const sender = members.find((member) => member.id === item.chatuserID);
+    const isFirstOfGroup = item.marginTop === 10;
 
     if (item.isEventMessage) {
       return (
@@ -175,15 +310,45 @@ export default function ChatScreen({ navigation, route }: Props) {
             marginTop: item.marginTop ?? 1,
           }}
         >
-          {!isMe && <ContactImage profileImageUrl={sender?.profileImageUrl} />}
+          {/* This way even if no image, the spacing still there */}
+          <View style={styles.senderImageContainer}>
+            {!isMe && isFirstOfGroup && (
+              <ContactImage profileImageUrl={sender?.profileImageUrl} />
+            )}
+          </View>
           <View style={{ maxWidth: item.messageBody ? "68%" : undefined }}>
-            {!isMe && <ContactNameLabel contactName={sender?.nickname} />}
+            {!isMe && isFirstOfGroup && (
+              <ContactNameLabel contactName={sender?.nickname} />
+            )}
             {item.messageBody && <MessageBubble message={item} />}
-            {item.imageUrl && <MediaMessage message={item} />}
+            {item.imageUrl && (
+              <MediaMessage message={item} setZoomImage={setZoomImage} />
+            )}
           </View>
         </View>
       );
     }
+  };
+
+  const renderIconButton = ({
+    item,
+  }: {
+    item: Omit<IconButtonProps, "onPress"> & { title: string };
+  }) => {
+    const { title, icon, dimension, color } = item;
+    return (
+      <IconButton
+        style={{ marginBottom: 7.5 }}
+        icon={icon}
+        dimension={50}
+        color={color}
+        onPress={() => {
+          if (title === "announcement") {
+            setIsAnnouncementDialogVisible(true);
+          }
+        }}
+      />
+    );
   };
 
   /* -------------------------------------------------------------------------- */
@@ -196,6 +361,7 @@ export default function ChatScreen({ navigation, route }: Props) {
       keyboardVerticalOffset={-42}
       enabled
     >
+      <AnnouncementDialog />
       {pendingAnnouncements.length > 0 && <Announcement />}
       <StatusBar hidden={true} />
       <FlatList
@@ -207,26 +373,13 @@ export default function ChatScreen({ navigation, route }: Props) {
         keyExtractor={(message) => message?.id}
         renderItem={renderMessage}
       />
-      <Pressable
-        style={styles.ChatInfoButton}
-        onPress={() =>
-          navigation.navigate("ChatInfoScreen", {
-            displayUser: route.params?.displayUser,
-            eventMessages: [],
-          })
-        }
-      >
-        {route.params.displayUser ? (
-          <CacheImage
-            cacheKey={route.params.displayUser.profileImageUrl}
-            source={route.params.displayUser.profileImageUrl}
-            style={{ flex: 1 }}
-          />
-        ) : (
-          <DefaultContactImage members={members} />
-        )}
-      </Pressable>
-      <MessageBar chat={chat ?? undefined} />
+      <MessageBar
+        chat={chat ?? undefined}
+        chats={chats ?? []}
+        setChats={chatScreenSetChats}
+      />
+      <ChatFlatlistButtons />
+      <ZoomImageView />
     </KeyboardAvoidingView>
   );
 }
@@ -251,9 +404,6 @@ const styles = StyleSheet.create({
   },
 
   ChatInfoButton: {
-    position: "absolute",
-    top: "5%",
-    right: "2.5%",
     height: 60,
     width: 60,
     backgroundColor: Colors.manorBlueGray,
@@ -264,5 +414,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.75,
     shadowRadius: 5,
     overflow: "hidden",
+  },
+
+  senderImageContainer: { height: 30, width: 30, marginRight: 5 },
+
+  chatFlatlistButtons: {
+    position: "absolute",
+    top: "5%",
+    right: "2.5%",
+    alignItems: "center",
   },
 });

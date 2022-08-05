@@ -15,10 +15,12 @@ import { extractDisplayUser } from "../../managers/ChatManager";
 
 interface ContactProps {
   contact: Chat;
+  chats: Chat[];
+  setChats: (value: React.SetStateAction<Chat[] | undefined>) => void;
 }
 
 export default function Contact(props: ContactProps) {
-  const { contact } = props;
+  const { contact, chats, setChats } = props;
   const { user } = useAuthContext();
   const navigation = useNavigation<OuterContactScreenNavigationProps>();
 
@@ -118,6 +120,8 @@ export default function Contact(props: ContactProps) {
           chatUser: contactChatUser,
           members: members,
           displayUser: displayUser,
+          chats: chats,
+          setChats: setChats,
         },
       });
     }
@@ -140,6 +144,8 @@ export default function Contact(props: ContactProps) {
             {
               shadowColor: contactChatUser?.hasUnreadMessage
                 ? Colors.manorLightBlue
+                : contactChatUser?.hasUnreadAnnouncement
+                ? Colors.manorRed
                 : "black",
             },
           ]}

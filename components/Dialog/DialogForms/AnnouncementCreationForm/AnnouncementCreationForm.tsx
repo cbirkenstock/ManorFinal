@@ -12,9 +12,10 @@ import ToggleButton from "../../../ToggleButton";
 import { FontAwesome5 } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import FormCompletionButton from "../../../FormCompletionButton";
+import { updateChatUserHasUnreadAnnouncements } from "../../../../managers/ChatUserManager";
 
 interface AnnouncementCreationFormProps {
-  onSubmit?: () => {};
+  onSubmit?: () => void;
 }
 
 export default function AnnouncementCreationForm(
@@ -22,7 +23,7 @@ export default function AnnouncementCreationForm(
 ) {
   const { onSubmit } = props;
   const context = useAppContext();
-  const { members, chat } = context;
+  const { members } = context;
   const [announcementBody, setAnnouncementBody] = useState<string>();
   const [link, setLink] = useState<string>();
   const [isMandatory, setIsMandatory] = useState<boolean>(false);
@@ -46,6 +47,7 @@ export default function AnnouncementCreationForm(
       );
       uploadMessage(newAnnouncement);
       UploadPendingAnnouncements(members, newAnnouncement);
+      updateChatUserHasUnreadAnnouncements(members, true);
       updateLastMessage(newAnnouncement, context);
       setAnnouncementBody("");
     }
@@ -69,6 +71,8 @@ export default function AnnouncementCreationForm(
             paddingHorizontal: 7,
             paddingVertical: 2,
           }}
+          autoFocus
+          keyboardAppearance="dark"
           multiline={true}
           placeholder={"Announcement..."}
           placeholderTextColor={"#E1D9D1"}

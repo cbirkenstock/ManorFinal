@@ -6,18 +6,22 @@ import { animate } from "../../managers/AnimationManager";
 import { InnerContactScreenNavigationProps } from "../../navigation/NavTypes";
 import { styles } from "./styles";
 import { ChatEnum } from "../../screens/AppScreens/UsersScreen";
+import { Chat } from "../../src/models";
 
 export interface DropdownItemProps {
   tab: {
     caption: string;
     type: string;
   };
+  chats: Chat[];
+  setChats: (value: React.SetStateAction<Chat[] | undefined>) => void;
   exitViewHeightAnim: Animated.Value;
   exitViewOpacityAnim: Animated.Value;
 }
 
 export default function DropdownItem(props: DropdownItemProps) {
-  const { tab, exitViewHeightAnim, exitViewOpacityAnim } = props;
+  const { tab, chats, setChats, exitViewHeightAnim, exitViewOpacityAnim } =
+    props;
   const navigation = useNavigation<InnerContactScreenNavigationProps>();
 
   const closeContactMenu = () => {
@@ -27,12 +31,20 @@ export default function DropdownItem(props: DropdownItemProps) {
 
   const toNewDirectMessage = () => {
     closeContactMenu();
-    navigation.navigate("UsersScreen", { chatType: ChatEnum.direct });
+    navigation.navigate("UsersScreen", {
+      chatType: ChatEnum.direct,
+      chats: chats,
+      setChats: setChats,
+    });
   };
 
   const toNewGroupMessage = () => {
     closeContactMenu();
-    navigation.navigate("UsersScreen", { chatType: ChatEnum.group });
+    navigation.navigate("UsersScreen", {
+      chatType: ChatEnum.group,
+      chats: chats,
+      setChats: setChats,
+    });
   };
 
   const dmItem = tab.caption === "New Direct Message";

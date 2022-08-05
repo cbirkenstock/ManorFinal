@@ -225,7 +225,10 @@ export const updateLastMessage = async (
         updatedChat.lastMessage =
           newMessage.messageBody ?? newMessage.announcementBody;
       })
-    ).then(async (chat) => setChat(chat));
+    ).then(async (chat) => {
+      setChat(chat);
+      return chat;
+    });
   }
 };
 

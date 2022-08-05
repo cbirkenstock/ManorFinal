@@ -45,11 +45,11 @@ const getImageWidthAndQuality = (request: PickImageRequestEnum) => {
     case PickImageRequestEnum.sendChatImage:
       return { width: 700, quality: 0.3 };
     case PickImageRequestEnum.setProfileImage:
-      return { width: 185, quality: 0.3 };
+      return { width: 300, quality: 0.7 };
     case PickImageRequestEnum.setChatImage:
-      return { width: 185, quality: 0.3 };
+      return { width: 300, quality: 0.7 };
     case PickImageRequestEnum.setChatUserImage:
-      return { width: 90, quality: 0.3 };
+      return { width: 90, quality: 0.7 };
   }
 };
 
@@ -144,9 +144,13 @@ export const uploadMedia = async (
   blob: Blob,
   uniqueKey?: string
 ) => {
-  const { key } = await Storage.put(`${uniqueKey ?? uuidv4()}.jpg`, blob, {
-    contentType: type,
-  });
+  const { key } = await Storage.put(
+    uniqueKey ? uniqueKey : `${uuidv4()}.jpg`,
+    blob,
+    {
+      contentType: type,
+    }
+  );
 
   return key;
 };

@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  TextInput,
-  SafeAreaView,
-  KeyboardAvoidingView,
-} from "react-native";
+import { StyleSheet, View, TextInput, SafeAreaView } from "react-native";
+import ToggleButton from "../../components/ToggleButton";
 import TriButton from "../../components/TriButton";
+import Colors from "../../constants/Colors";
 import useAuth from "../../hooks/useAuthContext";
 import { SignUpScreenProps as Props } from "../../navigation/NavTypes";
+import { AntDesign } from "@expo/vector-icons";
+import {
+  fetchMediaBlob,
+  PickImageRequestEnum,
+  pickMedia,
+} from "../../managers/MediaManager";
+import { setProfileImage } from "../../managers/UserManager";
+import { ImageInfo } from "expo-image-picker";
 
 export default function SignUpScreen({ navigation }: Props) {
   const { signUp } = useAuth();
@@ -18,6 +20,8 @@ export default function SignUpScreen({ navigation }: Props) {
   const [phone, setPhone] = useState<string | null>();
   const [password, setPassword] = useState<string | null>();
   const [lastPhoneLength, setLastPhoneLength] = useState<Number>(0);
+  const [profileImageUrl, setProfileImageUrl] = useState<string>();
+  const [profileImageBlob, setProfileImageBlob] = useState<Blob>();
 
   useEffect(() => {
     if (phone) {
@@ -35,121 +39,106 @@ export default function SignUpScreen({ navigation }: Props) {
   }, [phone]);
 
   const goToConfirmationScreen = async () => {
-    if (name && phone && password) {
-      signUp(name, phone, password);
+    if (name && phone && password && profileImageUrl && profileImageBlob) {
+      signUp(name, phone, password, profileImageUrl);
       navigation.navigate("ConfirmCodeScreen", {
         phone: phone,
         password: password,
+        profileImageBlob: profileImageBlob,
       });
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={loginStyles.container}
-      behavior="padding"
-      enabled
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: Colors.manorBackgroundGray,
+      }}
     >
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={loginStyles.ManorView}>
-          {/* <Image
-            style={loginStyles.logo}
-            source={{
-              uri: "https://manorchatapptestingbucketpublic.s3.amazonaws.com/GradientManorLogo.png",
-            }}
-          /> */}
-          <Text style={loginStyles.text}>Manor</Text>
-        </View>
-        <View style={loginStyles.buttonContainer}>
-          <TextInput
-            style={loginStyles.input}
-            placeholder="First + Last Name..."
-            placeholderTextColor="#E1D9D1"
-            onChangeText={(value) => {
-              setName(value);
-            }}
-            value={name?.toString()}
-          />
-          <TextInput
-            style={loginStyles.input}
-            placeholder="Phone..."
-            placeholderTextColor="#E1D9D1"
-            keyboardType="numeric"
-            onChangeText={(value) => {
-              setPhone(value);
-            }}
-            value={phone?.toString()}
-          />
-          <TextInput
-            style={loginStyles.input}
-            placeholder="Password..."
-            secureTextEntry
-            placeholderTextColor="#E1D9D1"
-            onChangeText={(value) => {
-              setPassword(value);
-            }}
-            value={password?.toString()}
-          />
-        </View>
-        <View
-          style={{
-            width: "100%",
-            alignItems: "center",
-            marginTop: 25,
+      <View style={{ paddingHorizontal: "7.5%" }}>
+        <TextInput
+          style={[loginStyles.input, { marginTop: 40 }]}
+          placeholder="First + Last Name..."
+          placeholderTextColor="#E1D9D1"
+          onChangeText={(value) => {
+            setName(value);
           }}
-        >
-          <TriButton
-            mainButton={{
-              title: "Sign Up",
-              onPress: () => goToConfirmationScreen(),
-            }}
-            bottomLeftButton={{
-              title: "Forgot Password?",
-              onPress: () => {
-                return null;
-              },
-            }}
-            bottomRightButton={{
-              title: "Log In",
-              onPress: () => navigation.replace("LoginScreen"),
-            }}
-          />
-          {/* <TouchableOpacity
-            style={loginStyles.button}
-            onPress={goToConfirmationScreen}
-          >
-            <Text style={loginStyles.buttonText}>Sign Up</Text>
-          </TouchableOpacity>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              width: "75%",
-              marginTop: 10,
-              paddingHorizontal: 10,
-            }}
-          >
-            <TouchableOpacity>
-              <Text style={{ color: "#5C6AEF", fontSize: 15 }}>
-                Forgot Password?
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.replace("LoginScreen")}>
-              <Text style={{ color: "#5C6AEF", fontSize: 15 }}>Log In</Text>
-            </TouchableOpacity>
-          </View> */}
-        </View>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+          value={name?.toString()}
+        />
+
+        <TextInput
+          style={loginStyles.input}
+          placeholder="Phone..."
+          placeholderTextColor="#E1D9D1"
+          keyboardType="numeric"
+          onChangeText={(value) => {
+            setPhone(value);
+          }}
+          value={phone?.toString()}
+        />
+        <TextInput
+          style={loginStyles.input}
+          placeholder="Password..."
+          secureTextEntry
+          placeholderTextColor="#E1D9D1"
+          onChangeText={(value) => {
+            setPassword(value);
+          }}
+          value={password?.toString()}
+        />
+
+        <ToggleButton
+          text="Add Profile Picture"
+          startAdornment={<AntDesign name="plus" size={24} color="white" />}
+          toggleStyle={[
+            loginStyles.input,
+            { backgroundColor: "transparent", justifyContent: "flex-start" },
+            {
+              borderColor: profileImageBlob
+                ? Colors.manorGreen
+                : Colors.manorPurple,
+            },
+          ]}
+          textStyle={{ color: "#E1D9D1", fontSize: 19 }}
+          onPress={async () => {
+            const imageData = await pickMedia(
+              PickImageRequestEnum.setProfileImage
+            );
+            const blob = await fetchMediaBlob(imageData?.uri ?? "");
+
+            if (blob) {
+              setProfileImageUrl(imageData?.uri);
+              setProfileImageBlob(blob);
+            }
+          }}
+        />
+
+        <TriButton
+          mainButton={{
+            title: "Sign Up",
+            onPress: () => goToConfirmationScreen(),
+          }}
+          bottomLeftButton={{
+            title: "Forgot Password?",
+            onPress: () => {
+              return null;
+            },
+          }}
+          bottomRightButton={{
+            title: "Log In",
+            onPress: () => navigation.replace("LoginScreen"),
+          }}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const loginStyles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: "column",
-    backgroundColor: "#242323",
-    justifyContent: "flex-start",
+    backgroundColor: Colors.manorBackgroundGray,
   },
 
   ManorView: {
@@ -175,10 +164,9 @@ const loginStyles = StyleSheet.create({
   },
 
   buttonContainer: {
-    height: "50%",
-    marginTop: 20,
-    justifyContent: "space-evenly",
-    alignItems: "center",
+    flex: 0.9,
+    marginTop: 0,
+    justifyContent: "space-between",
   },
 
   button: {
@@ -197,12 +185,12 @@ const loginStyles = StyleSheet.create({
 
   input: {
     height: 60,
-    width: "85%",
+    paddingHorizontal: 15,
     borderWidth: 3,
-    padding: 15,
     borderRadius: 40,
     borderColor: "#5C6AEF",
     color: "white",
     fontSize: 19,
+    marginTop: 15,
   },
 });

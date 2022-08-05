@@ -23,17 +23,28 @@ import Colors from "../../constants/Colors";
 import Dialog from "../Dialog/Dialog";
 import EventSuggestionForm from "../Dialog/DialogForms/EventSuggestionForm/EventSuggestionForm";
 import EventCreationForm from "../Dialog/DialogForms/EventCreationForm/EventCreationForm";
-import { updateChatUserOfActiveChatStatus } from "../../managers/ChatUserManager";
-import AnnouncementCreationForm from "../Dialog/DialogForms/AnnouncementCreationForm/AnnouncementCreationForm";
+import {
+  updateChatUserHasUnreadMessages,
+  updateChatUserOfActiveChatStatus,
+} from "../../managers/ChatUserManager";
+import { sendNotification } from "../../managers/NotificationManager";
+import useAuthContext from "../../hooks/useAuthContext";
+import { ChatUser } from "../../src/models";
+import { reOrderChats } from "../../managers/ChatManager";
 
 interface MessageBarProps {
   chat?: Chat;
+  chats: Chat[];
+  setChats: React.Dispatch<React.SetStateAction<Chat[] | undefined>>;
 }
 
 export default function MessageBar(props: MessageBarProps) {
-  const { chat } = props;
-  const { members, isForwardingEvent, setIsForwardingEvent } = useAppContext();
+  const { chat, chats, setChats } = props;
   const context = useAppContext();
+  const { chatUser, members, isForwardingEvent, setIsForwardingEvent } =
+    context;
+  const { user } = useAuthContext();
+
   const [messageBody, setMessageBody] = useState<string>("");
 
   /* -------------------------------------------------------------------------- */
@@ -44,7 +55,13 @@ export default function MessageBar(props: MessageBarProps) {
     if (messageBody) {
       const newMessage = createTextMessageComponent(messageBody, context);
       appendMessage(newMessage, context);
+      setChats(reOrderChats(chat, chats, newMessage.messageBody ?? undefined));
       uploadMessage(newMessage);
+      sendNotification(user ?? undefined, chat, members, newMessage);
+      updateChatUserHasUnreadMessages(
+        members.filter((member) => member.id !== chatUser?.id),
+        true
+      );
       updateLastMessage(newMessage, context);
       setMessageBody("");
 
@@ -86,6 +103,8 @@ export default function MessageBar(props: MessageBarProps) {
 
       uploadMedia(imageData.type, blob);
       uploadMessage(newDataMessage);
+      sendNotification(user ?? undefined, chat, members, newDataMessage);
+      updateChatUserHasUnreadMessages(members, true);
 
       if (chat?.isCoordinationChat) {
         updateChatUserOfActiveChatStatus(members, true);
@@ -101,13 +120,16 @@ export default function MessageBar(props: MessageBarProps) {
     <>
       <View style={styles.container}>
         <TouchableOpacity
-          style={styles.TouchableOpacity}
+          style={[styles.TouchableOpacity, { marginBottom: 4 }]}
           onPress={sendMediaMessage}
         >
           <FontAwesome5 name="camera-retro" size={25} color="white" />
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.TouchableOpacity, { marginRight: 5 }]}
+          style={[
+            styles.TouchableOpacity,
+            { marginRight: 5, marginBottom: 2.5 },
+          ]}
           onPress={() => setIsForwardingEvent(true)}
         >
           <FontAwesome5
@@ -123,22 +145,22 @@ export default function MessageBar(props: MessageBarProps) {
           onClose={() => setIsForwardingEvent(false)}
           marginTop={"15%"}
           width={350}
-          title={chat?.isCoordinationChat ? "Suggest Event" : "Create Event"}
+          title={chat?.isCoordinationChat ? "Suggest Event" : "Add Event"}
           helperText={
             chat?.isCoordinationChat
-              ? "The other group will have the ability to see and approve it"
+              ? "The other group will be able to approve it"
               : undefined
           }
         >
           {chat?.isCoordinationChat ? (
             <EventSuggestionForm onSubmit={() => setIsForwardingEvent(false)} />
           ) : (
-            <AnnouncementCreationForm />
-            // <EventCreationForm />
+            <EventCreationForm />
           )}
         </Dialog>
         <TextInput
           style={styles.messageBar}
+          keyboardAppearance="dark"
           placeholder={"Chat..."}
           placeholderTextColor="#E1D9D1"
           onChangeText={(value) => {
@@ -148,7 +170,7 @@ export default function MessageBar(props: MessageBarProps) {
           multiline={true}
         />
         <TouchableOpacity
-          style={styles.TouchableOpacity}
+          style={[styles.TouchableOpacity, { marginBottom: 3 }]}
           onPress={() => {
             sendTextMessage();
           }}

@@ -4,13 +4,6 @@ import Colors from "../../constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
 import CacheImage from "../../components/CustomPrimitives/CacheImage";
 import {
-  pickMedia,
-  PickImageRequestEnum,
-  fetchMediaBlob,
-  uploadMedia,
-  manipulatePhoto,
-} from "../../managers/MediaManager";
-import {
   FlatList,
   TouchableOpacity,
   View,
@@ -23,13 +16,11 @@ import SectionInput, {
 import SectionButton, {
   SectionButtonProps,
 } from "../../components/SectionButton/SectionButton";
-import { ImageData } from "../../managers/MediaManager";
-import { DataStore } from "aws-amplify";
-import { User } from "../../src/models";
 import {
-  updateUserProfileImageUrl,
+  setProfileImage,
   updateUserVenmoHandle,
 } from "../../managers/UserManager";
+import { setChatUserImage } from "../../managers/ChatUserManager";
 
 export default function ProfileScreen() {
   const { user, setUser, signOut } = useAuthContext();
@@ -86,48 +77,13 @@ export default function ProfileScreen() {
   ];
 
   /* -------------------------------------------------------------------------- */
-  /*                              Set Profile Photo                             */
-  /* -------------------------------------------------------------------------- */
-
-  //set profile Image
-  const setProfileImage = async () => {
-    const upToDateUser = await DataStore.query(User, user?.id ?? "");
-    const imageData = await pickMedia(PickImageRequestEnum.setProfileImage);
-
-    if (imageData && upToDateUser) {
-      const blob = await fetchMediaBlob(imageData.uri);
-      const key = await uploadMedia(imageData.type, blob);
-
-      const updatedUser = await updateUserProfileImageUrl(upToDateUser, key);
-      updatedUser && setUser(updatedUser);
-      return { imageData, key };
-    }
-  };
-
-  //create smaller image in order to use as chatUser image to save space & decrease load time
-  const setChatUserImage = async (imageData: ImageData, key: string) => {
-    if (user) {
-      const reducedSizeImageData = await manipulatePhoto(
-        imageData.fullQualityImageMetaData,
-        PickImageRequestEnum.setChatUserImage
-      );
-      const blob = await fetchMediaBlob(reducedSizeImageData.uri);
-      await uploadMedia(
-        imageData.type,
-        blob,
-        `${key.split(".")[0]}-reducedSizeVersion`
-      );
-    }
-  };
-
-  /* -------------------------------------------------------------------------- */
   /*                                Render Items                                */
   /* -------------------------------------------------------------------------- */
 
   /* ------------------------------ Section Input ----------------------------- */
 
   const renderSectionInput = ({ item }: { item: SectionInputProps }) => {
-    return <SectionInput {...item} />;
+    return <SectionInput containerStyle={{ paddingVertical: 15 }} {...item} />;
   };
 
   /* ----------------------------- Section Button ----------------------------- */
@@ -150,8 +106,14 @@ export default function ProfileScreen() {
       <View style={styles.rowContainer}>
         <TouchableOpacity
           onPress={async () => {
-            const results = await setProfileImage();
-            results && setChatUserImage(results.imageData, results.key);
+            const results = await setProfileImage(user ?? undefined);
+            results?.updatedUser && setUser(results.updatedUser);
+            results &&
+              setChatUserImage(
+                user ?? undefined,
+                results.imageData,
+                results.key
+              );
           }}
         >
           <CacheImage
@@ -212,6 +174,6 @@ const styles = StyleSheet.create({
 
   flatlist: {
     flexGrow: 0,
-    marginTop: 50,
+    marginTop: 30,
   },
 });

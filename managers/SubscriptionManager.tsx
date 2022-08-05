@@ -2,7 +2,7 @@ import { DataStore } from "aws-amplify";
 import { AppInitialStateProps } from "../navigation/InitialStates/AppInitialState";
 import { AuthInitialStateProps } from "../navigation/InitialStates/AuthInitialState";
 import { Chat, ChatUser, Message } from "../src/models";
-import { appendChat, removeChat } from "./ChatManager";
+import { prependChat, removeChat } from "./ChatManager";
 
 /* -------------------------------------------------------------------------- */
 /*                               Function Types                               */
@@ -45,9 +45,10 @@ export const messageSubscription = (
     message.chatID("eq", chat?.id ?? "")
   ).subscribe((object) => {
     const message = object.element;
+    const includesChatUserID = message.chatuserID;
     const isMe = message.chatuserID === chatUser?.id;
 
-    if (object.opType === "INSERT" && !isMe) {
+    if (object.opType === "INSERT" && includesChatUserID && !isMe) {
       handler(message, context);
     }
   });
@@ -57,13 +58,13 @@ export const messageSubscription = (
 
 /* --------------------------------- Contact -------------------------------- */
 
-/*kinda a hack rn -- not sure hwy update getting called several times
+/*kinda a hack rn -- not sure why update getting called several times
 and also called after INSERT */
 const chatsIncludeSpecificChat = (chats: Chat[], specificChat: Chat) => {
   return chats.map((chat) => chat.id).includes(specificChat.id);
 };
 
-export const contactSubscription = (
+export const getContactSubscription = (
   context: AuthInitialStateProps,
   chats: Chat[],
   setChats: SetChatsHandler
@@ -79,30 +80,59 @@ export const contactSubscription = (
       DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chat.id)).then(
         (newChat) => {
           if (!chatsIncludeSpecificChat(chats, newChat[0])) {
-            return appendChat(newChat[0], chats, setChats);
+            return setChats(prependChat(newChat[0], chats));
           }
         }
       );
     } else if (object.opType === "UPDATE") {
-      if (chatUser.isOfActiveChat) {
-        DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chat.id)).then(
-          (activatedChat) => {
-            if (!chatsIncludeSpecificChat(chats, activatedChat[0])) {
-              return appendChat(activatedChat[0], chats, setChats);
-            }
+      const mustRemove = !chatUser.isOfActiveChat;
+      const mustReorder = chatUser.isOfActiveChat && chatUser.hasUnreadMessage;
+
+      DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chat.id)).then(
+        (updatedChat) => {
+          let chatsList = chats;
+          if (
+            chatsIncludeSpecificChat(chats, updatedChat[0]) &&
+            (mustRemove || mustReorder)
+          ) {
+            chatsList = removeChat(updatedChat[0], chats);
           }
-        );
-      } else {
-        DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chat.id)).then(
-          (deactivatedChat) => {
-            if (chatsIncludeSpecificChat(chats, deactivatedChat[0])) {
-              return removeChat(deactivatedChat[0], chats, setChats);
-            }
+
+          if (mustReorder) {
+            return setChats(prependChat(updatedChat[0], chatsList));
           }
-        );
-      }
+
+          return;
+        }
+      );
     }
   });
 
   return subscription;
 };
+
+/* -------------------------------------------------------------------------- */
+/*                                    Chat                                    */
+/* -------------------------------------------------------------------------- */
+
+// export const getChatSubscription = (
+//   context: AuthInitialStateProps,
+//   chats: Chat[],
+//   setChats: SetChatsHandler
+// ) => {
+//   const { user } = context;
+
+//   const subscription = DataStore.observe(Chat, (chat) =>
+//     chat.userID("eq", user?.id ?? "")
+//   ).subscribe((object) => {
+//     if (object.opType === "UPDATE") {
+//       const updatedChat = object.element;
+
+//       const unUpdatedChats = chats.filter((chat) => chat.id !== updatedChat.id);
+
+//       prependChat(updatedChat, unUpdatedChats, setChats);
+//     }
+//   });
+
+//   return subscription;
+// };

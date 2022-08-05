@@ -4,10 +4,11 @@ export const styles = StyleSheet.create({
   container: {
     width: "100%",
     alignItems: "center",
+    marginTop: 30,
   },
 
   button: {
-    width: "75%",
+    width: "90%",
     borderRadius: 20,
     height: 60,
     alignItems: "center",

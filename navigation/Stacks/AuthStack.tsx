@@ -2,11 +2,16 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import SignUpScreen from "../../screens/AuthScreens/SignUpScreen";
 import LoginScreen from "../../screens/AuthScreens/LoginScreen";
 import ConfirmCodeScreen from "../../screens/AuthScreens/ConfirmCodeScreen";
+import { ImageInfo } from "expo-image-picker";
 
 export type AuthStackParamList = {
   SignUpScreen: undefined;
   LoginScreen: undefined;
-  ConfirmCodeScreen: { phone: string; password: string };
+  ConfirmCodeScreen: {
+    phone: string;
+    password: string;
+    profileImageBlob: Blob;
+  };
 };
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();

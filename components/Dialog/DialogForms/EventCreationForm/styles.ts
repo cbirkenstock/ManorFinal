@@ -2,7 +2,7 @@ import { StyleSheet } from "react-native";
 import Colors from "../../../../constants/Colors";
 
 export const styles = StyleSheet.create({
-  titleContainer: { marginTop: 10 },
+  titleContainer: { marginTop: 0 },
   dateContainer: { paddingVertical: 5 },
   rowButtonContainer: {
     flexDirection: "row",

@@ -1,5 +1,11 @@
 import { DataStore } from "aws-amplify";
 import { User } from "../src/models";
+import {
+  fetchMediaBlob,
+  PickImageRequestEnum,
+  pickMedia,
+  uploadMedia,
+} from "./MediaManager";
 
 export const updateUserVenmoHandle = async (
   user: User | null,
@@ -32,5 +38,17 @@ export const updateUserProfileImageUrl = async (
     );
 
     return updatedUser;
+  }
+};
+
+export const setProfileImage = async (user: User | undefined) => {
+  const upToDateUser = await DataStore.query(User, user?.id ?? "");
+  const imageData = await pickMedia(PickImageRequestEnum.setProfileImage);
+
+  if (imageData && upToDateUser) {
+    const blob = await fetchMediaBlob(imageData.uri);
+    const key = await uploadMedia(imageData.type, blob);
+    const updatedUser = await updateUserProfileImageUrl(upToDateUser, key);
+    return { updatedUser, imageData, key };
   }
 };

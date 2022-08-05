@@ -47,6 +47,11 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
   /*                                   Render                                   */
   /* -------------------------------------------------------------------------- */
 
+  /*
+  leaving it as the larger version of the contact image since you stare at this 
+  a lot, would actually pick up if the quality was low, and there are only
+  at max six photos
+  */
   switch (membersCount) {
     case 0:
       return null;
