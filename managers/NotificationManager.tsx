@@ -2,7 +2,6 @@ import { DataStore } from "aws-amplify";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
-import Announcement from "../components/Announcement";
 import { Chat, ChatUser, Message, User } from "../src/models";
 
 /* -------------------------------------------------------------------------- */
@@ -150,9 +149,9 @@ export const sendNotification = async (
 
       const recipients = Array.from(recipientTokens).join(",");
 
-      const otherUserName = members
+      const currentUserName = members
         .map((member) => member.user)
-        .filter((member) => member.id != user.id)
+        .filter((member) => member.id === user.id)
         .map((member) => member.name)[0];
 
       const mediaMessage =
@@ -161,7 +160,7 @@ export const sendNotification = async (
       fetch(https, {
         // @ts-ignore
         headers: {
-          title: chat.isGroupChat ? chat.title : otherUserName,
+          title: chat.isGroupChat ? chat.title : currentUserName,
           message: announcement
             ? encodeURIComponent(message.announcementBody ?? "")
             : message.messageBody

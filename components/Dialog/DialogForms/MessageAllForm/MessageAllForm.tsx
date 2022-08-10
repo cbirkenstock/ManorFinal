@@ -8,6 +8,7 @@ import {
   checkForPreExistingDMChat,
   createDMChat,
 } from "../../../../managers/ChatManager";
+import { updateChatUserHasUnreadMessages } from "../../../../managers/ChatUserManager";
 import {
   updateLastMessage,
   uploadMessage,
@@ -23,6 +24,7 @@ interface MessageAllFormProps {
 export default function MessageAllForm(props: MessageAllFormProps) {
   const { unreachedUsers, onSubmit } = props;
   const { user } = useAuthContext();
+  const { chatUser } = useAppContext();
   const [messageToAll, setMessageToAll] = useState<string>();
 
   /* -------------------------------------------------------------------------- */
@@ -31,8 +33,9 @@ export default function MessageAllForm(props: MessageAllFormProps) {
 
   const messageAllUnreached = async () => {
     if (user) {
+      let unreachedChatUsers = [];
       for (const unreachedUser of unreachedUsers) {
-        var DMChat = await checkForPreExistingDMChat(user, unreachedUser);
+        let DMChat = await checkForPreExistingDMChat(user, unreachedUser);
 
         if (!DMChat) {
           const results = await createDMChat(user, unreachedUser);
@@ -44,15 +47,21 @@ export default function MessageAllForm(props: MessageAllFormProps) {
           DMChat = results.chat;
         }
 
-        const DMChatUser = (
-          await DataStore.query(ChatUser, (chatUser) =>
-            chatUser.chatID("eq", DMChat.id).userID("eq", user?.id ?? "")
-          )
+        const DMChatUsers = await DataStore.query(ChatUser, (chatUser) =>
+          chatUser.chatID("eq", DMChat.id)
+        );
+
+        const currentChatUser = DMChatUsers.filter(
+          (chatUser) => chatUser.user.id === user?.id
+        )[0];
+
+        const otherChatUser = DMChatUsers.filter(
+          (chatUser) => chatUser.user.id !== user?.id
         )[0];
 
         const newMessage = new Message({
           messageBody: messageToAll,
-          chatuserID: DMChatUser?.id,
+          chatuserID: currentChatUser.id,
           chatID: DMChat.id,
         });
 
@@ -64,8 +73,17 @@ export default function MessageAllForm(props: MessageAllFormProps) {
           })
         );
 
+        unreachedChatUsers.push(otherChatUser);
+
         setMessageToAll("");
       }
+
+      updateChatUserHasUnreadMessages(
+        unreachedChatUsers.filter(
+          (unreachedChatUser) => unreachedChatUser.id !== chatUser?.id
+        ),
+        true
+      );
     }
   };
 
@@ -89,9 +107,9 @@ export default function MessageAllForm(props: MessageAllFormProps) {
       />
       <FormCompletionButton
         text="Send Message"
-        onPress={() => {
+        onPress={async () => {
           if (messageToAll) {
-            messageAllUnreached();
+            await messageAllUnreached();
             onSubmit?.();
           }
         }}

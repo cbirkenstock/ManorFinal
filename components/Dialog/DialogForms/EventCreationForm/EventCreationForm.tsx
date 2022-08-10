@@ -40,10 +40,6 @@ export default function EventCreationForm() {
   } = context;
   const navigation = useNavigation<InnerCreateEventFormNavigationProps>();
 
-  // useEffect(() => {
-  //   console.log(eventDateTime);
-  // }, [eventDateTime]);
-
   const clearState = () => {
     setEventTitle("");
     setEventDateTime(new Date());

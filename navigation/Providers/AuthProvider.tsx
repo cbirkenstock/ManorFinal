@@ -97,6 +97,7 @@ export const AuthProvider = (props: AuthProviderProps) => {
       );
       if (fakeUser) {
         setUser(fakeUser);
+        AsyncStorage.setItem("currentUser", JSON.stringify(fakeUser));
         return "SUCCESS";
       }
     }
