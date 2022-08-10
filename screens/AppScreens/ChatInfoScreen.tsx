@@ -76,19 +76,21 @@ export default function ProfileScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     const updateChatUser = () => {
-      if (
-        chatUser &&
-        notificationsEnabledRef.current !== chatUser?.notificationsEnabled
-      ) {
-        DataStore.save(
-          ChatUser.copyOf(chatUser, (updatedChatUser) => {
-            updatedChatUser.notificationsEnabled =
-              notificationsEnabledRef.current;
-          })
-        ).then((newChatUser) => {
-          setChatUser(newChatUser);
-        });
-      }
+      DataStore.query(ChatUser, chatUser?.id ?? "").then((upToDateChatUser) => {
+        if (
+          upToDateChatUser &&
+          notificationsEnabledRef.current !== chatUser?.notificationsEnabled
+        ) {
+          DataStore.save(
+            ChatUser.copyOf(upToDateChatUser, (updatedChatUser) => {
+              updatedChatUser.notificationsEnabled =
+                notificationsEnabledRef.current;
+            })
+          ).then((newChatUser) => {
+            setChatUser(newChatUser);
+          });
+        }
+      });
     };
 
     return () => updateChatUser();

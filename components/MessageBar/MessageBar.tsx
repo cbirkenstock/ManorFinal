@@ -29,7 +29,6 @@ import {
 } from "../../managers/ChatUserManager";
 import { sendNotification } from "../../managers/NotificationManager";
 import useAuthContext from "../../hooks/useAuthContext";
-import { ChatUser } from "../../src/models";
 import { reOrderChats } from "../../managers/ChatManager";
 
 interface MessageBarProps {
@@ -57,7 +56,7 @@ export default function MessageBar(props: MessageBarProps) {
       appendMessage(newMessage, context);
       setChats(reOrderChats(chat, chats, newMessage.messageBody ?? undefined));
       uploadMessage(newMessage);
-      sendNotification(user ?? undefined, chat, members, newMessage);
+      sendNotification(user ?? undefined, chat, members, newMessage, false);
       updateChatUserHasUnreadMessages(
         members.filter((member) => member.id !== chatUser?.id),
         true
@@ -103,7 +102,7 @@ export default function MessageBar(props: MessageBarProps) {
 
       uploadMedia(mediaData.type, blob);
       uploadMessage(newDataMessage);
-      sendNotification(user ?? undefined, chat, members, newDataMessage);
+      sendNotification(user ?? undefined, chat, members, newDataMessage, false);
       updateChatUserHasUnreadMessages(members, true);
 
       if (chat?.isCoordinationChat) {

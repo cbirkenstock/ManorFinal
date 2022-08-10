@@ -13,6 +13,8 @@ import { FontAwesome5 } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import FormCompletionButton from "../../../FormCompletionButton";
 import { updateChatUserHasUnreadAnnouncements } from "../../../../managers/ChatUserManager";
+import { sendNotification } from "../../../../managers/NotificationManager";
+import useAuthContext from "../../../../hooks/useAuthContext";
 
 interface AnnouncementCreationFormProps {
   onSubmit?: () => void;
@@ -22,8 +24,9 @@ export default function AnnouncementCreationForm(
   props: AnnouncementCreationFormProps
 ) {
   const { onSubmit } = props;
+  const { user } = useAuthContext();
   const context = useAppContext();
-  const { members } = context;
+  const { members, chat } = context;
   const [announcementBody, setAnnouncementBody] = useState<string>();
   const [link, setLink] = useState<string>();
   const [isMandatory, setIsMandatory] = useState<boolean>(false);
@@ -48,7 +51,14 @@ export default function AnnouncementCreationForm(
       uploadMessage(newAnnouncement);
       UploadPendingAnnouncements(members, newAnnouncement);
       updateChatUserHasUnreadAnnouncements(members, true);
-      updateLastMessage(newAnnouncement, context);
+      sendNotification(
+        user ?? undefined,
+        chat ?? undefined,
+        members,
+        newAnnouncement,
+        true
+      );
+      //updateLastMessage(newAnnouncement, context);
       setAnnouncementBody("");
     }
   };

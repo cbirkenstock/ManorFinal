@@ -80,7 +80,7 @@ export const getContactSubscription = (
     const chatUser = object.element;
 
     if (object.opType === "INSERT") {
-      DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chat?.id)).then(
+      DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chatID)).then(
         (newChat) => {
           if (!chatsIncludeSpecificChat(chats, newChat[0])) {
             return setChats(prependChat(newChat[0], chats));
@@ -91,7 +91,7 @@ export const getContactSubscription = (
       const mustRemove = !chatUser.isOfActiveChat;
       const mustReorder = chatUser.hasUnreadMessage;
 
-      DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chat?.id)).then(
+      DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chatID)).then(
         (updatedChat) => {
           let chatsList = chats;
           if (

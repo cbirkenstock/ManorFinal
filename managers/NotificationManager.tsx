@@ -2,6 +2,7 @@ import { DataStore } from "aws-amplify";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
+import Announcement from "../components/Announcement";
 import { Chat, ChatUser, Message, User } from "../src/models";
 
 /* -------------------------------------------------------------------------- */
@@ -124,7 +125,8 @@ export const sendNotification = async (
   user: User | undefined,
   chat: Chat | undefined,
   members: ChatUser[] | undefined,
-  message: Message
+  message: Message,
+  announcement: boolean
 ) => {
   if (user && chat && members && message) {
     const messageSender = await DataStore.query(
@@ -132,15 +134,21 @@ export const sendNotification = async (
       message.chatuserID ?? ""
     );
 
-    const recpientTokens = members
-      .filter((member) => member.notificationsEnabled)
-      .map((member) => member.user.expoPushToken);
+    let recipientTokens;
 
-    if (recpientTokens && messageSender) {
+    if (announcement) {
+      recipientTokens = members.map((member) => member.user.expoPushToken);
+    } else {
+      recipientTokens = members
+        .filter((member) => member.notificationsEnabled)
+        .map((member) => member.user.expoPushToken);
+    }
+
+    if (recipientTokens && messageSender) {
       const https =
         "https://tlvk01h5sc.execute-api.us-east-1.amazonaws.com/default/PushNotificationSender";
 
-      const recipients = Array.from(recpientTokens).join(",");
+      const recipients = Array.from(recipientTokens).join(",");
 
       const otherUserName = members
         .map((member) => member.user)
@@ -154,7 +162,9 @@ export const sendNotification = async (
         // @ts-ignore
         headers: {
           title: chat.isGroupChat ? chat.title : otherUserName,
-          message: message.messageBody
+          message: announcement
+            ? encodeURIComponent(message.announcementBody ?? "")
+            : message.messageBody
             ? encodeURIComponent(message.messageBody)
             : `${messageSender.user.name} sent ${mediaMessage}`,
           sender: chat.isGroupChat
