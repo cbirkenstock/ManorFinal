@@ -54,6 +54,10 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
     message.likes ?? undefined
   );
 
+  useEffect(() => {
+    setMessageLikes(message.likes ?? undefined);
+  }, [message]);
+
   /* --------------------------- Dislikes Constants --------------------------- */
 
   const [hasDislikedMessage, setHasDislikedMessage] = useState<boolean>();
@@ -160,25 +164,35 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
           <ContactImage profileImageUrl={sender?.profileImageUrl} />
         )}
       </View>
-      {messageLikes ? (
-        <LikeIndicator messageLikes={messageLikes} isMe={isMe} />
-      ) : null}
       <View style={{ maxWidth: message.messageBody ? "68%" : undefined }}>
         {!isMe && isFirstOfGroup && (
           <ContactNameLabel contactName={sender?.nickname} />
         )}
-        <Pressable onPress={() => setIsVisible(!isVisible)}>
-          <MessageReactMenu
-            isMe={isMe}
-            visible={isVisible}
-            onLikeMessage={() => likeMessage()}
-            onReaction={() => setIsVisible(!isVisible)}
-          />
-          {message.messageBody && <MessageBubble message={message} />}
-          {message.imageUrl && (
-            <MediaMessage message={message} setZoomImage={setZoomImage} />
-          )}
-        </Pressable>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          {messageLikes && isMe ? (
+            <LikeIndicator messageLikes={messageLikes} isMe={isMe} />
+          ) : null}
+          <Pressable onPress={() => setIsVisible(!isVisible)}>
+            <MessageReactMenu
+              isMe={isMe}
+              visible={isVisible}
+              onLikeMessage={() => likeMessage()}
+              onReaction={() => setIsVisible(!isVisible)}
+            />
+            {message.messageBody && <MessageBubble message={message} />}
+            {message.imageUrl && (
+              <MediaMessage message={message} setZoomImage={setZoomImage} />
+            )}
+          </Pressable>
+          {messageLikes && !isMe ? (
+            <LikeIndicator messageLikes={messageLikes} isMe={isMe} />
+          ) : null}
+        </View>
       </View>
     </View>
   );

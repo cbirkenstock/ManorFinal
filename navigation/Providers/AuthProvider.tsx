@@ -35,13 +35,13 @@ export const AuthProvider = (props: AuthProviderProps) => {
 
   async function loadStorageData(): Promise<void> {
     try {
-      const authUser = await Auth.currentAuthenticatedUser();
-      if (authUser) {
-        const user = await AsyncStorage.getItem("currentUser").then(
-          (data) => data && JSON.parse(data)
-        );
-        setUser(user);
-      }
+      // const authUser = await Auth.currentAuthenticatedUser();
+      // if (authUser) {
+      const user = await AsyncStorage.getItem("currentUser").then(
+        (data) => data && JSON.parse(data)
+      );
+      setUser(user);
+      // }
     } catch (error) {
       console.log(error);
     } finally {
