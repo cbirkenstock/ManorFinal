@@ -165,27 +165,56 @@ export const removeAnnouncement = (
   );
 };
 
-export const updateEventMessageMembersCountInternally = (
-  messages: Message[],
-  eventMessage: Message
+export const updateMessageLocally = (
+  updatedMessage: Message,
+  context: AppInitialStateProps
 ) => {
-  const updatedMessages = messages.map((message) => {
-    if (message.id === eventMessage.id) {
-      return {
-        ...message,
-        eventMembersCount: eventMessage.eventMembersCount + 1,
-      } as Message;
+  const { messages, setMessages } = context;
+
+  let updatedMessages = messages.map((message) => {
+    if (message.id === updatedMessage.id) {
+      return updatedMessage;
     } else {
       return message;
     }
   });
 
-  return updatedMessages;
+  setMessages(updatedMessages);
 };
+
+// export const updateEventMessageMembersCountInternally = (
+//   messages: Message[],
+//   eventMessage: Message
+// ) => {
+//   const updatedMessages = messages.map((message) => {
+//     if (message.id === eventMessage.id) {
+//       return {
+//         ...message,
+//         eventMembersCount: (eventMessage.eventMembersCount ?? 0) + 1,
+//       } as Message;
+//     } else {
+//       return message;
+//     }
+//   });
+
+//   return updatedMessages;
+// };
 
 /* -------------------------------------------------------------------------- */
 /*                              Network Updating                              */
 /* -------------------------------------------------------------------------- */
+
+export const updateMessageLikes = async (message: Message) => {
+  const upToDateMessage = await DataStore.query(Message, message.id);
+
+  if (upToDateMessage) {
+    DataStore.save(
+      Message.copyOf(upToDateMessage, (updatedMessage) => {
+        updatedMessage.likes = message.likes;
+      })
+    );
+  }
+};
 
 export const uploadMessage = (message: Message) => {
   DataStore.save(message);
@@ -219,9 +248,11 @@ export const updateLastMessage = async (
 ) => {
   const { chat, setChat } = context;
 
-  if (chat) {
+  const upToDateChat = await DataStore.query(Chat, chat?.id ?? "");
+
+  if (upToDateChat) {
     DataStore.save(
-      Chat.copyOf(chat, (updatedChat) => {
+      Chat.copyOf(upToDateChat, (updatedChat) => {
         updatedChat.lastMessage =
           newMessage.messageBody ?? newMessage.announcementBody;
       })

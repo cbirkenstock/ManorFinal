@@ -122,6 +122,8 @@ export default function UsersScreen({ route, navigation }: Props) {
                     chat: results.chat,
                     chatUser: results.chatUser,
                     members: results.members,
+                    chats: route.params?.chats,
+                    setChats: route.params?.setChats,
                   },
                 });
               }
@@ -144,6 +146,8 @@ export default function UsersScreen({ route, navigation }: Props) {
                   chat: chat,
                   chatUser: chatUser,
                   members: [...(newChatUsers ?? []), ...members],
+                  chats: route.params?.chats,
+                  setChats: route.params?.setChats,
                 },
               });
             }}
@@ -178,6 +182,8 @@ export default function UsersScreen({ route, navigation }: Props) {
                       chat: results.chat,
                       chatUser: results.chatUser,
                       members: results.members,
+                      chats: route.params?.chats,
+                      setChats: route.params?.setChats,
                     },
                   });
                 }
@@ -203,6 +209,8 @@ export default function UsersScreen({ route, navigation }: Props) {
                     chat: chat,
                     chatUser: chatUser,
                     members: [...(newChatUsers ?? []), ...members],
+                    chats: route.params?.chats,
+                    setChats: route.params?.setChats,
                   },
                 });
               }}

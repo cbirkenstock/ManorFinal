@@ -20,8 +20,14 @@ export default function SignUpScreen({ navigation }: Props) {
   const [phone, setPhone] = useState<string | null>();
   const [password, setPassword] = useState<string | null>();
   const [lastPhoneLength, setLastPhoneLength] = useState<Number>(0);
-  const [profileImageUrl, setProfileImageUrl] = useState<string>();
-  const [profileImageBlob, setProfileImageBlob] = useState<Blob>();
+  const [profileImageData, setProfileImageData] = useState<{
+    fullQualityImageMetaData: ImageInfo;
+    type: "video" | "image";
+    uri: string;
+    width: number;
+    height: number;
+    base64?: string | undefined;
+  } | null>();
 
   useEffect(() => {
     if (phone) {
@@ -39,12 +45,13 @@ export default function SignUpScreen({ navigation }: Props) {
   }, [phone]);
 
   const goToConfirmationScreen = async () => {
-    if (name && phone && password && profileImageUrl && profileImageBlob) {
-      signUp(name, phone, password, profileImageUrl);
+    if (name && phone && password && profileImageData) {
+      signUp(name, phone, password);
       navigation.navigate("ConfirmCodeScreen", {
+        name: name,
         phone: phone,
         password: password,
-        profileImageBlob: profileImageBlob,
+        profileImageData: profileImageData,
       });
     }
   };
@@ -89,13 +96,17 @@ export default function SignUpScreen({ navigation }: Props) {
         />
 
         <ToggleButton
-          text="Add Profile Picture"
-          startAdornment={<AntDesign name="plus" size={24} color="white" />}
+          text={profileImageData ? "Picure Added" : "Add Profile Picture"}
+          startAdornment={
+            !profileImageData && (
+              <AntDesign name="plus" size={24} color="white" />
+            )
+          }
           toggleStyle={[
             loginStyles.input,
             { backgroundColor: "transparent", justifyContent: "flex-start" },
             {
-              borderColor: profileImageBlob
+              borderColor: profileImageData
                 ? Colors.manorGreen
                 : Colors.manorPurple,
             },
@@ -105,12 +116,8 @@ export default function SignUpScreen({ navigation }: Props) {
             const imageData = await pickMedia(
               PickImageRequestEnum.setProfileImage
             );
-            const blob = await fetchMediaBlob(imageData?.uri ?? "");
 
-            if (blob) {
-              setProfileImageUrl(imageData?.uri);
-              setProfileImageBlob(blob);
-            }
+            setProfileImageData(imageData);
           }}
         />
 
@@ -129,6 +136,7 @@ export default function SignUpScreen({ navigation }: Props) {
             title: "Log In",
             onPress: () => navigation.replace("LoginScreen"),
           }}
+          isLoading={false}
         />
       </View>
     </SafeAreaView>

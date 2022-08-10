@@ -1,108 +1,79 @@
 import React, { useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  SafeAreaView,
-  KeyboardAvoidingView,
-  TouchableOpacity,
-} from "react-native";
+import { StyleSheet, View, TextInput, SafeAreaView, Alert } from "react-native";
+import TriButton from "../../components/TriButton";
+import Colors from "../../constants/Colors";
 import useAuth from "../../hooks/useAuthContext";
-import { uploadMedia } from "../../managers/MediaManager";
 import { ConfirmCodeScreenProps as Props } from "../../navigation/NavTypes";
 
 export default function SignupScreen({ route, navigation }: Props) {
   const { confirmSignUp, signIn } = useAuth();
 
-  const [phone, setPhone] = useState<string | null>(route.params?.phone);
   const [code, setCode] = useState<string | null>();
-  const [password, setPassword] = useState<string | null>(
-    route.params?.password
-  );
+  const [isSigningIn, setIsSigningIn] = useState<boolean>(Boolean);
+
+  const phone = route.params?.phone;
+  const password = route.params?.password;
+  const userName = route.params?.name;
+  const profileImageData = route.params?.profileImageData;
 
   const openHomePage = async () => {
-    if (phone && code && password) {
+    if (phone && code && password && profileImageData) {
+      setIsSigningIn(true);
       const confirmResult = await confirmSignUp(phone, code);
 
       if (confirmResult === "SUCCESS") {
-        const signInResult = await signIn(phone, password);
-        if (signInResult === "SUCCESS") {
-          uploadMedia("image", route.params?.profileImageBlob);
+        const signInResult = await signIn(
+          phone,
+          password,
+          userName,
+          profileImageData
+        );
+
+        if (signInResult !== "SUCCESS") {
+          setIsSigningIn(false);
+
+          Alert.alert(signInResult);
         }
       }
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={loginStyles.container}
-      behavior="padding"
-      enabled
-    >
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={loginStyles.ManorView}>
-          <Text style={loginStyles.text}>Manor</Text>
-        </View>
-        <View style={loginStyles.buttonContainer}>
-          <TextInput
-            style={loginStyles.input}
-            keyboardAppearance="dark"
-            placeholder="Confirmation Code..."
-            placeholderTextColor="#E1D9D1"
-            onChangeText={(value) => {
-              setCode(value);
-            }}
-            value={code?.toString()}
-          />
-        </View>
-        <View
-          style={{
-            width: "100%",
-            alignItems: "center",
-            marginTop: 25,
+    <SafeAreaView style={loginStyles.container}>
+      <View style={loginStyles.buttonContainer}>
+        <TextInput
+          style={loginStyles.input}
+          keyboardAppearance="dark"
+          placeholder="Confirmation Code..."
+          placeholderTextColor="#E1D9D1"
+          onChangeText={(value) => {
+            setCode(value);
           }}
-        >
-          <TouchableOpacity style={loginStyles.button} onPress={openHomePage}>
-            <Text style={loginStyles.buttonText}>Sign Up</Text>
-          </TouchableOpacity>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              width: "75%",
-              marginTop: 10,
-              paddingHorizontal: 10,
-            }}
-          >
-            <TouchableOpacity>
-              <Text style={{ color: "#5C6AEF", fontSize: 15 }}>
-                Forgot Password?
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("LoginScreen")}
-            >
-              <Text style={{ color: "#5C6AEF", fontSize: 15 }}>Log In</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+          value={code?.toString()}
+        />
+
+        <TriButton
+          mainButton={{ title: "Sign Up", onPress: openHomePage }}
+          bottomLeftButton={{ title: "Forgot Password?", onPress: () => {} }}
+          bottomRightButton={{
+            title: "Log In",
+            onPress: () => navigation.navigate("LoginScreen"),
+          }}
+          isLoading={isSigningIn}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const loginStyles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: "column",
-    backgroundColor: "#242323",
-    justifyContent: "flex-start",
+    backgroundColor: Colors.manorBackgroundGray,
   },
 
   ManorView: {
     height: 75,
-    width: "100%",
     marginTop: 10,
     justifyContent: "center",
     alignItems: "center",
@@ -115,37 +86,13 @@ const loginStyles = StyleSheet.create({
     color: "#5C6AEF",
   },
 
-  logo: {
-    height: 75,
-    width: 75,
-    marginRight: 5,
-    marginTop: 5,
-  },
-
   buttonContainer: {
-    height: "50%",
-    marginTop: 20,
-    justifyContent: "space-evenly",
-    alignItems: "center",
-  },
-
-  button: {
-    width: "75%",
-    borderRadius: 20,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#5C6AEF",
-  },
-
-  buttonText: {
-    fontSize: 27,
-    color: "white",
+    marginTop: 30,
+    paddingHorizontal: "7.5%",
   },
 
   input: {
     height: 60,
-    width: "85%",
     borderWidth: 3,
     padding: 15,
     borderRadius: 40,

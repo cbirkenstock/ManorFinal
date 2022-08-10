@@ -6,7 +6,7 @@ import {
   PickImageRequestEnum,
   uploadMedia,
 } from "./MediaManager";
-import { ImageData } from "../managers/MediaManager";
+import { CustomImageData } from "../managers/MediaManager";
 
 export const createChatUsers = async (
   users?: User[],
@@ -108,7 +108,7 @@ export const updateChatUserHasUnreadAnnouncements = async (
 
 export const setChatUserImage = async (
   user: User | undefined,
-  imageData: ImageData,
+  imageData: CustomImageData,
   key: string
 ) => {
   if (user) {

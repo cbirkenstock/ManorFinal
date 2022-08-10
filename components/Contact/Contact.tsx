@@ -165,7 +165,12 @@ export default function Contact(props: ContactProps) {
         <Text
           style={[
             styles.contactNameText,
-            { color: contact?.isEventChat ? Colors.manorPurple : "white" },
+            {
+              color:
+                contact?.isEventChat || contact?.isCoordinationChat
+                  ? Colors.manorPurple
+                  : "white",
+            },
           ]}
         >
           {contact?.title ?? displayUser?.name}

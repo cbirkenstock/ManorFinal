@@ -40,21 +40,33 @@ type ChatUser @model @auth(rules: [{ allow: public }]) {
   isAdmin: Boolean
   writtenMessages: [Message] @hasMany(indexName: "byChatUser", fields: ["id"])
   unreadAnnouncements: [PendingAnnouncement]
-    @hasMany(indexName: "customByChatUser", fields: ["id"])
+    @hasMany(indexName: "announcementsByChatUser", fields: ["id"])
+  reactions: [Reaction]
+    @hasMany(indexName: "reactionsByChatUser", fields: ["id"])
   profileImageUrl: String
 }
 
 type PendingAnnouncement @model @auth(rules: [{ allow: public }]) {
   id: ID!
-  chatUserID: ID! @index(name: "customByChatUser")
+  chatUserID: ID! @index(name: "announcementsByChatUser")
   messageID: ID!
   chatUser: ChatUser! @belongsTo(fields: ["chatUserID"])
   message: Message! @belongsTo(fields: ["messageID"])
   remindDate: AWSDateTime
 }
 
+type Reaction @model @auth(rules: [{ allow: public }]) {
+  id: ID!
+  chatUserID: ID! @index(name: "reactionsByChatUser")
+  messageID: ID!
+  chatUser: ChatUser! @belongsTo(fields: ["chatUserID"])
+  message: Message! @belongsTo(fields: ["messageID"])
+  reactionType: String!
+}
+
 type User @model @auth(rules: [{ allow: public }]) {
   id: ID!
+  cognitoUserSub: String!
   name: String!
   phoneNumber: AWSPhone!
   profileImageUrl: String
@@ -84,7 +96,9 @@ type Message @model @auth(rules: [{ allow: public }]) {
   chatID: ID @index(name: "byChat")
   chatuserID: ID @index(name: "byChatUser")
   unreachedMembers: [PendingAnnouncement] @hasMany(fields: ["id"])
+  reactions: [Reaction] @hasMany(fields: ["id"])
   likes: Int
+  dislikes: Int
   link: AWSURL
   isMandatory: Boolean
   imageHeight: Int

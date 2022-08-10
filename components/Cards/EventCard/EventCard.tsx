@@ -8,6 +8,8 @@ import {
   View,
   Text,
 } from "react-native";
+import { TouchableOpacity } from "react-native-gesture-handler";
+import Colors from "../../../constants/Colors";
 import { EventCardBackgrounds } from "../../../constants/EventCardBackgrounds";
 import useAppContext from "../../../hooks/useAppContext";
 import { getShortenedAddress } from "../../../managers/AddressManager";
@@ -36,22 +38,30 @@ export default function EventCard(props: EventCardProps) {
   /* -------------------------------------------------------------------------- */
 
   return (
-    <ImageBackground
-      style={{
-        height: 115,
-        width: 165,
-        marginRight: 10,
-        paddingHorizontal: 10,
-        paddingVertical: 5,
+    <TouchableOpacity
+      disabled={!location}
+      style={{ marginRight: 10 }}
+      onPress={() => {
+        if (location) {
+          navigation.navigate("GoogleMapsScreen", { link: location });
+        }
       }}
-      source={backgroundImageSource}
-      resizeMode="cover"
-      imageStyle={{ borderRadius: 10, opacity: 0.7 }}
     >
-      <Pressable
+      <ImageBackground
         style={{
+          height: 115,
+          width: 165,
+
+          paddingHorizontal: 10,
+          paddingVertical: 5,
           flex: 1,
           justifyContent: "space-between",
+        }}
+        source={backgroundImageSource}
+        resizeMode="cover"
+        imageStyle={{
+          borderRadius: 10,
+          opacity: 0.7,
         }}
       >
         <View
@@ -67,31 +77,25 @@ export default function EventCard(props: EventCardProps) {
         </View>
         <View style={{ alignSelf: "flex-end", alignItems: "flex-end" }}>
           <Text style={{ color: "white", fontSize: 15, fontWeight: "500" }}>
-            {typeof dateTime === "string" ? dateTime : formatDate(dateTime)}
-          </Text>
-          <Text style={{ color: "white", fontSize: 15, fontWeight: "500" }}>
             {typeof dateTime === "string" ? "" : formatTime(dateTime)}
           </Text>
+          <Text style={{ color: "white", fontSize: 15, fontWeight: "500" }}>
+            {typeof dateTime === "string" ? dateTime : formatDate(dateTime)}
+          </Text>
           {location && (
-            <Pressable
-              onPress={() =>
-                navigation.navigate("GoogleMapsScreen", { link: location })
-              }
+            <Text
+              style={{
+                color: Colors.manorPaymentBlue,
+                fontSize: 15,
+                fontWeight: "800",
+              }}
             >
-              <Text
-                style={{
-                  color: "white",
-                  fontSize: 15,
-                  fontWeight: "500",
-                }}
-              >
-                {getShortenedAddress(location)}
-              </Text>
-            </Pressable>
+              {getShortenedAddress(location)}
+            </Text>
           )}
         </View>
-      </Pressable>
-    </ImageBackground>
+      </ImageBackground>
+    </TouchableOpacity>
   );
 }
 

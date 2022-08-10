@@ -25,7 +25,7 @@ export interface AppInitialStateProps {
     addEventChat: boolean
   ) => Promise<void> | PromiseConstructor;
   setEventCapacity: (
-    eventCapacity: string
+    eventCapacity: string | null
   ) => Promise<void> | PromiseConstructor;
   setEventDescription: (
     eventDescription: string

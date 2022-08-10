@@ -64,6 +64,7 @@ export const extractDisplayUser = (chat: Chat, user?: User) => {
       user.id === idArray[0] ? (position = 1) : (position = 0);
 
       const displayUser = new User({
+        cognitoUserSub: "1",
         name: nameArray[position],
         profileImageUrl: profileImageUrlArray[position],
         phoneNumber: "111 111 1111",

@@ -6,7 +6,7 @@ import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import { Message } from "../src/models";
 
-export type ImageData = {
+export type CustomImageData = {
   fullQualityImageMetaData: ImagePicker.ImageInfo;
   type: "image" | "video";
   uri: string;
@@ -49,7 +49,7 @@ const getImageWidthAndQuality = (request: PickImageRequestEnum) => {
     case PickImageRequestEnum.setChatImage:
       return { width: 300, quality: 0.7 };
     case PickImageRequestEnum.setChatUserImage:
-      return { width: 90, quality: 0.7 };
+      return { width: 200, quality: 0.7 };
   }
 };
 
@@ -76,12 +76,15 @@ export const manipulatePhoto = async (
   return manipulatedPhoto;
 };
 
-export const resizeImage = (message: Message) => {
+export const resizeImage = (message: Message, isImage: boolean) => {
   const necessaryWidth = 0.75 * Dimensions.get("window").width;
 
   if (message.imageHeight && message.imageWidth) {
-    const necessaryHeight =
-      (message.imageHeight * necessaryWidth) / message.imageWidth;
+    //video width is sometimes wrong for some reason so this hardcodes it
+    const trueWidth =
+      message.imageWidth === 3840 && !isImage ? 1215 : message.imageWidth;
+
+    const necessaryHeight = (message.imageHeight * necessaryWidth) / trueWidth;
 
     return { necessaryHeight, necessaryWidth };
   } else {
@@ -144,8 +147,9 @@ export const uploadMedia = async (
   blob: Blob,
   uniqueKey?: string
 ) => {
+  const suffix = type === "image" ? "jpg" : "mp4";
   const { key } = await Storage.put(
-    uniqueKey ? uniqueKey : `${uuidv4()}.jpg`,
+    uniqueKey ? uniqueKey : `${uuidv4()}.${suffix}`,
     blob,
     {
       contentType: type,

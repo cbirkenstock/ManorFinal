@@ -1,5 +1,5 @@
 import React from "react";
-import { TouchableOpacity, View, Text } from "react-native";
+import { TouchableOpacity, View, Text, ActivityIndicator } from "react-native";
 import { styles } from "./styles";
 
 interface Tributton {
@@ -15,10 +15,11 @@ interface Tributton {
     title: string;
     onPress: () => void;
   };
+  isLoading: boolean;
 }
 
 export default function TriButton(props: Tributton) {
-  const { mainButton, bottomLeftButton, bottomRightButton } = props;
+  const { mainButton, bottomLeftButton, bottomRightButton, isLoading } = props;
 
   return (
     <View style={styles.container}>
@@ -29,7 +30,11 @@ export default function TriButton(props: Tributton) {
         ]}
         onPress={mainButton.onPress}
       >
-        <Text style={styles.buttonText}>{mainButton.title}</Text>
+        {isLoading ? (
+          <ActivityIndicator />
+        ) : (
+          <Text style={styles.buttonText}>{mainButton.title}</Text>
+        )}
       </TouchableOpacity>
       <View style={styles.smallButtonContainer}>
         <TouchableOpacity onPress={bottomLeftButton.onPress}>

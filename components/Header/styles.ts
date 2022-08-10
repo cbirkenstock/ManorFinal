@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+import { hasBezels } from "../../constants/hasBezels";
 
 export const styles = StyleSheet.create({
   container: {
@@ -6,7 +7,7 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignContent: "center",
     marginLeft: "5%",
-    marginTop: "12%",
+    marginTop: hasBezels ? "1%" : "12%",
     marginBottom: "2%",
     marginRight: "5%",
     flex: 1,

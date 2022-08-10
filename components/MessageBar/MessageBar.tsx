@@ -1,4 +1,4 @@
-import { View, TextInput, TouchableOpacity } from "react-native";
+import { View, TextInput, TouchableOpacity, Alert } from "react-native";
 import React, { useState } from "react";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { Send } from "react-native-feather";
@@ -79,29 +79,29 @@ export default function MessageBar(props: MessageBarProps) {
   const sendMediaMessage = async () => {
     requestCameraPermissionsAsync();
 
-    const imageData = await pickMedia(PickImageRequestEnum.sendChatImage);
+    const mediaData = await pickMedia(PickImageRequestEnum.sendChatImage);
 
-    if (imageData && imageData.type) {
+    if (mediaData && mediaData.type) {
       const newLocalMessage = createMediaMessageComponent(
-        imageData.fullQualityImageMetaData.uri,
-        imageData.height,
-        imageData.width,
+        mediaData.fullQualityImageMetaData.uri,
+        mediaData.height,
+        mediaData.width,
         context
       );
 
       appendMessage(newLocalMessage, context);
 
-      const blob = await fetchMediaBlob(imageData.uri);
-      const key = await uploadMedia(imageData.type, blob);
+      const blob = await fetchMediaBlob(mediaData.uri);
+      const key = await uploadMedia(mediaData.type, blob);
 
       const newDataMessage = createMediaMessageComponent(
         key,
-        imageData.height,
-        imageData.width,
+        mediaData.height,
+        mediaData.width,
         context
       );
 
-      uploadMedia(imageData.type, blob);
+      uploadMedia(mediaData.type, blob);
       uploadMessage(newDataMessage);
       sendNotification(user ?? undefined, chat, members, newDataMessage);
       updateChatUserHasUnreadMessages(members, true);

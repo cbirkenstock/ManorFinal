@@ -24,6 +24,10 @@ type PendingAnnouncementMetaData = {
   readOnlyFields: "createdAt" | "updatedAt";
 };
 
+type ReactionMetaData = {
+  readOnlyFields: "createdAt" | "updatedAt";
+};
+
 export declare class Chat {
   readonly id: string;
   readonly title?: string | null;
@@ -64,6 +68,7 @@ export declare class Chat {
 
 export declare class User {
   readonly id: string;
+  readonly cognitoUserSub: string;
   readonly name: string;
   readonly phoneNumber: string;
   readonly profileImageUrl?: string | null;
@@ -97,6 +102,7 @@ export declare class ChatUser {
   readonly isAdmin?: boolean | null;
   readonly writtenMessages?: (Message | null)[] | null;
   readonly unreadAnnouncements?: (PendingAnnouncement | null)[] | null;
+  readonly reactions?: (Reaction | null)[] | null;
   readonly profileImageUrl?: string | null;
   readonly createdAt?: string | null;
   readonly updatedAt?: string | null;
@@ -129,7 +135,9 @@ export declare class Message {
   readonly chatID?: string | null;
   readonly chatuserID?: string | null;
   readonly unreachedMembers?: (PendingAnnouncement | null)[] | null;
+  readonly reactions?: (Reaction | null)[] | null;
   readonly likes?: number | null;
+  readonly dislikes?: number | null;
   readonly link?: string | null;
   readonly isMandatory?: boolean | null;
   readonly imageHeight?: number | null;
@@ -153,6 +161,7 @@ export declare class PendingAnnouncement {
   readonly chatUser: ChatUser;
   readonly chatUserID: string;
   readonly message: Message;
+  readonly messageID: string;
   readonly remindDate?: string | null;
   readonly createdAt?: string | null;
   readonly updatedAt?: string | null;
@@ -165,4 +174,22 @@ export declare class PendingAnnouncement {
       draft: MutableModel<PendingAnnouncement, PendingAnnouncementMetaData>
     ) => MutableModel<PendingAnnouncement, PendingAnnouncementMetaData> | void
   ): PendingAnnouncement;
+}
+
+export declare class Reaction {
+  readonly id: string;
+  readonly chatUser: ChatUser;
+  readonly chatUserID: string;
+  readonly message: Message;
+  readonly messageID: string;
+  readonly reactionType: string;
+  readonly createdAt?: string | null;
+  readonly updatedAt?: string | null;
+  constructor(init: ModelInit<Reaction, ReactionMetaData>);
+  static copyOf(
+    source: Reaction,
+    mutator: (
+      draft: MutableModel<Reaction, ReactionMetaData>
+    ) => MutableModel<Reaction, ReactionMetaData> | void
+  ): Reaction;
 }

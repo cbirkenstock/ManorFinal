@@ -5,6 +5,7 @@ import {
   View,
   TextInput,
   KeyboardAvoidingView,
+  Alert,
 } from "react-native";
 import { useAuthContext } from "../../hooks/useAuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,12 +13,14 @@ import Colors from "../../constants/Colors";
 import { LoginScreenProps as Props } from "../../navigation/NavTypes";
 import TriButton from "../../components/TriButton";
 import { DataStore } from "aws-amplify";
+import { User } from "../../src/models";
 
 export default function LoginScreen({ navigation }: Props) {
   const { signIn } = useAuthContext();
   const [phone, setPhone] = useState<string | null>();
   const [password, setPassword] = useState<string | null>();
   const [lastPhoneLength, setLastPhoneLength] = useState<Number>(0);
+  const [isSigningIn, setIsSigningIn] = useState<boolean>(false);
 
   useEffect(() => {
     if (phone) {
@@ -33,6 +36,21 @@ export default function LoginScreen({ navigation }: Props) {
       setLastPhoneLength(0);
     }
   }, [phone]);
+
+  const _signIn = async () => {
+    if (phone?.length !== 14) {
+      Alert.alert("Please Input Correct Phone Number");
+      return;
+    }
+    if (phone && password) {
+      setIsSigningIn(true);
+      const result = await signIn(phone!, password!);
+      if (result !== "SUCCESS") {
+        setIsSigningIn(false);
+        Alert.alert(result);
+      }
+    }
+  };
 
   return (
     <SafeAreaView style={loginStyles.container}>
@@ -66,7 +84,7 @@ export default function LoginScreen({ navigation }: Props) {
         <TriButton
           mainButton={{
             title: "Log In",
-            onPress: () => signIn(phone!, password!),
+            onPress: _signIn,
           }}
           bottomLeftButton={{
             title: "Forgot Password?",
@@ -78,6 +96,7 @@ export default function LoginScreen({ navigation }: Props) {
             title: "Sign Up",
             onPress: () => navigation.replace("SignUpScreen"),
           }}
+          isLoading={isSigningIn}
         />
       </View>
     </SafeAreaView>
@@ -92,45 +111,16 @@ const loginStyles = StyleSheet.create({
 
   ManorView: {
     height: 75,
-    width: "100%",
     marginTop: 10,
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    flexDirection: "row",
   },
 
   text: {
     fontSize: 70,
     fontWeight: "600",
     color: "#5C6AEF",
-  },
-
-  logo: {
-    height: 75,
-    width: 75,
-    marginRight: 5,
-    marginTop: 5,
-  },
-
-  inputContainer: {
-    flex: 0.9,
-    marginTop: 60,
-    justifyContent: "space-between",
-  },
-
-  button: {
-    width: "75%",
-    borderRadius: 20,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 40,
-    backgroundColor: "#5C6AEF",
-  },
-
-  buttonText: {
-    fontSize: 27,
-    color: "white",
   },
 
   input: {

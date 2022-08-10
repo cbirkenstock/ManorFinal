@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, TextInput, Pressable, Text } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Colors from "../../../../constants/Colors";
@@ -29,6 +29,7 @@ export default function EventCreationForm() {
     eventDateTime,
     setEventDateTime,
     eventLocation,
+    setEventLocation,
     addEventChat,
     setAddEventChat,
     eventCapacity,
@@ -39,8 +40,23 @@ export default function EventCreationForm() {
   } = context;
   const navigation = useNavigation<InnerCreateEventFormNavigationProps>();
 
+  // useEffect(() => {
+  //   console.log(eventDateTime);
+  // }, [eventDateTime]);
+
+  const clearState = () => {
+    setEventTitle("");
+    setEventDateTime(new Date());
+    setEventLocation("");
+    setAddEventChat(false);
+    setEventCapacity(null);
+    setEventDescription("");
+  };
+
   const createEvent = async () => {
     if (eventTitle) {
+      clearState();
+
       let newEventChat;
       if (addEventChat && user) {
         newEventChat = (
@@ -113,10 +129,14 @@ export default function EventCreationForm() {
           ]}
           text="Add Location"
           onPress={() => {
-            setIsForwardingEvent?.(false);
-            navigation.navigate("GoogleMapsScreen", {
-              link: undefined,
-            });
+            if (eventLocation) {
+              setEventLocation("");
+            } else {
+              setIsForwardingEvent?.(false);
+              navigation.navigate("GoogleMapsScreen", {
+                link: undefined,
+              });
+            }
           }}
           startAdornment={
             <FontAwesome name="hand-stop-o" size={20} color="white" />

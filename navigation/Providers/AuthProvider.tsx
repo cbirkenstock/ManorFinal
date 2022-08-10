@@ -3,13 +3,20 @@ import { Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { Auth, DataStore } from "aws-amplify";
-import { Chat, User } from "../../src/models";
+import { User } from "../../src/models";
 
 import AuthReducer, { UserActionCase } from "../Reducers/AuthReducer";
 import {
   AuthInitialStateProps,
   initialState,
 } from "../InitialStates/AuthInitialState";
+import {
+  CustomImageData,
+  fetchMediaBlob,
+  uploadMedia,
+} from "../../managers/MediaManager";
+import { setChatUserImage } from "../../managers/ChatUserManager";
+import { ImageInfo } from "expo-image-picker";
 
 interface AuthProviderProps {
   children: JSX.Element;
@@ -21,7 +28,6 @@ export const AuthProvider = (props: AuthProviderProps) => {
   const { children } = props;
   const [loading, setLoading] = useState<boolean>(true);
   const [state, dispatch] = useReducer(AuthReducer, initialState);
-  const [cognitoUser, setCognitoUser] = useState<any>();
 
   useEffect(() => {
     loadStorageData();
@@ -43,28 +49,24 @@ export const AuthProvider = (props: AuthProviderProps) => {
     }
   }
 
-  const signUp = async (
-    name: string,
-    phone: string,
-    password: string,
-    profileImageUrl: string
-  ) => {
+  const signUp = async (name: string, phone: string, password: string) => {
     if (name && phone && password) {
       const phone_number =
         "+" + "1" + phone.slice(1, 4) + phone.slice(6, 9) + phone.slice(10, 14);
       const username = phone_number;
       try {
-        await Auth.signUp({
+        const result = await Auth.signUp({
           username,
           password,
           attributes: {
             name,
             phone_number,
-            "custom:profileImageUrl": profileImageUrl,
           },
         });
+
+        return result;
       } catch (error) {
-        console.log(error);
+        return (error as any).toString();
       }
     }
   };
@@ -74,49 +76,72 @@ export const AuthProvider = (props: AuthProviderProps) => {
       const phone_number =
         "+" + "1" + phone.slice(1, 4) + phone.slice(6, 9) + phone.slice(10, 14);
       try {
-        const results = await Auth.confirmSignUp(phone_number, code);
-        return results;
+        const result = await Auth.confirmSignUp(phone_number, code);
+        return result;
       } catch (error) {
-        console.log(error);
+        return (error as any).toString();
       }
     }
   };
 
-  const signIn = async (phone: string, password: string) => {
-    if (phone === "1") {
-      const hunter = await DataStore.query(
-        User,
-        "7db2f16e-52d3-4fd1-a6fb-e931ead8e344"
-      );
-
-      if (hunter) {
-        setUser(hunter);
-        return "SUCCESS";
-      }
-    }
-
+  const signIn = async (
+    phone: string,
+    password: string,
+    name?: string,
+    profileImageData?: CustomImageData
+  ) => {
     const phone_number =
       "+" + "1" + phone.slice(1, 4) + phone.slice(6, 9) + phone.slice(10, 14);
+
     try {
+      //Cognito Sign-In
       const cognitoUser = await Auth.signIn(phone_number, password);
-      const user = await DataStore.query(User, cognitoUser.attributes.sub);
+
+      //set user & key placeholders
+      let user: User;
+      let key: string = "";
+
+      //if signing in for first time, get profile image ready
+      if (profileImageData) {
+        const blob = await fetchMediaBlob(profileImageData.uri ?? "");
+        key = await uploadMedia("image", blob);
+      }
+
+      //if signing in for first time, create user in DB to go with Cognito User
+      if (name && key) {
+        const userItem = new User({
+          name: name,
+          phoneNumber: phone_number,
+          profileImageUrl: key,
+          cognitoUserSub: cognitoUser.attributes.sub,
+        });
+
+        user = await DataStore.save(userItem);
+
+        //also create chatUser image equivalent like changing profile picture
+        setChatUserImage(user, profileImageData!, key);
+      }
+      //else there should already be a user in the DB so retrieve it
+      else {
+        user = (
+          await DataStore.query(User, (user) =>
+            user.cognitoUserSub("eq", cognitoUser.attributes.sub)
+          )
+        )[0];
+      }
+
       if (user) {
         setUser(user);
         AsyncStorage.setItem("currentUser", JSON.stringify(user));
         return "SUCCESS";
       }
 
-      return "FAILURE";
+      //if no user, return error message
+      return profileImageData
+        ? "User Could Not Be Created"
+        : "User Not Found in Database";
     } catch (error) {
-      if (typeof error === "string") {
-        Alert.alert("Error", error, [
-          {
-            text: "OK",
-            style: "cancel",
-          },
-        ]);
-      }
-      return "ERROR";
+      return (error as any).toString();
     }
   };
 

@@ -8,9 +8,17 @@ export type AuthStackParamList = {
   SignUpScreen: undefined;
   LoginScreen: undefined;
   ConfirmCodeScreen: {
+    name: string;
     phone: string;
     password: string;
-    profileImageBlob: Blob;
+    profileImageData: {
+      fullQualityImageMetaData: ImageInfo;
+      type: "video" | "image";
+      uri: string;
+      width: number;
+      height: number;
+      base64?: string | undefined;
+    } | null;
   };
 };
 

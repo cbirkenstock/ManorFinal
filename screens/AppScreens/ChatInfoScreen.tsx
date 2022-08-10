@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -11,7 +11,7 @@ import {
 import useAppContext from "../../hooks/useAppContext";
 import useAuthContext from "../../hooks/useAuthContext";
 import { ChatInfoScreenProps as Props } from "../../navigation/NavTypes";
-import { ChatUser, Message } from "../../src/models";
+import { ChatUser, Message, User } from "../../src/models";
 import Colors from "../../constants/Colors";
 import { DataStore } from "aws-amplify";
 import SectionButton, {
@@ -43,8 +43,13 @@ export default function ProfileScreen({ navigation, route }: Props) {
   const [eventMessages, setEventMessages] = useState<Message[]>([]);
   const [firstThreeAnnouncementMessages, setFirstThreeAnnouncementMessages] =
     useState<Message[]>([]);
+  const [firstThreeAnnouncementSenders, setFirstThreeAnnouncementSenders] =
+    useState<User[]>([]);
 
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(
+    chatUser?.notificationsEnabled ?? true
+  );
+  const notificationsEnabledRef = useRef(
     chatUser?.notificationsEnabled ?? true
   );
 
@@ -66,14 +71,19 @@ export default function ProfileScreen({ navigation, route }: Props) {
 
   const toggleNotifications = () => {
     setNotificationsEnabled(!notificationsEnabled);
+    notificationsEnabledRef.current = !notificationsEnabledRef.current;
   };
 
   useEffect(() => {
     const updateChatUser = () => {
-      if (chatUser && notificationsEnabled != chatUser.notificationsEnabled) {
+      if (
+        chatUser &&
+        notificationsEnabledRef.current !== chatUser?.notificationsEnabled
+      ) {
         DataStore.save(
           ChatUser.copyOf(chatUser, (updatedChatUser) => {
-            updatedChatUser.notificationsEnabled = notificationsEnabled;
+            updatedChatUser.notificationsEnabled =
+              notificationsEnabledRef.current;
           })
         ).then((newChatUser) => {
           setChatUser(newChatUser);
@@ -159,7 +169,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
   }, []);
 
   useEffect(() => {
-    const fetchAllAnnouncements = async () => {
+    const fetchFirstThreeAnnouncementsAndSenders = async () => {
       const _firstThreeAnnouncementMessages = await DataStore.query(
         Message,
         (message) =>
@@ -169,10 +179,24 @@ export default function ProfileScreen({ navigation, route }: Props) {
         { limit: 3 }
       );
 
+      let _firstThreeAnnouncementSenders: User[] = [];
+
+      for (const announcement of _firstThreeAnnouncementMessages) {
+        const user = await DataStore.query(
+          ChatUser,
+          announcement.chatuserID ?? ""
+        ).then((chatUser) => chatUser?.user);
+
+        if (user) {
+          _firstThreeAnnouncementSenders.push(user);
+        }
+      }
+
       setFirstThreeAnnouncementMessages(_firstThreeAnnouncementMessages);
+      setFirstThreeAnnouncementSenders(_firstThreeAnnouncementSenders);
     };
 
-    fetchAllAnnouncements();
+    fetchFirstThreeAnnouncementsAndSenders();
   }, []);
 
   const data: ChatInfoDataType[] = [
@@ -248,18 +272,25 @@ export default function ProfileScreen({ navigation, route }: Props) {
     },
     {
       title: "Announcements",
-      data: firstThreeAnnouncementMessages.map((announcementMessage) => {
+      data: firstThreeAnnouncementMessages.map((announcementMessage, index) => {
+        const announcementSender = firstThreeAnnouncementSenders[index];
         return {
           caption: announcementMessage.announcementBody ?? "",
-          buttonStyle: {
-            borderWidth: 2,
-            backgroundColor: "rgba(92, 106, 239, 0.25)",
-            borderColor: "rgba(92, 106, 239, 1)",
-          },
-          textStyle: {
-            fontWeight: "500",
-          },
+          multiline: true,
+          textStyle: { fontWeight: "500" },
           onPress: () => goToUnreachedMembers(announcementMessage),
+          dictionaryInput: (
+            <Text
+              style={{
+                fontWeight: "700",
+                fontSize: 19,
+                color: Colors.manorRed,
+                alignSelf: "flex-start",
+              }}
+            >
+              {`${announcementSender?.name}: `}
+            </Text>
+          ),
         };
       }),
     },
@@ -275,19 +306,20 @@ export default function ProfileScreen({ navigation, route }: Props) {
 
   /* ----------------------------- Section Header ----------------------------- */
 
-  const renderSectionHeader = (
-    section: SectionListData<SectionButtonProps | Message, ChatInfoDataType>
-  ) => {
-    if (section.data.length > 0) {
-      return <Text style={styles.header}>{section.title}</Text>;
-    } else {
-      return null;
-    }
-  };
+  // const renderSectionHeader = (
+  //   section: SectionListData<SectionButtonProps | Message, ChatInfoDataType>
+  // ) => {
+  //   return null;
+  //   if (section.data.length === 0 || !section.title) {
+  //     return null;
+  //   } else {
+  //     return <Text style={styles.header}>{section.title}</Text>;
+  //   }
+  // };
 
   /* ----------------------------- Section Button ----------------------------- */
 
-  const renderSectionButton = (item: SectionButtonProps) => {
+  const renderSectionButton = (item: SectionButtonProps, first?: boolean) => {
     return (
       <SectionButton
         caption={item.caption}
@@ -295,6 +327,9 @@ export default function ProfileScreen({ navigation, route }: Props) {
         textStyle={item.textStyle}
         buttonStyle={[item.buttonStyle]}
         onPress={item.onPress}
+        multiline={item.multiline}
+        dictionaryInput={item.dictionaryInput}
+        first={first}
       />
     );
   };
@@ -319,13 +354,82 @@ export default function ProfileScreen({ navigation, route }: Props) {
       const eventMessageItems = section.data as Message[];
 
       return (
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={eventMessageItems}
-          keyExtractor={(eventMessage) => eventMessage.id}
-          renderItem={renderEventCard}
-        />
+        <View
+          style={{
+            backgroundColor: Colors.manorBackgroundGray,
+            padding: 15,
+            marginBottom: 15,
+            borderRadius: 20,
+          }}
+        >
+          {section.title && (
+            <View
+              style={{ flexDirection: "row", justifyContent: "space-between" }}
+            >
+              <Text style={{ color: "white", fontSize: 20, fontWeight: "600" }}>
+                {section.title}
+              </Text>
+            </View>
+          )}
+          <FlatList
+            style={{ marginTop: 10 }}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={eventMessageItems}
+            keyExtractor={(eventMessage) => eventMessage.id}
+            renderItem={renderEventCard}
+          />
+        </View>
+      );
+    } else {
+      return null;
+    }
+  };
+
+  const renderSectionListCard = (
+    index: number,
+    section: SectionListData<SectionButtonProps | Message, ChatInfoDataType>
+  ) => {
+    if (index === 0) {
+      const sectionButtons = section.data as SectionButtonProps[];
+      return (
+        <View
+          style={{
+            backgroundColor: Colors.manorBackgroundGray,
+            padding: 15,
+            marginBottom: 15,
+            borderRadius: 20,
+          }}
+        >
+          {section.title && (
+            <View
+              style={{ flexDirection: "row", justifyContent: "space-between" }}
+            >
+              <Text style={{ color: "white", fontSize: 20, fontWeight: "600" }}>
+                {section.title}
+              </Text>
+
+              <Text
+                style={{
+                  color: Colors.manorPaymentBlue,
+                  fontSize: 18,
+                  fontWeight: "400",
+                }}
+              >
+                See More
+              </Text>
+            </View>
+          )}
+          <FlatList
+            style={{ marginTop: section.title ? 10 : 0 }}
+            scrollEnabled={false}
+            data={sectionButtons}
+            keyExtractor={(sectionButtonProps) => sectionButtonProps.caption}
+            renderItem={({ item, index }) =>
+              renderSectionButton(item, index === 0)
+            }
+          />
+        </View>
       );
     } else {
       return null;
@@ -348,47 +452,52 @@ export default function ProfileScreen({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.rowContainer}>
-        {displayUser?.profileImageUrl || chat?.chatImageUrl ? (
-          <SignedImage
-            style={styles.image}
-            source={
-              displayUser ? displayUser.profileImageUrl : chat?.chatImageUrl
-            }
-          />
-        ) : (
-          <View style={[styles.image]}>
-            <DefaultContactImage members={members} />
-          </View>
-        )}
+      <View style={styles.paddingContainer}>
+        <View style={styles.rowContainer}>
+          {displayUser?.profileImageUrl || chat?.chatImageUrl ? (
+            <SignedImage
+              style={styles.image}
+              source={
+                displayUser ? displayUser.profileImageUrl : chat?.chatImageUrl
+              }
+            />
+          ) : (
+            <View style={[styles.image]}>
+              <DefaultContactImage members={members} />
+            </View>
+          )}
 
-        <View style={{ flexShrink: 1 }}>
-          <TextInput
-            editable={chat ? false : true}
-            style={styles.title}
-            keyboardAppearance="dark"
-            placeholder={chat?.title ?? displayUser?.name}
-            placeholderTextColor={"white"}
-            multiline={true}
-            maxLength={30}
-            returnKeyType="done"
-          />
+          <View style={{ flexShrink: 1 }}>
+            <TextInput
+              editable={chat ? false : true}
+              style={styles.title}
+              keyboardAppearance="dark"
+              placeholder={chat?.title ?? displayUser?.name}
+              placeholderTextColor={"white"}
+              multiline={true}
+              maxLength={30}
+              returnKeyType="done"
+            />
+          </View>
         </View>
+        <SectionList
+          showsVerticalScrollIndicator={false}
+          style={styles.sectionList}
+          sections={data}
+          keyExtractor={(item) => extractKey(item)}
+          renderSectionHeader={() => {
+            return null;
+          }}
+          renderItem={({ index, item, section }) => {
+            if ((item as SectionButtonProps).caption) {
+              //return renderSectionButton(item as SectionButtonProps);
+              return renderSectionListCard(index, section);
+            } else {
+              return renderEventCardFlatlist(index, section);
+            }
+          }}
+        />
       </View>
-      <SectionList
-        showsVerticalScrollIndicator={false}
-        style={styles.sectionList}
-        sections={data}
-        keyExtractor={(item) => extractKey(item)}
-        renderSectionHeader={({ section }) => renderSectionHeader(section)}
-        renderItem={({ index, item, section }) => {
-          if ((item as SectionButtonProps).caption) {
-            return renderSectionButton(item as SectionButtonProps);
-          } else {
-            return renderEventCardFlatlist(index, section);
-          }
-        }}
-      />
     </SafeAreaView>
   );
 }
@@ -398,18 +507,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "black",
   },
+
+  paddingContainer: {
+    flex: 1,
+    paddingHorizontal: "3%",
+  },
+
   header: {
     fontSize: 20,
-    fontWeight: "600",
+    fontWeight: "700",
     textAlign: "center",
     backgroundColor: "black",
     color: "white",
-    marginBottom: 3,
+    marginVertical: 5,
   },
   rowContainer: {
     marginTop: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
     flexDirection: "row",
     justifyContent: "flex-start",
     alignItems: "center",
@@ -429,5 +542,5 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     fontWeight: "bold",
   },
-  sectionList: { paddingHorizontal: "1%" },
+  sectionList: { marginTop: 20 },
 });

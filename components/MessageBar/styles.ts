@@ -7,7 +7,6 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "flex-end",
     minHeight: 37.5,
-    marginBottom: 47.5,
     paddingHorizontal: "1%",
   },
 

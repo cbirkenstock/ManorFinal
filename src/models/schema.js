@@ -260,6 +260,13 @@ export const schema = {
           isRequired: true,
           attributes: [],
         },
+        cognitoUserSub: {
+          name: "cognitoUserSub",
+          isArray: false,
+          type: "String",
+          isRequired: true,
+          attributes: [],
+        },
         name: {
           name: "name",
           isArray: false,
@@ -480,6 +487,20 @@ export const schema = {
             associatedWith: "chatUser",
           },
         },
+        reactions: {
+          name: "reactions",
+          isArray: true,
+          type: {
+            model: "Reaction",
+          },
+          isRequired: false,
+          attributes: [],
+          isArrayNullable: true,
+          association: {
+            connectionType: "HAS_MANY",
+            associatedWith: "chatUser",
+          },
+        },
         profileImageUrl: {
           name: "profileImageUrl",
           isArray: false,
@@ -674,8 +695,29 @@ export const schema = {
             associatedWith: "message",
           },
         },
+        reactions: {
+          name: "reactions",
+          isArray: true,
+          type: {
+            model: "Reaction",
+          },
+          isRequired: false,
+          attributes: [],
+          isArrayNullable: true,
+          association: {
+            connectionType: "HAS_MANY",
+            associatedWith: "message",
+          },
+        },
         likes: {
           name: "likes",
+          isArray: false,
+          type: "Int",
+          isRequired: false,
+          attributes: [],
+        },
+        dislikes: {
+          name: "dislikes",
           isArray: false,
           type: "Int",
           isRequired: false,
@@ -824,6 +866,13 @@ export const schema = {
             targetName: "messageID",
           },
         },
+        messageID: {
+          name: "messageID",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
         remindDate: {
           name: "remindDate",
           isArray: false,
@@ -858,7 +907,108 @@ export const schema = {
         {
           type: "key",
           properties: {
-            name: "customByChatUser",
+            name: "announcementsByChatUser",
+            fields: ["chatUserID"],
+          },
+        },
+        {
+          type: "auth",
+          properties: {
+            rules: [
+              {
+                allow: "public",
+                operations: ["create", "update", "delete", "read"],
+              },
+            ],
+          },
+        },
+      ],
+    },
+    Reaction: {
+      name: "Reaction",
+      fields: {
+        id: {
+          name: "id",
+          isArray: false,
+          type: "ID",
+          isRequired: true,
+          attributes: [],
+        },
+        chatUser: {
+          name: "chatUser",
+          isArray: false,
+          type: {
+            model: "ChatUser",
+          },
+          isRequired: true,
+          attributes: [],
+          association: {
+            connectionType: "BELONGS_TO",
+            targetName: "chatUserID",
+          },
+        },
+        chatUserID: {
+          name: "chatUserID",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
+        message: {
+          name: "message",
+          isArray: false,
+          type: {
+            model: "Message",
+          },
+          isRequired: true,
+          attributes: [],
+          association: {
+            connectionType: "BELONGS_TO",
+            targetName: "messageID",
+          },
+        },
+        messageID: {
+          name: "messageID",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
+        reactionType: {
+          name: "reactionType",
+          isArray: false,
+          type: "String",
+          isRequired: true,
+          attributes: [],
+        },
+        createdAt: {
+          name: "createdAt",
+          isArray: false,
+          type: "AWSDateTime",
+          isRequired: false,
+          attributes: [],
+          isReadOnly: true,
+        },
+        updatedAt: {
+          name: "updatedAt",
+          isArray: false,
+          type: "AWSDateTime",
+          isRequired: false,
+          attributes: [],
+          isReadOnly: true,
+        },
+      },
+      syncable: true,
+      pluralName: "Reactions",
+      attributes: [
+        {
+          type: "model",
+          properties: {},
+        },
+        {
+          type: "key",
+          properties: {
+            name: "reactionsByChatUser",
             fields: ["chatUserID"],
           },
         },
@@ -878,5 +1028,5 @@ export const schema = {
   },
   enums: {},
   nonModels: {},
-  version: "5f410f22626370a9a32bd6afb4f2561b",
+  version: "be7a9161c697cedd5cddbac9cd440a7d",
 };

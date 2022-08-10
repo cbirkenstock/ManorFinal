@@ -18,10 +18,7 @@ import { Chat, ChatUser } from "../../src/models";
 import { animateTwoSequence } from "../../managers/AnimationManager";
 import { dropDown } from "../../constants/Dropdown";
 import DropdownItem, { DropdownItemProps } from "../../components/DropdownItem";
-import {
-  // getChatSubscription,
-  getContactSubscription,
-} from "../../managers/SubscriptionManager";
+import { getContactSubscription } from "../../managers/SubscriptionManager";
 import {
   attachNotificationHandler,
   fetchNotificationChat,

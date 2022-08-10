@@ -5,9 +5,8 @@ export default {
   manorPurple: "#5C6AEF",
   manorRed: "#E25F43",
   manorGreen: "#26A69A",
-
   manorLightBlue: "#00ffff",
-  manorPaymentBlue: "",
+  manorPaymentBlue: "#008CFF",
   manorDarkWhite: "#E1D9D1",
   manorBackgroundGray: "#171717",
   manorBlueGray: "#2d3238",

@@ -37,7 +37,8 @@ type SetChatsHandler = (
 
 export const messageSubscription = (
   context: AppInitialStateProps,
-  handler: MessageSubscriptionHandler
+  insertHandler: MessageSubscriptionHandler,
+  updateHandler: MessageSubscriptionHandler
 ) => {
   const { chat, chatUser } = context;
 
@@ -49,7 +50,9 @@ export const messageSubscription = (
     const isMe = message.chatuserID === chatUser?.id;
 
     if (object.opType === "INSERT" && includesChatUserID && !isMe) {
-      handler(message, context);
+      insertHandler(message, context);
+    } else if (object.opType === "UPDATE") {
+      updateHandler(message, context);
     }
   });
 
@@ -77,7 +80,7 @@ export const getContactSubscription = (
     const chatUser = object.element;
 
     if (object.opType === "INSERT") {
-      DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chat.id)).then(
+      DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chat?.id)).then(
         (newChat) => {
           if (!chatsIncludeSpecificChat(chats, newChat[0])) {
             return setChats(prependChat(newChat[0], chats));
@@ -86,9 +89,9 @@ export const getContactSubscription = (
       );
     } else if (object.opType === "UPDATE") {
       const mustRemove = !chatUser.isOfActiveChat;
-      const mustReorder = chatUser.isOfActiveChat && chatUser.hasUnreadMessage;
+      const mustReorder = chatUser.hasUnreadMessage;
 
-      DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chat.id)).then(
+      DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chat?.id)).then(
         (updatedChat) => {
           let chatsList = chats;
           if (
@@ -100,6 +103,8 @@ export const getContactSubscription = (
 
           if (mustReorder) {
             return setChats(prependChat(updatedChat[0], chatsList));
+          } else {
+            return setChats(chatsList);
           }
 
           return;

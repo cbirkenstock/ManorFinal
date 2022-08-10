@@ -10,26 +10,23 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import MessageBubble from "../../components/Message/MessageBubble/MessageBubble";
-import MediaMessage from "../../components/Message/MediaMessage/MediaMessage";
-import ContactImage from "../../components/Message/ContactImage";
 import MessageBar from "../../components/MessageBar/MessageBar";
-import ContactNameLabel from "../../components/Message/ContactNameLabel";
 import Colors from "../../constants/Colors";
 import useAppContext from "../../hooks/useAppContext";
 import { ChatScreenProps as Props } from "../../navigation/NavTypes";
 import { Chat, ChatUser, Message, PendingAnnouncement } from "../../src/models";
-import EventMessage from "../../components/Message/EventMessage/EventMessage";
 import DefaultContactImage from "../../components/DefaultContactImage";
 import CacheImage from "../../components/CustomPrimitives/CacheImage";
-import EventSuggestionMessage from "../../components/Message/EventSuggestionMessage/EventSuggestionMessage";
 import Announcement from "../../components/Announcement/Announcement";
 import {
   updateChatUserHasUnreadAnnouncements,
   updateChatUserHasUnreadMessages,
 } from "../../managers/ChatUserManager";
 import { messageSubscription } from "../../managers/SubscriptionManager";
-import { appendMessage } from "../../managers/MessageManager";
+import {
+  appendMessage,
+  updateMessageLocally,
+} from "../../managers/MessageManager";
 import { chatFlatlistButtons } from "../../constants/chatFlatlistButtonData";
 import { animate } from "../../managers/AnimationManager";
 import IconButton, {
@@ -39,6 +36,10 @@ import Dialog from "../../components/Dialog";
 import AnnouncementCreationForm from "../../components/Dialog/DialogForms/AnnouncementCreationForm/AnnouncementCreationForm";
 import useAuthContext from "../../hooks/useAuthContext";
 import ImageView from "react-native-image-viewing";
+import { hasBezels } from "../../constants/hasBezels";
+import FullMessageComponent from "../../components/Message/FullMessageComponent/FullMessageComponent";
+import EventMessage from "../../components/Message/SubComponents/EventMessage";
+import EventSuggestionMessage from "../../components/Message/SubComponents/EventSuggestionMessage/EventSuggestionMessage";
 
 export default function ChatScreen({ navigation, route }: Props) {
   const context = useAppContext();
@@ -62,7 +63,7 @@ export default function ChatScreen({ navigation, route }: Props) {
   const [isAnnouncementDialogVisible, setIsAnnouncementDialogVisible] =
     useState<boolean>(false);
 
-  const heightAnim = useRef(new Animated.Value(0)).current;
+  const chatFlatlistButtonsHeightAnim = useRef(new Animated.Value(0)).current;
   const chatcontextUpdated = chat?.id === route.params?.chat.id;
   const chatScreenSetChats = route.params.setChats;
 
@@ -188,7 +189,11 @@ export default function ChatScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     if (messages) {
-      const subscription = messageSubscription(context, appendMessage);
+      const subscription = messageSubscription(
+        context,
+        appendMessage,
+        updateMessageLocally
+      );
       return () => subscription.unsubscribe();
     }
   }, [messages]);
@@ -197,13 +202,13 @@ export default function ChatScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     Keyboard.addListener("keyboardWillShow", () => {
-      animate(heightAnim, 165, 300);
+      animate(chatFlatlistButtonsHeightAnim, 165, 300);
     });
   }, []);
 
   useEffect(() => {
     Keyboard.addListener("keyboardWillHide", () => {
-      animate(heightAnim, 0, 300);
+      animate(chatFlatlistButtonsHeightAnim, 0, 300);
     });
   }, []);
 
@@ -236,7 +241,7 @@ export default function ChatScreen({ navigation, route }: Props) {
           )}
         </Pressable>
         <Animated.FlatList
-          style={{ marginTop: 7.5, height: heightAnim }}
+          style={{ marginTop: 7.5, height: chatFlatlistButtonsHeightAnim }}
           scrollEnabled={false}
           keyboardShouldPersistTaps="always"
           keyExtractor={(item) => item.title}
@@ -285,10 +290,6 @@ export default function ChatScreen({ navigation, route }: Props) {
   /* -------------------------------------------------------------------------- */
 
   const renderMessage = ({ item }: { item: Message }) => {
-    const isMe = item.chatuserID === chatUser?.id;
-    const sender = members.find((member) => member.id === item.chatuserID);
-    const isFirstOfGroup = item.marginTop === 10;
-
     if (item.isEventMessage) {
       return (
         <View style={{ marginTop: item.marginTop ?? 1 }}>
@@ -303,29 +304,7 @@ export default function ChatScreen({ navigation, route }: Props) {
       );
     } else {
       return (
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: isMe ? "flex-end" : "flex-start",
-            marginTop: item.marginTop ?? 1,
-          }}
-        >
-          {/* This way even if no image, the spacing still there */}
-          <View style={styles.senderImageContainer}>
-            {!isMe && isFirstOfGroup && (
-              <ContactImage profileImageUrl={sender?.profileImageUrl} />
-            )}
-          </View>
-          <View style={{ maxWidth: item.messageBody ? "68%" : undefined }}>
-            {!isMe && isFirstOfGroup && (
-              <ContactNameLabel contactName={sender?.nickname} />
-            )}
-            {item.messageBody && <MessageBubble message={item} />}
-            {item.imageUrl && (
-              <MediaMessage message={item} setZoomImage={setZoomImage} />
-            )}
-          </View>
-        </View>
+        <FullMessageComponent message={item} setZoomImage={setZoomImage} />
       );
     }
   };
@@ -335,7 +314,7 @@ export default function ChatScreen({ navigation, route }: Props) {
   }: {
     item: Omit<IconButtonProps, "onPress"> & { title: string };
   }) => {
-    const { title, icon, dimension, color } = item;
+    const { title, icon, color } = item;
     return (
       <IconButton
         style={{ marginBottom: 7.5 }}
@@ -355,41 +334,44 @@ export default function ChatScreen({ navigation, route }: Props) {
   /*                                   Render                                   */
   /* -------------------------------------------------------------------------- */
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior="padding"
-      keyboardVerticalOffset={-42}
-      enabled
-    >
-      <AnnouncementDialog />
-      {pendingAnnouncements.length > 0 && <Announcement />}
-      <StatusBar hidden={true} />
-      <FlatList
-        style={[styles.messageFlatlist]}
-        inverted
-        keyboardDismissMode={"on-drag"}
-        showsVerticalScrollIndicator={false}
-        data={messages}
-        keyExtractor={(message) => message?.id}
-        renderItem={renderMessage}
-      />
-      <MessageBar
-        chat={chat ?? undefined}
-        chats={chats ?? []}
-        setChats={chatScreenSetChats}
-      />
-      <ChatFlatlistButtons />
-      <ZoomImageView />
-    </KeyboardAvoidingView>
+    <View style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior="padding"
+        enabled
+        keyboardVerticalOffset={5}
+      >
+        <AnnouncementDialog />
+        {pendingAnnouncements.length > 0 && <Announcement />}
+        <StatusBar hidden={true} />
+        <FlatList
+          style={[styles.messageFlatlist]}
+          inverted
+          keyboardDismissMode={"on-drag"}
+          showsVerticalScrollIndicator={false}
+          data={messages}
+          keyExtractor={(message) => message?.id}
+          renderItem={renderMessage}
+        />
+        <MessageBar
+          chat={chat ?? undefined}
+          chats={chats ?? []}
+          setChats={chatScreenSetChats}
+        />
+        <ChatFlatlistButtons />
+        <ZoomImageView />
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: { backgroundColor: Colors.manorChatScreenBlack, flex: 1 },
+  keyboardAvoidingView: {
     flex: 1,
-    marginVertical: 0,
     backgroundColor: Colors.manorChatScreenBlack,
     justifyContent: "space-between",
+    marginBottom: hasBezels ? 5 : 47.5,
   },
 
   messageFlatlist: {
@@ -415,9 +397,6 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     overflow: "hidden",
   },
-
-  senderImageContainer: { height: 30, width: 30, marginRight: 5 },
-
   chatFlatlistButtons: {
     position: "absolute",
     top: "5%",

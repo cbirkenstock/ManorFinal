@@ -51,7 +51,7 @@ export const AppProvider = (props: AppProviderProps) => {
     });
   };
 
-  const setEventLocation = async (newEventLocation: string) => {
+  const setEventLocation = async (newEventLocation: string | null) => {
     dispatch({
       type: AppActionCase.setEventLocation,
       payload: newEventLocation,
@@ -65,7 +65,7 @@ export const AppProvider = (props: AppProviderProps) => {
     });
   };
 
-  const setEventCapacity = async (eventCapacity: string) => {
+  const setEventCapacity = async (eventCapacity: string | null) => {
     dispatch({
       type: AppActionCase.setEventCapacity,
       payload: eventCapacity,

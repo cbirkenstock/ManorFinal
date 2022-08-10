@@ -5,12 +5,11 @@ export const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 5,
     borderRadius: 10,
     backgroundColor: Colors.manorBlueGray,
     paddingHorizontal: 10,
     paddingVertical: 10,
-    height: 50,
+    minHeight: 50,
   },
 
   text: {
