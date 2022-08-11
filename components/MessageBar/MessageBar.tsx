@@ -55,7 +55,7 @@ export default function MessageBar(props: MessageBarProps) {
       const newMessage = createTextMessageComponent(messageBody, context);
       appendMessage(newMessage, context);
       setChats(reOrderChats(chat, chats, newMessage.messageBody ?? undefined));
-      uploadMessage(newMessage);
+      await uploadMessage(newMessage);
       sendNotification(user ?? undefined, chat, members, newMessage, false);
       updateChatUserHasUnreadMessages(
         members.filter((member) => member.id !== chatUser?.id),
@@ -101,7 +101,7 @@ export default function MessageBar(props: MessageBarProps) {
       );
 
       uploadMedia(mediaData.type, blob);
-      uploadMessage(newDataMessage);
+      await uploadMessage(newDataMessage);
       sendNotification(user ?? undefined, chat, members, newDataMessage, false);
       updateChatUserHasUnreadMessages(members, true);
 

@@ -16,7 +16,6 @@ import {
   uploadMedia,
 } from "../../managers/MediaManager";
 import { setChatUserImage } from "../../managers/ChatUserManager";
-import { ImageInfo } from "expo-image-picker";
 
 interface AuthProviderProps {
   children: JSX.Element;
@@ -30,6 +29,7 @@ export const AuthProvider = (props: AuthProviderProps) => {
   const [state, dispatch] = useReducer(AuthReducer, initialState);
 
   useEffect(() => {
+    DataStore.start();
     loadStorageData();
   }, []);
 
@@ -151,7 +151,7 @@ export const AuthProvider = (props: AuthProviderProps) => {
       //if no user, return error message
       return profileImageData
         ? "User Could Not Be Created"
-        : "User Not Found in Database";
+        : "User Not Found in Database. Please Try Again.";
     } catch (error) {
       return (error as any).toString();
     }

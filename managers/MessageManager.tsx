@@ -216,8 +216,8 @@ export const updateMessageLikes = async (message: Message) => {
   }
 };
 
-export const uploadMessage = (message: Message) => {
-  DataStore.save(message);
+export const uploadMessage = async (message: Message) => {
+  await DataStore.save(message);
 };
 
 export const UploadPendingAnnouncements = (

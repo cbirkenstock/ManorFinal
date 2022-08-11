@@ -63,7 +63,7 @@ export const setUpAndroidNotificationChanel = () => {
 export const setNotificationHandler = () => {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: true,
+      shouldShowAlert: false,
       shouldPlaySound: false,
       shouldSetBadge: false,
     }),

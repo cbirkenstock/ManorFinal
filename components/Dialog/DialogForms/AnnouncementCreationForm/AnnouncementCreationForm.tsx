@@ -40,21 +40,25 @@ export default function AnnouncementCreationForm(
     }
   };
 
-  const sendAnnouncement = () => {
+  const sendAnnouncement = async () => {
     if (announcementBody) {
+      const membersExcludingCurrentUser = members.filter(
+        (member) => member.user.id !== user?.id
+      );
+
       const newAnnouncement = createAnnouncementComponent(
         context,
         announcementBody,
         isMandatory,
         link
       );
-      uploadMessage(newAnnouncement);
-      UploadPendingAnnouncements(members, newAnnouncement);
-      updateChatUserHasUnreadAnnouncements(members, true);
+      await uploadMessage(newAnnouncement);
+      UploadPendingAnnouncements(membersExcludingCurrentUser, newAnnouncement);
+      updateChatUserHasUnreadAnnouncements(membersExcludingCurrentUser, true);
       sendNotification(
         user ?? undefined,
         chat ?? undefined,
-        members,
+        membersExcludingCurrentUser,
         newAnnouncement,
         true
       );
