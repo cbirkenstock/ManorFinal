@@ -7,7 +7,7 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignContent: "center",
     marginLeft: "5%",
-    marginTop: hasBezels ? "1%" : "12%",
+    marginTop: hasBezels ? "5%" : "12%",
     marginBottom: "2%",
     marginRight: "5%",
     flex: 1,

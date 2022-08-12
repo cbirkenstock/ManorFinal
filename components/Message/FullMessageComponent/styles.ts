@@ -7,5 +7,20 @@ export const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  senderImageContainer: { height: 30, width: 30, marginRight: 5 },
+  contactImageContainer: {
+    height: 30,
+    width: 30,
+    marginRight: 5,
+    alignSelf: "flex-end",
+  },
+
+  iconCounterContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 20,
+    padding: 5,
+    borderWidth: 1,
+    borderColor: Colors.manorChatScreenBlack,
+    marginTop: -5,
+  },
 });

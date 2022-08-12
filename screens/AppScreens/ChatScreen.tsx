@@ -9,6 +9,7 @@ import {
   StatusBar,
   StyleSheet,
   View,
+  Text,
 } from "react-native";
 import MessageBar from "../../components/MessageBar/MessageBar";
 import Colors from "../../constants/Colors";
@@ -40,6 +41,8 @@ import { hasBezels } from "../../constants/hasBezels";
 import FullMessageComponent from "../../components/Message/FullMessageComponent/FullMessageComponent";
 import EventMessage from "../../components/Message/SubComponents/EventMessage";
 import EventSuggestionMessage from "../../components/Message/SubComponents/EventSuggestionMessage/EventSuggestionMessage";
+import { FontAwesome } from "@expo/vector-icons";
+import { TouchableOpacity } from "react-native-gesture-handler";
 
 export default function ChatScreen({ navigation, route }: Props) {
   const context = useAppContext();
@@ -64,6 +67,9 @@ export default function ChatScreen({ navigation, route }: Props) {
     useState<boolean>(false);
 
   const chatFlatlistButtonsHeightAnim = useRef(new Animated.Value(0)).current;
+  const announcementSentNotificationOpacityAnim = useRef(
+    new Animated.Value(0)
+  ).current;
   const chatcontextUpdated = chat?.id === route.params?.chat.id;
   const chatScreenSetChats = route.params.setChats;
 
@@ -285,6 +291,38 @@ export default function ChatScreen({ navigation, route }: Props) {
     );
   };
 
+  const AnnouncementSent = () => {
+    return (
+      <Animated.View
+        style={{
+          opacity: announcementSentNotificationOpacityAnim,
+          position: "absolute",
+          height: "100%",
+          width: "100%",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: Colors.manorBlueGray,
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingVertical: 25,
+            height: 200,
+            width: 200,
+            borderRadius: 30,
+          }}
+        >
+          <Text style={{ color: "black", fontWeight: "600", fontSize: 60 }}>
+            Sent
+          </Text>
+          <FontAwesome name="check" size={70} color="black" />
+        </View>
+      </Animated.View>
+    );
+  };
+
   /* -------------------------------------------------------------------------- */
   /*                       Render Flatlist Item Functions                       */
   /* -------------------------------------------------------------------------- */
@@ -359,6 +397,8 @@ export default function ChatScreen({ navigation, route }: Props) {
           setChats={chatScreenSetChats}
         />
         <ChatFlatlistButtons />
+        {/* <AnnouncementSent /> */}
+        {/* <DoubleClickButton /> */}
         <ZoomImageView />
       </KeyboardAvoidingView>
     </View>

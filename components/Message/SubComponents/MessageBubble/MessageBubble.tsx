@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Text, View } from "react-native";
 import { Message } from "../../../../src/models";
 import useAppContext from "../../../../hooks/useAppContext";
@@ -18,15 +18,13 @@ export default function MessageBubble(props: MessageBubbleProps) {
   /* -------------------------------------------------------------------------- */
 
   return (
-    <>
-      <View
-        style={[
-          styles.messageBubble,
-          isMe ? styles.bubbleOutgoing : styles.bubbleIncoming,
-        ]}
-      >
-        <Text style={styles.textMessageFont}>{message.messageBody}</Text>
-      </View>
-    </>
+    <View
+      style={[
+        styles.messageBubble,
+        isMe ? styles.bubbleOutgoing : styles.bubbleIncoming,
+      ]}
+    >
+      <Text style={styles.textMessageFont}>{message.messageBody}</Text>
+    </View>
   );
 }

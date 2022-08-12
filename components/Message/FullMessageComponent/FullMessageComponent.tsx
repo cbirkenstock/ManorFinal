@@ -5,12 +5,14 @@ import { Message, Reaction } from "../../../src/models";
 import { styles } from "./styles";
 import ContactImage from "../SubComponents/ContactImage";
 import ContactNameLabel from "../SubComponents/ContactNameLabel";
-import LikeIndicator from "../SubComponents/LikeIndicator/LikeIndicator";
 import MediaMessage from "../SubComponents/MediaMessage";
 import MessageBubble from "../SubComponents/MessageBubble";
 import MessageReactMenu from "../../MessageReactMenu/MessageReactMenu";
 import { DataStore } from "aws-amplify";
-import { updateMessageLikes } from "../../../managers/MessageManager";
+import Colors from "../../../constants/Colors";
+import IconCounter from "../SubComponents/IconCounter/IconCounter";
+import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
+import MultiGestureButton from "../../CustomPrimitives/MultiGestureButton";
 
 interface FullMessageComponentProps {
   message: Message;
@@ -40,10 +42,9 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
 
   const [isVisible, setIsVisible] = useState<boolean>(false);
 
-  const [hasReactedToMessage, setHasReactedToMessage] = useState<boolean>();
-
-  const [reaction, setReaction] = useState<Reaction | undefined>();
+  const originalReactionRef = useRef<Reaction | undefined>();
   const reactionRef = useRef<Reaction | undefined>();
+  const hasSetReactionRef = useRef<boolean>(false);
 
   /* ----------------------------- Likes Constants ---------------------------- */
 
@@ -60,14 +61,16 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
 
   /* --------------------------- Dislikes Constants --------------------------- */
 
-  const [hasDislikedMessage, setHasDislikedMessage] = useState<boolean>();
+  const [messageDislikes, setMessageDislikes] = useState<number | undefined>(
+    message.dislikes ?? undefined
+  );
+  const messageDislikesRef = useRef<number | undefined>(
+    message.dislikes ?? undefined
+  );
 
-  const [messageDislikes, setMessagedisLikes] = useState<number | undefined>(
-    message.dislikes ?? undefined
-  );
-  const messagedisLikesRef = useRef<number | undefined>(
-    message.dislikes ?? undefined
-  );
+  useEffect(() => {
+    setMessageDislikes(message.dislikes ?? undefined);
+  }, [message]);
 
   /* -------------------------------------------------------------------------- */
   /*                               Fetch Reaction                               */
@@ -75,7 +78,7 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
 
   useEffect(() => {
     const fetchReaction = async () => {
-      const _reaction = (
+      const reaction = (
         await DataStore.query(Reaction, (reaction) =>
           reaction
             .chatUserID("eq", chatUser?.id ?? "")
@@ -83,69 +86,167 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
         )
       )[0];
 
-      setHasReactedToMessage(Boolean(_reaction));
-      setReaction(_reaction);
+      originalReactionRef.current = reaction;
+      reactionRef.current = reaction;
+      hasSetReactionRef.current = true;
     };
 
     fetchReaction();
   }, []);
 
-  useEffect(() => {
-    reactionRef.current = reaction;
-  }, [reaction]);
-
   /* -------------------------------------------------------------------------- */
-  /*                                Like Message                                */
+  /*                             Increment/Decrement                            */
   /* -------------------------------------------------------------------------- */
 
-  useEffect(() => {
-    messageLikesRef.current = messageLikes;
-  }, [messageLikes]);
+  const incrementLikes = () => {
+    const newMessageLikes = (messageLikes ?? 0) + 1;
+    setMessageLikes(newMessageLikes);
+    messageLikesRef.current = newMessageLikes;
+  };
 
-  //check what type of react -- if there's already reaction update it, if not create it, update message likes & dislikes appropriately
+  const decrementLikes = () => {
+    const newMessageLikes = (messageLikes ?? 1) - 1;
+    setMessageLikes(newMessageLikes);
+    messageLikesRef.current = newMessageLikes;
+  };
 
-  useEffect(() => {
-    const updateMessageLikeCount = () => {
-      const _messageLikes = messageLikesRef.current;
-      const _reaction = reactionRef.current;
+  const incrementDislikes = () => {
+    const newMessageDislikes = (messageDislikes ?? 0) + 1;
+    setMessageDislikes(newMessageDislikes);
+    messageDislikesRef.current = newMessageDislikes;
+  };
 
-      if (_messageLikes !== undefined && _messageLikes != message.likes) {
-        if (chatUser && _messageLikes > (message.likes ?? 0)) {
-          const newReaction = new Reaction({
-            chatUser: chatUser,
-            chatUserID: chatUser?.id,
-            message: message,
-            messageID: message.id,
-            reactionType: ReactionType.liked,
-          });
+  const decrementDislikes = () => {
+    const newMessageDislikes = (messageDislikes ?? 1) - 1;
+    setMessageDislikes(newMessageDislikes);
+    messageDislikesRef.current = newMessageDislikes;
+  };
 
-          DataStore.save(newReaction);
-        } else if (_reaction && _messageLikes < (message.likes ?? 1)) {
-          DataStore.delete(_reaction);
+  /* -------------------------------------------------------------------------- */
+  /*                           Local Reaction Handler                           */
+  /* -------------------------------------------------------------------------- */
+  const reactToMessage = (reactionType: ReactionType) => {
+    if (hasSetReactionRef.current === true) {
+      const reaction = reactionRef.current;
+
+      if (reaction) {
+        if (reactionType === reaction.reactionType) {
+          if (reactionType === ReactionType.liked) {
+            decrementLikes();
+          } else {
+            decrementDislikes;
+          }
+          reactionRef.current = undefined;
+        } else {
+          if (reactionType === ReactionType.liked) {
+            incrementLikes();
+            decrementDislikes();
+
+            reactionRef.current = {
+              ...reactionRef.current,
+              reactionType: ReactionType.liked,
+            } as Reaction;
+          } else {
+            incrementDislikes();
+            decrementLikes();
+
+            reactionRef.current = {
+              ...reactionRef.current,
+              reactionType: ReactionType.disliked,
+            } as Reaction;
+          }
         }
-
-        const newMessage = { ...message, likes: _messageLikes };
-        updateMessageLikes(newMessage);
-      }
-    };
-
-    return () => updateMessageLikeCount();
-  }, []);
-
-  const likeMessage = async () => {
-    if (hasReactedToMessage !== undefined) {
-      if (hasReactedToMessage) {
-        setMessageLikes((messageLikes ?? 1) - 1);
       } else {
-        setMessageLikes((messageLikes ?? 0) + 1);
+        if (chatUser) {
+          if (reactionType === ReactionType.liked) {
+            const newMessageLikes = (messageLikes ?? 0) + 1;
+            setMessageLikes(newMessageLikes);
+            messageLikesRef.current = newMessageLikes;
+            reactionRef.current = new Reaction({
+              chatUser: chatUser,
+              chatUserID: chatUser?.id,
+              message: message,
+              messageID: message.id,
+              reactionType: ReactionType.liked,
+            });
+          } else {
+            const newMessageDislikes = (messageDislikes ?? 0) + 1;
+            setMessageDislikes(newMessageDislikes);
+            messageDislikesRef.current = newMessageDislikes;
+            reactionRef.current = new Reaction({
+              chatUser: chatUser,
+              chatUserID: chatUser?.id,
+              message: message,
+              messageID: message.id,
+              reactionType: ReactionType.disliked,
+            });
+          }
+        }
       }
 
-      setHasReactedToMessage(!hasReactedToMessage);
+      setIsVisible(!isVisible);
     }
   };
 
   /* -------------------------------------------------------------------------- */
-  /*                               Dislike Message                              */
+  /*                      Network Message Reaction Handler                      */
+  /* -------------------------------------------------------------------------- */
+
+  /* --------------------------------- Helpers -------------------------------- */
+
+  const updateMessageReactions = (message: Message) => {
+    DataStore.save(
+      Message.copyOf(message, (updatedMessage) => {
+        updatedMessage.likes = messageLikesRef.current;
+        updatedMessage.dislikes = messageDislikesRef.current;
+      })
+    );
+  };
+
+  const updateReaction = (
+    originalReaction: Reaction,
+    currentReaction: Reaction
+  ) => {
+    DataStore.save(
+      Reaction.copyOf(originalReaction, (updatedReaction) => {
+        updatedReaction.reactionType = currentReaction.reactionType;
+      })
+    );
+  };
+
+  /* ---------------------------- Clean Up Function --------------------------- */
+
+  useEffect(() => {
+    const updateMessageAndReaction = () => {
+      const originalReaction = originalReactionRef.current;
+      const currentReaction = reactionRef.current;
+
+      if (originalReaction?.reactionType === currentReaction?.reactionType) {
+        return;
+      }
+
+      DataStore.query(Message, message.id).then((upToDateMessage) => {
+        if (upToDateMessage) {
+          try {
+            updateMessageReactions(upToDateMessage);
+
+            if (originalReaction && currentReaction) {
+              updateReaction(originalReaction, currentReaction);
+            } else if (!originalReaction && currentReaction) {
+              DataStore.save(currentReaction);
+            } else if (originalReaction && !currentReaction) {
+              DataStore.delete(originalReaction);
+            }
+          } catch (error) {}
+        }
+      });
+    };
+
+    return () => updateMessageAndReaction();
+  }, []);
+
+  /* -------------------------------------------------------------------------- */
+  /*                                   Render                                   */
   /* -------------------------------------------------------------------------- */
 
   return (
@@ -158,40 +259,95 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
         },
       ]}
     >
-      {/* This way even if no image, the spacing still there */}
-      <View style={styles.senderImageContainer}>
-        {!isMe && isFirstOfGroup && (
-          <ContactImage profileImageUrl={sender?.profileImageUrl} />
-        )}
-      </View>
-      <View style={{ maxWidth: message.messageBody ? "68%" : undefined }}>
-        {!isMe && isFirstOfGroup && (
+      {!isMe && (
+        <View
+          style={[
+            styles.contactImageContainer,
+            { marginBottom: messageLikes ? 35 : 5 },
+          ]}
+        >
+          {isFirstOfGroup && (
+            <ContactImage profileImageUrl={sender?.profileImageUrl} />
+          )}
+        </View>
+      )}
+      <View style={{ maxWidth: "68%" }}>
+        {!isMe && isFirstOfGroup && !isVisible && (
           <ContactNameLabel contactName={sender?.nickname} />
         )}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-        >
-          {messageLikes && isMe ? (
-            <LikeIndicator messageLikes={messageLikes} isMe={isMe} />
-          ) : null}
-          <Pressable onPress={() => setIsVisible(!isVisible)}>
-            <MessageReactMenu
-              isMe={isMe}
-              visible={isVisible}
-              onLikeMessage={() => likeMessage()}
-              onReaction={() => setIsVisible(!isVisible)}
-            />
+        <MessageReactMenu
+          isMe={isMe}
+          visible={isVisible}
+          onLikeMessage={() => reactToMessage(ReactionType.liked)}
+          onDislikeMessage={() => reactToMessage(ReactionType.disliked)}
+        />
+        <View style={{ alignSelf: isMe ? "flex-end" : "flex-start" }}>
+          <MultiGestureButton onDoublePress={() => setIsVisible(!isVisible)}>
             {message.messageBody && <MessageBubble message={message} />}
             {message.imageUrl && (
               <MediaMessage message={message} setZoomImage={setZoomImage} />
             )}
-          </Pressable>
-          {messageLikes && !isMe ? (
-            <LikeIndicator messageLikes={messageLikes} isMe={isMe} />
-          ) : null}
+          </MultiGestureButton>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: isMe ? "flex-start" : "flex-end",
+              marginLeft: isMe ? -10 : 0,
+              marginRight: isMe ? 0 : -10,
+            }}
+          >
+            {messageLikes ? (
+              <View
+                style={[
+                  styles.iconCounterContainer,
+                  {
+                    backgroundColor: isMe
+                      ? Colors.manorPurple
+                      : Colors.manorBlueGray,
+                    marginRight: messageDislikes ? 5 : 0,
+                  },
+                ]}
+              >
+                <IconCounter
+                  count={messageLikes}
+                  side={"left"}
+                  icon={
+                    <FontAwesome
+                      name="heart"
+                      size={20}
+                      color="white"
+                      style={{ marginTop: 3 }}
+                    />
+                  }
+                />
+              </View>
+            ) : null}
+            {messageDislikes ? (
+              <View
+                style={[
+                  styles.iconCounterContainer,
+                  {
+                    backgroundColor: isMe
+                      ? Colors.manorPurple
+                      : Colors.manorBlueGray,
+                  },
+                ]}
+              >
+                <IconCounter
+                  count={messageDislikes}
+                  side={"left"}
+                  icon={
+                    <FontAwesome5
+                      name="poop"
+                      size={20}
+                      color="white"
+                      style={{ marginTop: 3 }}
+                    />
+                  }
+                />
+              </View>
+            ) : null}
+          </View>
         </View>
       </View>
     </View>
