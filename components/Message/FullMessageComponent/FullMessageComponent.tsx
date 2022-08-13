@@ -284,13 +284,26 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
   /*                                   Render                                   */
   /* -------------------------------------------------------------------------- */
 
+  const getMarginTop = () => {
+    const marginTop = message.marginTop ?? 1;
+    if (marginTop === 10) {
+      return marginTop;
+    } else {
+      if (message?.likes ?? 0 >= 1) {
+        return marginTop + 3;
+      } else {
+        return marginTop;
+      }
+    }
+  };
+
   return (
-    <Animated.View
+    <View
       style={[
         styles.container,
         {
           justifyContent: isMe ? "flex-end" : "flex-start",
-          marginTop: message.marginTop ?? 1,
+          marginTop: getMarginTop(),
         },
       ]}
     >
@@ -310,19 +323,20 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
         {!isMe && isFirstOfGroup && !isVisible && (
           <ContactNameLabel contactName={sender?.nickname} />
         )}
-        <MessageReactMenu
-          isMe={isMe}
-          visible={isVisible}
-          onLikeMessage={() => reactToMessage(ReactionType.liked)}
-          onDislikeMessage={() => reactToMessage(ReactionType.disliked)}
-        />
         <View style={{ alignSelf: isMe ? "flex-end" : "flex-start" }}>
+          <MessageReactMenu
+            isMe={isMe}
+            visible={isVisible}
+            onLikeMessage={() => reactToMessage(ReactionType.liked)}
+            onDislikeMessage={() => reactToMessage(ReactionType.disliked)}
+          />
           <MultiGestureButton
             onPress={() => {
               if (message.imageUrl) {
                 getImageCachePath();
               }
             }}
+            style={(message.likes ?? 0) >= 1 && styles.popularMessage}
             onDoublePress={() => setIsVisible(!isVisible)}
           >
             {message.messageBody && <MessageBubble message={message} />}
@@ -396,7 +410,7 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
           </View>
         </View>
       </View>
-    </Animated.View>
+    </View>
   );
 }
 

@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+import Colors from "../../../../constants/Colors";
 
 export const styles = StyleSheet.create({
   messageBubble: {
@@ -10,25 +11,17 @@ export const styles = StyleSheet.create({
   },
 
   bubbleOutgoing: {
-    backgroundColor: "rgba(92, 106, 239, 0.25)",
+    backgroundColor: Colors.manorDarkPurple,
     borderWidth: 2,
     borderColor: "rgba(92, 106, 239, 0.5)",
     alignSelf: "flex-end",
   },
 
   bubbleIncoming: {
-    backgroundColor: "rgba(82, 82, 82, 0.25)",
+    backgroundColor: Colors.manorBlueGray,
     borderWidth: 2,
-    borderColor: "rgba(82, 82, 82, 0.5)",
+    borderColor: "#535c69",
     alignSelf: "flex-start",
-  },
-
-  popularMessage: {
-    shadowColor: "#fcba03",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 6,
-    elevation: 5,
   },
 
   venmo: {

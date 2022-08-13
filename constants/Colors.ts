@@ -3,9 +3,10 @@ const tintColorDark = "#fff";
 
 export default {
   manorPurple: "#5C6AEF",
+  manorDarkPurple: "#202657",
   manorRed: "#E25F43",
   manorGreen: "#26A69A",
-  manorGold: "#fcba03",
+  manorGold: "#d4af37",
   manorLightBlue: "#00ffff",
   manorPaymentBlue: "#008CFF",
   manorDarkWhite: "#E1D9D1",

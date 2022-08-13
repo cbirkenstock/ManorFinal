@@ -22,7 +22,6 @@ export default function MessageBubble(props: MessageBubbleProps) {
       style={[
         styles.messageBubble,
         isMe ? styles.bubbleOutgoing : styles.bubbleIncoming,
-        (message.likes ?? 0) >= 1 && styles.popularMessage,
       ]}
     >
       <Text style={styles.textMessageFont}>{message.messageBody}</Text>
