@@ -12,13 +12,15 @@ interface DefaultContactImageProps {
 export default function DefaultContactImage(props: DefaultContactImageProps) {
   const { members, chat } = props;
 
-  const [membersCount, setMembersCount] = useState<number>(0);
-  const [formattedMembers, setFormattedMembers] = useState<ChatUser[]>([]);
+  const [membersCount, setMembersCount] = useState<number>(2);
+  const [formattedMembers, setFormattedMembers] = useState<ChatUser[]>(
+    members ?? []
+  );
 
-  useEffect(() => {
-    setMembersCount(members?.length ?? 0);
-    setFormattedMembers(members ?? []);
-  }, [members]);
+  // useEffect(() => {
+  //   setMembersCount(members?.length ?? 0);
+  //   setFormattedMembers(members ?? []);
+  // }, [members]);
 
   /* -------------------------------------------------------------------------- */
   /*                                Fetch Members                               */
@@ -98,8 +100,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
             }}
           >
             <CacheImage
-              source={formattedMembers[0].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[0].id}
+              source={formattedMembers[0]?.profileImageUrl ?? ""}
+              cacheKey={formattedMembers[0]?.id}
               style={{
                 height: "90%",
                 width: "45%",
@@ -117,8 +119,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
             }}
           >
             <CacheImage
-              source={formattedMembers[1].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[1].id}
+              source={formattedMembers[1]?.profileImageUrl ?? ""}
+              cacheKey={formattedMembers[1]?.id}
               style={{
                 height: "90%",
                 width: "45%",
@@ -445,4 +447,14 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
   }
 }
 
-export const MemoizedDefaultContactImage = React.memo(DefaultContactImage);
+function membersHaveChanged(
+  prevDefaultContactImageProps: DefaultContactImageProps,
+  nextDefaultContactImageProps: DefaultContactImageProps
+) {
+  return true;
+}
+
+export const MemoizedDefaultContactImage = React.memo(
+  DefaultContactImage,
+  membersHaveChanged
+);

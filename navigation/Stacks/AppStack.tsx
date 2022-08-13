@@ -7,6 +7,9 @@ import UnreachedMembersScreen from "../../screens/AppScreens/UnreachedMembersScr
 import UsersScreen, { ChatEnum } from "../../screens/AppScreens/UsersScreen";
 import GoogleFormsScreen from "../../screens/AppScreens/GoogleFormsScreen";
 import GoogleMapsScreen from "../../screens/AppScreens/GoogleMapsScreen";
+import AllItemsScreen, {
+  AllItemType,
+} from "../../screens/AppScreens/AllItemsScreen";
 import Colors from "../../constants/Colors";
 import { AppProvider } from "../Providers/AppProvider";
 import {
@@ -53,6 +56,7 @@ export type InnerAppStackParamList = {
   };
   GoogleFormsScreen: { pendingAnnouncement: PendingAnnouncement };
   UnreachedMembersScreen: { announcementMessage: Message };
+  AllItemsScreen: { allItemType: AllItemType };
 };
 
 export type OuterAppStackParamList = {
@@ -150,6 +154,13 @@ export const AppStack = () => {
               },
               headerShadowVisible: false,
               ...TransitionPresets.ModalTransition,
+            }}
+          />
+          <InnerStack.Screen
+            name="AllItemsScreen"
+            component={AllItemsScreen}
+            options={{
+              headerShown: false,
             }}
           />
           <InnerStack.Group screenOptions={{ presentation: "modal" }}>

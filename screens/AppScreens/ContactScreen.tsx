@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Pressable,
   View,
+  Dimensions,
 } from "react-native";
 import Colors from "../../constants/Colors";
 import Header from "../../components/Header";
@@ -15,7 +16,7 @@ import Contact from "../../components/Contact";
 import useAuthContext from "../../hooks/useAuthContext";
 import { ContactScreenProps as Props } from "../../navigation/NavTypes";
 import { Chat, ChatUser } from "../../src/models";
-import { animateTwoSequence } from "../../managers/AnimationManager";
+import { animate, animateTwoSequence } from "../../managers/AnimationManager";
 import { dropDown } from "../../constants/Dropdown";
 import DropdownItem, { DropdownItemProps } from "../../components/DropdownItem";
 import { getContactSubscription } from "../../managers/SubscriptionManager";
@@ -28,11 +29,14 @@ import {
   updateUserExpoToken,
 } from "../../managers/NotificationManager";
 import * as Notifications from "expo-notifications";
+import { Ionicons, Octicons } from "@expo/vector-icons";
+import { hasBezels } from "../../constants/hasBezels";
 
 export default function ContactScreen({ route, navigation }: Props) {
   const context = useAuthContext();
   const { user } = context;
   const [chats, setChats] = useState<Chat[]>();
+  const height = Dimensions.get("screen").height;
   const exitViewHeightAnim = useRef(new Animated.Value(0)).current;
   const exitViewOpacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -160,11 +164,36 @@ export default function ContactScreen({ route, navigation }: Props) {
     const noChats = chats![index].title === "Header_Trojan_Horse";
     const hangingChat = end && index % 2 === 0;
 
-    const HeaderComponent = () => {
+    const ContactHeader = () => {
       return (
         <Header
-          exitViewHeightAnim={exitViewHeightAnim}
-          exitViewOpacityAnim={exitViewOpacityAnim}
+          title="Messages"
+          buttons={[
+            <Pressable
+              key={"profileButton"}
+              onPress={() => navigation.navigate("ProfileScreen")}
+            >
+              <Ionicons
+                name={"person-circle-outline"}
+                size={35}
+                color={"white"}
+              />
+            </Pressable>,
+            <Pressable
+              key={"addChatButton"}
+              onPress={() => {
+                animate(exitViewHeightAnim, height, 0);
+                animate(exitViewOpacityAnim, 1, 150);
+              }}
+            >
+              <Octicons name="plus" size={35} color={"white"} />
+            </Pressable>,
+          ]}
+          style={{
+            marginHorizontal: "5%",
+            marginTop: hasBezels ? "5%" : "12%",
+            marginBottom: "2%",
+          }}
         />
       );
     };
@@ -200,7 +229,7 @@ export default function ContactScreen({ route, navigation }: Props) {
 
     return (
       <>
-        {start && <HeaderComponent />}
+        {start && <ContactHeader />}
         {!noChats && evenChat && (hangingChat ? <HangingChat /> : <ChatPair />)}
       </>
     );
@@ -236,7 +265,7 @@ export default function ContactScreen({ route, navigation }: Props) {
         style={styles.FlatList}
         data={chats}
         renderItem={renderContact}
-        keyExtractor={(item) => (typeof item == "string" ? item : item?.id)}
+        keyExtractor={(item) => item?.id}
         showsVerticalScrollIndicator={false}
       />
       <Animated.View

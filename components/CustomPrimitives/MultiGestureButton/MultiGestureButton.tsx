@@ -15,7 +15,7 @@ export default function MultiGestureButton(props: MultiGestureButtonProps) {
   const lastPress = useRef<number>();
   const waiting = useRef<boolean>();
 
-  const waitTime = 200;
+  const waitTime = 300;
 
   /* -------------------------------------------------------------------------- */
   /*                                Tap Listener                                */
@@ -29,7 +29,7 @@ export default function MultiGestureButton(props: MultiGestureButtonProps) {
         onEndFunction?.();
       }
       waiting.current = false;
-    }, 200);
+    }, waitTime);
   };
 
   /* -------------------------------- Listener -------------------------------- */

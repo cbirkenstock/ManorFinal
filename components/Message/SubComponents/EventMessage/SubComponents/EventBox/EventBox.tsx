@@ -20,7 +20,7 @@ interface EventMessageProps {
 export default function EventBox(props: EventMessageProps) {
   const { eventMessage, isMember } = props;
   const { user } = useAuthContext();
-  const { chat, messages, setMessages } = useAppContext();
+  const { chat } = useAppContext();
   const dateTime = eventMessage.eventDateTime
     ? new Date(eventMessage.eventDateTime)
     : new Date();

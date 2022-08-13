@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Animated, View } from "react-native";
 import useAppContext from "../../../hooks/useAppContext";
 import { Message, Reaction } from "../../../src/models";
 import { styles } from "./styles";
@@ -13,6 +13,9 @@ import Colors from "../../../constants/Colors";
 import IconCounter from "../SubComponents/IconCounter/IconCounter";
 import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import MultiGestureButton from "../../CustomPrimitives/MultiGestureButton";
+import { animate } from "../../../managers/AnimationManager";
+import * as FileSystem from "expo-file-system";
+import CacheImage from "../../CustomPrimitives/CacheImage";
 
 interface FullMessageComponentProps {
   message: Message;
@@ -32,6 +35,11 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
   const isMe = message.chatuserID === chatUser?.id;
   const sender = members.find((member) => member.id === message.chatuserID);
   const isFirstOfGroup = message.marginTop === 10;
+
+  const heightAnim = useRef(new Animated.Value(0)).current;
+
+  const isLocal = message.imageUrl?.includes("file:///");
+  const isImage = message.imageUrl?.split(".")[1] === "jpg";
 
   /* ----------------------- General Reaction Constants ----------------------- */
 
@@ -245,12 +253,39 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
     return () => updateMessageAndReaction();
   }, []);
 
+  useEffect(() => {
+    animate(heightAnim, 1, 300);
+  }, []);
+
+  /* -------------------------------------------------------------------------- */
+  /*                                 Zoom Image                                 */
+  /* -------------------------------------------------------------------------- */
+
+  const getImageCachePath = async () => {
+    if (isImage) {
+      try {
+        if (isLocal) {
+          setZoomImage([{ uri: message.imageUrl! }]);
+        } else {
+          const cachePath = `${FileSystem.cacheDirectory}.${message.imageUrl!}`;
+          const imageInfo = await FileSystem.getInfoAsync(cachePath);
+
+          if (imageInfo.exists) {
+            setZoomImage([{ uri: cachePath }]);
+          }
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  };
+
   /* -------------------------------------------------------------------------- */
   /*                                   Render                                   */
   /* -------------------------------------------------------------------------- */
 
   return (
-    <View
+    <Animated.View
       style={[
         styles.container,
         {
@@ -282,11 +317,16 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
           onDislikeMessage={() => reactToMessage(ReactionType.disliked)}
         />
         <View style={{ alignSelf: isMe ? "flex-end" : "flex-start" }}>
-          <MultiGestureButton onDoublePress={() => setIsVisible(!isVisible)}>
+          <MultiGestureButton
+            onPress={() => {
+              if (message.imageUrl) {
+                getImageCachePath();
+              }
+            }}
+            onDoublePress={() => setIsVisible(!isVisible)}
+          >
             {message.messageBody && <MessageBubble message={message} />}
-            {message.imageUrl && (
-              <MediaMessage message={message} setZoomImage={setZoomImage} />
-            )}
+            {message.imageUrl && <MediaMessage message={message} />}
           </MultiGestureButton>
           <View
             style={{
@@ -301,9 +341,12 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
                 style={[
                   styles.iconCounterContainer,
                   {
-                    backgroundColor: isMe
-                      ? Colors.manorPurple
-                      : Colors.manorBlueGray,
+                    backgroundColor:
+                      (message?.likes ?? 0) >= 1
+                        ? Colors.manorGold
+                        : isMe
+                        ? Colors.manorPurple
+                        : Colors.manorBlueGray,
                     marginRight: messageDislikes ? 5 : 0,
                   },
                 ]}
@@ -327,9 +370,12 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
                 style={[
                   styles.iconCounterContainer,
                   {
-                    backgroundColor: isMe
-                      ? Colors.manorPurple
-                      : Colors.manorBlueGray,
+                    backgroundColor:
+                      (message?.likes ?? 0) > 1
+                        ? Colors.manorGold
+                        : isMe
+                        ? Colors.manorPurple
+                        : Colors.manorBlueGray,
                   },
                 ]}
               >
@@ -350,6 +396,15 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
           </View>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
+
+const areEqual = (prevMessage: any, nextMessage: any) => {
+  return prevMessage["Message"]?.id === nextMessage["Message"]?.id;
+};
+
+export const MemoizedFullMessageComponent = React.memo(
+  FullMessageComponent,
+  areEqual
+);

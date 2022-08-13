@@ -11,7 +11,12 @@ import { OuterContactScreenNavigationProps } from "../../navigation/NavTypes";
 import CacheImage from "../CustomPrimitives/CacheImage";
 import DefaultContactImage from "../DefaultContactImage";
 import { styles } from "./styles";
-import { extractDisplayUser } from "../../managers/ChatManager";
+import {
+  extractDisplayUser,
+  prependChat,
+  removeChat,
+} from "../../managers/ChatManager";
+import { chatsIncludeSpecificChat } from "../../managers/SubscriptionManager";
 
 interface ContactProps {
   contact: Chat;
@@ -53,6 +58,31 @@ export default function Contact(props: ContactProps) {
           user?.id == chatUser?.user?.id
         ) {
           setContactChatUser(chatUser);
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const subscription = DataStore.observe(Chat, (chat) =>
+      chat.id("eq", contact?.id)
+    ).subscribe((msg) => {
+      const chat = msg.element;
+
+      if (msg.opType === "UPDATE") {
+        if (chatsIncludeSpecificChat(chats, chat)) {
+          if (
+            chats[0].id === chat.id &&
+            chats[0].lastMessage === chat.lastMessage
+          ) {
+            return;
+          }
+
+          let chatsList = removeChat(chat, chats);
+          chatsList = prependChat(chat, chatsList);
+          setChats(chatsList);
         }
       }
     });

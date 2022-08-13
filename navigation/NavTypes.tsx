@@ -70,6 +70,11 @@ export type UnreachedMembersScreenProps = NativeStackScreenProps<
   "UnreachedMembersScreen"
 >;
 
+export type AllItemsScreenProps = NativeStackScreenProps<
+  InnerAppStackParamList,
+  "AllItemsScreen"
+>;
+
 /* -------------------------- useNavigation Imports ------------------------- */
 
 export type InnerContactScreenNavigationProps = NativeStackNavigationProp<

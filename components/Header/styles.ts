@@ -6,10 +6,7 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignContent: "center",
-    marginLeft: "5%",
-    marginTop: hasBezels ? "5%" : "12%",
-    marginBottom: "2%",
-    marginRight: "5%",
+
     flex: 1,
   },
   titleText: {

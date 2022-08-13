@@ -1,6 +1,6 @@
 import { DataStore } from "aws-amplify";
 import React, { useState } from "react";
-import { View, Pressable, Text, TextInput, StyleSheet } from "react-native";
+import { TextInput, StyleSheet } from "react-native";
 import Colors from "../../../../constants/Colors";
 import useAppContext from "../../../../hooks/useAppContext";
 import useAuthContext from "../../../../hooks/useAuthContext";
@@ -9,10 +9,7 @@ import {
   createDMChat,
 } from "../../../../managers/ChatManager";
 import { updateChatUserHasUnreadMessages } from "../../../../managers/ChatUserManager";
-import {
-  updateLastMessage,
-  uploadMessage,
-} from "../../../../managers/MessageManager";
+import { uploadMessage } from "../../../../managers/MessageManager";
 import { Chat, ChatUser, Message, User } from "../../../../src/models";
 import FormCompletionButton from "../../../FormCompletionButton";
 

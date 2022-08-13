@@ -63,7 +63,7 @@ export const messageSubscription = (
 
 /*kinda a hack rn -- not sure why update getting called several times
 and also called after INSERT */
-const chatsIncludeSpecificChat = (chats: Chat[], specificChat: Chat) => {
+export const chatsIncludeSpecificChat = (chats: Chat[], specificChat: Chat) => {
   return chats.map((chat) => chat.id).includes(specificChat.id);
 };
 
@@ -88,26 +88,24 @@ export const getContactSubscription = (
         }
       );
     } else if (object.opType === "UPDATE") {
-      const mustRemove = !chatUser.isOfActiveChat;
-      const mustReorder = chatUser.hasUnreadMessage;
+      const isOfActiveChat = !chatUser.isOfActiveChat;
 
       DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chatID)).then(
         (updatedChat) => {
           let chatsList = chats;
           if (
             chatsIncludeSpecificChat(chats, updatedChat[0]) &&
-            (mustRemove || mustReorder)
+            isOfActiveChat
           ) {
             chatsList = removeChat(updatedChat[0], chats);
+          } else if (
+            !chatsIncludeSpecificChat(chats, updatedChat[0]) &&
+            !isOfActiveChat
+          ) {
+            chatsList = prependChat(updatedChat[0], chatsList);
           }
 
-          if (mustReorder) {
-            return setChats(prependChat(updatedChat[0], chatsList));
-          } else {
-            return setChats(chatsList);
-          }
-
-          return;
+          return setChats(chatsList);
         }
       );
     }
@@ -115,29 +113,3 @@ export const getContactSubscription = (
 
   return subscription;
 };
-
-/* -------------------------------------------------------------------------- */
-/*                                    Chat                                    */
-/* -------------------------------------------------------------------------- */
-
-// export const getChatSubscription = (
-//   context: AuthInitialStateProps,
-//   chats: Chat[],
-//   setChats: SetChatsHandler
-// ) => {
-//   const { user } = context;
-
-//   const subscription = DataStore.observe(Chat, (chat) =>
-//     chat.userID("eq", user?.id ?? "")
-//   ).subscribe((object) => {
-//     if (object.opType === "UPDATE") {
-//       const updatedChat = object.element;
-
-//       const unUpdatedChats = chats.filter((chat) => chat.id !== updatedChat.id);
-
-//       prependChat(updatedChat, unUpdatedChats, setChats);
-//     }
-//   });
-
-//   return subscription;
-// };

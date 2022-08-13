@@ -7,6 +7,7 @@ import {
   SectionList,
   SectionListData,
   Text,
+  TouchableOpacity,
 } from "react-native";
 import useAppContext from "../../hooks/useAppContext";
 import useAuthContext from "../../hooks/useAuthContext";
@@ -22,14 +23,17 @@ import { FontAwesome, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import {
   checkForPreExistingDMChat,
   createDMChat,
+  removeChat,
 } from "../../managers/ChatManager";
 import { ChatEnum } from "./UsersScreen";
 import EventCard from "../../components/Cards/EventCard/EventCard";
 import { FlatList } from "react-native-gesture-handler";
 import CacheImage from "../../components/CustomPrimitives/CacheImage";
+import { AllItemType } from "./AllItemsScreen";
 
 export type ChatInfoDataType = {
   title: string | undefined;
+  allItemType?: AllItemType;
   data: ReadonlyArray<SectionButtonProps | Message>;
   horizontal?: boolean;
 };
@@ -256,6 +260,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
     },
     {
       title: "Members",
+      allItemType: AllItemType.members,
       data: members.map((member) => {
         return {
           caption: member.nickname ?? "",
@@ -277,6 +282,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
     },
     {
       title: "Announcements",
+      allItemType: AllItemType.announcements,
       data: firstThreeAnnouncementMessages.map((announcementMessage, index) => {
         const announcementSender = firstThreeAnnouncementSenders[index];
         return {
@@ -301,7 +307,24 @@ export default function ProfileScreen({ navigation, route }: Props) {
     },
     {
       title: "Settings",
-      data: [{ caption: "Leave Chat", textStyle: { color: "red" } }],
+      data: [
+        {
+          caption: "Leave Chat",
+          textStyle: { color: "red" },
+          onPress: async () => {
+            const upToDateChatUser = await DataStore.query(
+              ChatUser,
+              chatUser?.id ?? ""
+            );
+
+            if (upToDateChatUser && chat) {
+              await DataStore.delete(upToDateChatUser);
+              route.params.setChats(removeChat(chat, route.params.chats));
+              navigation.navigate("ContactScreen");
+            }
+          },
+        },
+      ],
     },
   ];
 
@@ -414,15 +437,25 @@ export default function ProfileScreen({ navigation, route }: Props) {
                 {section.title}
               </Text>
 
-              <Text
-                style={{
-                  color: Colors.manorPaymentBlue,
-                  fontSize: 18,
-                  fontWeight: "400",
-                }}
-              >
-                See More
-              </Text>
+              {section.allItemType !== undefined ? (
+                <TouchableOpacity
+                  onPress={() => {
+                    navigation.navigate("AllItemsScreen", {
+                      allItemType: section.allItemType ?? AllItemType.members,
+                    });
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: Colors.manorPaymentBlue,
+                      fontSize: 18,
+                      fontWeight: "400",
+                    }}
+                  >
+                    See More
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           )}
           <FlatList
@@ -498,7 +531,6 @@ export default function ProfileScreen({ navigation, route }: Props) {
           }}
           renderItem={({ index, item, section }) => {
             if ((item as SectionButtonProps).caption) {
-              //return renderSectionButton(item as SectionButtonProps);
               return renderSectionListCard(index, section);
             } else {
               return renderEventCardFlatlist(index, section);
