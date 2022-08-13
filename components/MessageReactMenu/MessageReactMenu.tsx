@@ -1,11 +1,8 @@
 import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
-import React, { useEffect, useRef, useState } from "react";
-import { Animated, Modal, Pressable, TouchableOpacity } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, TouchableOpacity } from "react-native";
 import Colors from "../../constants/Colors";
 import { animate } from "../../managers/AnimationManager";
-import { Message, Reaction } from "../../src/models";
-import { DataStore } from "aws-amplify";
-import useAppContext from "../../hooks/useAppContext";
 import { styles } from "./styles";
 
 interface MessageReactMenuProps {

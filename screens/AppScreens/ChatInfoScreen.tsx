@@ -13,11 +13,10 @@ import useAuthContext from "../../hooks/useAuthContext";
 import { ChatInfoScreenProps as Props } from "../../navigation/NavTypes";
 import { ChatUser, Message, User } from "../../src/models";
 import Colors from "../../constants/Colors";
-import { DataStore } from "aws-amplify";
+import { DataStore, SortDirection } from "aws-amplify";
 import SectionButton, {
   SectionButtonProps,
 } from "../../components/SectionButton/SectionButton";
-import SignedImage from "../../components/CustomPrimitives/SignedImage";
 import DefaultContactImage from "../../components/DefaultContactImage";
 import { FontAwesome, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import {
@@ -36,8 +35,7 @@ export type ChatInfoDataType = {
 };
 
 export default function ProfileScreen({ navigation, route }: Props) {
-  const { chat, members, chatUser, setChatUser, pendingAnnouncements } =
-    useAppContext();
+  const { chat, members, chatUser, setChatUser } = useAppContext();
   const { user } = useAuthContext();
   const { displayUser } = route.params;
   const [eventMessages, setEventMessages] = useState<Message[]>([]);
@@ -178,7 +176,12 @@ export default function ProfileScreen({ navigation, route }: Props) {
           message
             .chatID("eq", chat?.id ?? "")
             .isAnnouncementMessage("eq", true),
-        { limit: 3 }
+        {
+          sort: (announcement) => {
+            return announcement.createdAt(SortDirection.DESCENDING);
+          },
+          limit: 3,
+        }
       );
 
       let _firstThreeAnnouncementSenders: User[] = [];
@@ -457,8 +460,11 @@ export default function ProfileScreen({ navigation, route }: Props) {
       <View style={styles.paddingContainer}>
         <View style={styles.rowContainer}>
           {displayUser?.profileImageUrl || chat?.chatImageUrl ? (
-            <SignedImage
+            <CacheImage
               style={styles.image}
+              cacheKey={
+                displayUser ? displayUser.profileImageUrl : chat?.chatImageUrl
+              }
               source={
                 displayUser ? displayUser.profileImageUrl : chat?.chatImageUrl
               }

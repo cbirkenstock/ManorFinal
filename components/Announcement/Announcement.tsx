@@ -5,11 +5,12 @@ import { View, Text, Animated } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import useAppContext from "../../hooks/useAppContext";
 import { animate } from "../../managers/AnimationManager";
+import { formatDateTime } from "../../managers/DateTimeManager";
 import { deletePendingAnnouncement } from "../../managers/MessageManager";
 import { InnerAnnouncementProps } from "../../navigation/NavTypes";
+import { PendingAnnouncement } from "../../src/models";
 import { ChatUser } from "../../src/models";
 import CacheImage from "../CustomPrimitives/CacheImage";
-import SignedImage from "../CustomPrimitives/SignedImage";
 import { styles } from "./styles";
 
 interface AnnouncementProps {}
@@ -27,8 +28,11 @@ export default function Announcement(props: AnnouncementProps) {
   /*                      Unwrapped & Asbtracted Constants                      */
   /* -------------------------------------------------------------------------- */
 
+  const currentPendingAnnouncement =
+    pendingAnnouncements[pendingAnnouncementIndex];
+
   const { announcementBody, link, isMandatory } =
-    pendingAnnouncements[pendingAnnouncementIndex].message;
+    currentPendingAnnouncement.message;
 
   const isLastPendingAnnouncement =
     !pendingAnnouncements[pendingAnnouncementIndex + 1]?.message
@@ -86,15 +90,35 @@ export default function Announcement(props: AnnouncementProps) {
   /*                      Disappear, Delete, & Update Index                     */
   /* -------------------------------------------------------------------------- */
 
-  const hideDeleteAndReplacePendingAnnouncement = async () => {
+  const hideAndReplacePendingAnnouncement = async () => {
     animate(opacityAnim, 0, 300, () => {
-      deletePendingAnnouncement(pendingAnnouncements[pendingAnnouncementIndex]);
       if (!isLastPendingAnnouncement) {
         setPendingAnnouncementIndex(pendingAnnouncementIndex + 1);
       } else {
         setPendingAnnouncements([]);
       }
     });
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /*                                Remind Later                                */
+  /* -------------------------------------------------------------------------- */
+
+  const setAnnouncementReminderDate = async () => {
+    let nextDayDate = new Date();
+    nextDayDate.setSeconds(nextDayDate.getSeconds() + 60 * 60 * 24);
+
+    try {
+      hideAndReplacePendingAnnouncement();
+      DataStore.save(
+        PendingAnnouncement.copyOf(
+          currentPendingAnnouncement,
+          (updatedPendingAnnouncement) => {
+            updatedPendingAnnouncement.remindDate = formatDateTime(nextDayDate);
+          }
+        )
+      );
+    } catch (error) {}
   };
 
   /* -------------------------------------------------------------------------- */
@@ -118,11 +142,20 @@ export default function Announcement(props: AnnouncementProps) {
       <View style={styles.bottomRow}>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => {
-            isMandatory ? () => {} : hideDeleteAndReplacePendingAnnouncement();
+          onPress={async () => {
+            if (isMandatory) {
+              setAnnouncementReminderDate();
+            } else {
+              await hideAndReplacePendingAnnouncement();
+              deletePendingAnnouncement(
+                pendingAnnouncements[pendingAnnouncementIndex]
+              );
+            }
           }}
         >
-          <Text style={styles.buttonText}>Got It!</Text>
+          <Text style={styles.buttonText}>
+            {isMandatory ? "Remind Me Later" : link ? "Nah!" : "Got It!"}
+          </Text>
         </TouchableOpacity>
         {link && (
           <TouchableOpacity
@@ -134,7 +167,7 @@ export default function Announcement(props: AnnouncementProps) {
               })
             }
           >
-            <Text style={styles.buttonText}>Open Link</Text>
+            <Text style={styles.buttonText}>Open Form</Text>
           </TouchableOpacity>
         )}
       </View>

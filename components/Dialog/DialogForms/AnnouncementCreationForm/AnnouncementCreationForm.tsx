@@ -135,8 +135,8 @@ export default function AnnouncementCreationForm(
       </View>
       <FormCompletionButton
         text="Send"
-        onPress={() => {
-          sendAnnouncement();
+        onPress={async () => {
+          await sendAnnouncement();
           onSubmit?.();
         }}
       />

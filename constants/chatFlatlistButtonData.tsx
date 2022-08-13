@@ -1,6 +1,7 @@
 import {
   Entypo,
   FontAwesome5,
+  Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
 import React from "react";
@@ -12,7 +13,7 @@ export const chatFlatlistButtons: (Omit<IconButtonProps, "onPress"> & {
 })[] = [
   {
     title: "announcement",
-    icon: <Entypo name="pin" size={28} color={"white"} />,
+    icon: <Ionicons name="megaphone" size={28} color="white" />,
     dimension: 45,
     color: Colors.manorPurple,
   },

@@ -134,7 +134,7 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
           if (reactionType === ReactionType.liked) {
             decrementLikes();
           } else {
-            decrementDislikes;
+            decrementDislikes();
           }
           reactionRef.current = undefined;
         } else {

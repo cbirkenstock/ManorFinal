@@ -1,6 +1,15 @@
 import { days } from "../constants/Days";
 import { months } from "../constants/Months";
 
+export const formatDateTime = (dateTime?: Date) => {
+  if (dateTime) {
+    const tzoffset = dateTime.getTimezoneOffset() * 60000; //offset in milliseconds
+    const localISOTime = new Date(dateTime.getTime() - tzoffset).toISOString();
+
+    return localISOTime;
+  }
+};
+
 export const formatTime = (dateTime?: Date) => {
   if (dateTime) {
     let hours = dateTime.getUTCHours() - 7;

@@ -43,6 +43,7 @@ import EventMessage from "../../components/Message/SubComponents/EventMessage";
 import EventSuggestionMessage from "../../components/Message/SubComponents/EventSuggestionMessage/EventSuggestionMessage";
 import { FontAwesome } from "@expo/vector-icons";
 import { TouchableOpacity } from "react-native-gesture-handler";
+import { formatDateTime, formatTime } from "../../managers/DateTimeManager";
 
 export default function ChatScreen({ navigation, route }: Props) {
   const context = useAppContext();
@@ -63,6 +64,8 @@ export default function ChatScreen({ navigation, route }: Props) {
 
   const [chats, setChats] = useState<Chat[]>();
   const [zoomImage, setZoomImage] = useState<{ uri: string }[]>([]);
+  const [hasSentAnnouncement, setHasSentAnnouncement] =
+    useState<boolean>(false);
   const [isAnnouncementDialogVisible, setIsAnnouncementDialogVisible] =
     useState<boolean>(false);
 
@@ -170,15 +173,21 @@ export default function ChatScreen({ navigation, route }: Props) {
   useEffect(() => {
     const fetchAnnouncements = async () => {
       if (chatcontextUpdated && pendingAnnouncements.length === 0) {
-        const _pendingAnnouncements = await DataStore.query(
-          PendingAnnouncement,
-          (pendingAnnouncement) =>
-            pendingAnnouncement.chatUserID("eq", chatUser?.id ?? ""),
-          {
-            sort: (announcement) =>
-              announcement.createdAt(SortDirection.ASCENDING),
-          }
-        );
+        const today = new Date(formatDateTime(new Date())!);
+
+        const _pendingAnnouncements = (
+          await DataStore.query(
+            PendingAnnouncement,
+            (pendingAnnouncement) =>
+              pendingAnnouncement.chatUserID("eq", chatUser?.id ?? ""),
+            {
+              sort: (announcement) =>
+                announcement.createdAt(SortDirection.ASCENDING),
+            }
+          )
+        ).filter((pendingAnnouncement) => {
+          return new Date(pendingAnnouncement.remindDate ?? today) <= today;
+        });
 
         setPendingAnnouncements(_pendingAnnouncements);
       }
@@ -267,6 +276,7 @@ export default function ChatScreen({ navigation, route }: Props) {
         children={
           <AnnouncementCreationForm
             onSubmit={() => {
+              setHasSentAnnouncement(true);
               setIsAnnouncementDialogVisible(false);
             }}
           />
@@ -314,14 +324,35 @@ export default function ChatScreen({ navigation, route }: Props) {
             borderRadius: 30,
           }}
         >
-          <Text style={{ color: "black", fontWeight: "600", fontSize: 60 }}>
+          <Text
+            style={{
+              color: Colors.manorGreen,
+              fontWeight: "600",
+              fontSize: 60,
+            }}
+          >
             Sent
           </Text>
-          <FontAwesome name="check" size={70} color="black" />
+          <FontAwesome name="check" size={70} color={Colors.manorGreen} />
         </View>
       </Animated.View>
     );
   };
+
+  useEffect(() => {
+    if (hasSentAnnouncement) {
+      const time = 500;
+      const stayTime = 200;
+
+      animate(announcementSentNotificationOpacityAnim, 1, time);
+
+      setTimeout(() => {
+        animate(announcementSentNotificationOpacityAnim, 0, time, () => {
+          setHasSentAnnouncement(false);
+        });
+      }, time + stayTime);
+    }
+  }, [hasSentAnnouncement]);
 
   /* -------------------------------------------------------------------------- */
   /*                       Render Flatlist Item Functions                       */
@@ -397,8 +428,7 @@ export default function ChatScreen({ navigation, route }: Props) {
           setChats={chatScreenSetChats}
         />
         <ChatFlatlistButtons />
-        {/* <AnnouncementSent /> */}
-        {/* <DoubleClickButton /> */}
+        {hasSentAnnouncement ? <AnnouncementSent /> : null}
         <ZoomImageView />
       </KeyboardAvoidingView>
     </View>
