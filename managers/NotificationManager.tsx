@@ -63,7 +63,7 @@ export const setUpAndroidNotificationChanel = () => {
 export const setNotificationHandler = () => {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: false,
+      shouldShowAlert: true,
       shouldPlaySound: false,
       shouldSetBadge: false,
     }),
@@ -127,6 +127,7 @@ export const sendNotification = async (
   message: Message,
   announcement: boolean
 ) => {
+  console.log("triggered");
   if (user && chat && members && message) {
     const messageSender = await DataStore.query(
       ChatUser,

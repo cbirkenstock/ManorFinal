@@ -11,16 +11,20 @@ interface SpotsLeftViewProps {
 }
 
 export default function SpotsLeftView(props: SpotsLeftViewProps) {
-  const { chatUser } = useAppContext();
   const { eventMessage, isMember } = props;
 
   /* -------------------------------------------------------------------------- */
   /*                            Spots Left Calculator                           */
   /* -------------------------------------------------------------------------- */
 
+  //console.log(eventMessage);
   let spotsLeft: number = 0;
 
-  if (eventMessage.eventCapacity && eventMessage.eventMembersCount) {
+  if (
+    eventMessage.eventCapacity &&
+    eventMessage.eventMembersCount !== undefined &&
+    eventMessage.eventMembersCount !== null
+  ) {
     if (eventMessage.eventCapacity > eventMessage.eventMembersCount) {
       spotsLeft = eventMessage.eventCapacity - eventMessage.eventMembersCount;
     } else {

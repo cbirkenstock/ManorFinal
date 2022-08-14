@@ -447,7 +447,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
                 >
                   <Text
                     style={{
-                      color: Colors.manorPaymentBlue,
+                      color: Colors.manorPurple,
                       fontSize: 18,
                       fontWeight: "400",
                     }}

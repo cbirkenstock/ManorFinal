@@ -53,10 +53,7 @@ export default function Contact(props: ContactProps) {
         const newMembers = [...members, msg.element];
         setMembers(newMembers);
       } else if (msg.opType === "UPDATE") {
-        if (
-          contact?.id == chatUser?.chat?.id &&
-          user?.id == chatUser?.user?.id
-        ) {
+        if (contact?.id == chatUser?.chatID && user?.id == chatUser?.userID) {
           setContactChatUser(chatUser);
         }
       }

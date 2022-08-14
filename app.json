@@ -18,7 +18,10 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.cbirkenstock.ManorFinal"
+      "bundleIdentifier": "com.cbirkenstock.ManorFinal",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
     },
     "android": {
       "adaptiveIcon": {

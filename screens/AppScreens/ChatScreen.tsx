@@ -15,7 +15,13 @@ import MessageBar from "../../components/MessageBar/MessageBar";
 import Colors from "../../constants/Colors";
 import useAppContext from "../../hooks/useAppContext";
 import { ChatScreenProps as Props } from "../../navigation/NavTypes";
-import { Chat, ChatUser, Message, PendingAnnouncement } from "../../src/models";
+import {
+  Chat,
+  ChatUser,
+  Message,
+  PendingAnnouncement,
+  User,
+} from "../../src/models";
 import CacheImage from "../../components/CustomPrimitives/CacheImage";
 import Announcement from "../../components/Announcement/Announcement";
 import {
@@ -37,13 +43,10 @@ import AnnouncementCreationForm from "../../components/Dialog/DialogForms/Announ
 import useAuthContext from "../../hooks/useAuthContext";
 import ImageView from "react-native-image-viewing";
 import { hasBezels } from "../../constants/hasBezels";
-import FullMessageComponent, {
-  MemoizedFullMessageComponent,
-} from "../../components/Message/FullMessageComponent/FullMessageComponent";
+import { MemoizedFullMessageComponent } from "../../components/Message/FullMessageComponent/FullMessageComponent";
 import EventMessage from "../../components/Message/SubComponents/EventMessage";
 import EventSuggestionMessage from "../../components/Message/SubComponents/EventSuggestionMessage/EventSuggestionMessage";
 import { FontAwesome } from "@expo/vector-icons";
-import { TouchableOpacity } from "react-native-gesture-handler";
 import { formatDateTime, formatTime } from "../../managers/DateTimeManager";
 import { MemoizedDefaultContactImage } from "../../components/DefaultContactImage/DefaultContactImage";
 
@@ -72,6 +75,7 @@ export default function ChatScreen({ navigation, route }: Props) {
     useState<boolean>(false);
 
   const [page, setPage] = useState<number>(0);
+  const hasMoreMessages = useRef<boolean>(true);
 
   const chatFlatlistButtonsHeightAnim = useRef(new Animated.Value(0)).current;
   const announcementSentNotificationOpacityAnim = useRef(
@@ -150,18 +154,26 @@ export default function ChatScreen({ navigation, route }: Props) {
   */
   useEffect(() => {
     const fetchMessages = async () => {
-      if (chatcontextUpdated && (messages.length === 0 || page !== 0)) {
+      if (
+        hasMoreMessages.current &&
+        chatcontextUpdated &&
+        (messages.length === 0 || page !== 0)
+      ) {
         const _messages = (
           await DataStore.query(
             Message,
             (message) => message.chatID("eq", chat.id),
             {
               page: page,
-              limit: page === 0 ? 30 : 45,
+              limit: 30,
               sort: (message) => message.createdAt(SortDirection.DESCENDING),
             }
           )
         ).filter((message) => !message.announcementBody);
+
+        if (_messages.length < 30) {
+          hasMoreMessages.current = false;
+        }
 
         if (page === 0) {
           setMessages(_messages);
@@ -217,7 +229,7 @@ export default function ChatScreen({ navigation, route }: Props) {
         appendMessage,
         updateMessageLocally
       );
-      return () => subscription.unsubscribe();
+      //return () => subscription.unsubscribe();
     }
   }, [messages]);
 
@@ -238,10 +250,6 @@ export default function ChatScreen({ navigation, route }: Props) {
   /* -------------------------------------------------------------------------- */
   /*                               Sub-Components                               */
   /* -------------------------------------------------------------------------- */
-
-  function change(a: any, b: any) {
-    return true;
-  }
 
   const ChatFlatlistButtons = () => {
     return (
@@ -278,8 +286,6 @@ export default function ChatScreen({ navigation, route }: Props) {
       </View>
     );
   };
-
-  const B = React.memo(ChatFlatlistButtons, change);
 
   const AnnouncementDialog = () => {
     return (
@@ -431,9 +437,6 @@ export default function ChatScreen({ navigation, route }: Props) {
         {pendingAnnouncements.length > 0 && <Announcement />}
         <StatusBar hidden={true} />
         <FlatList
-          // onScroll={(event) => {
-          //   console.log(event.nativeEvent.contentOffset.y);
-          // }}
           onEndReached={() => setPage(page + 1)}
           style={[styles.messageFlatlist]}
           inverted
@@ -448,7 +451,7 @@ export default function ChatScreen({ navigation, route }: Props) {
           chats={chats ?? []}
           setChats={chatScreenSetChats}
         />
-        <B />
+        <ChatFlatlistButtons />
         {hasSentAnnouncement ? <AnnouncementSent /> : null}
         <ZoomImageView />
       </KeyboardAvoidingView>

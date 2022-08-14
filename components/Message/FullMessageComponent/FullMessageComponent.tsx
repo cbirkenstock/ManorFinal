@@ -323,13 +323,17 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
         {!isMe && isFirstOfGroup && !isVisible && (
           <ContactNameLabel contactName={sender?.nickname} />
         )}
-        <View style={{ alignSelf: isMe ? "flex-end" : "flex-start" }}>
-          <MessageReactMenu
-            isMe={isMe}
-            visible={isVisible}
-            onLikeMessage={() => reactToMessage(ReactionType.liked)}
-            onDislikeMessage={() => reactToMessage(ReactionType.disliked)}
-          />
+        <MessageReactMenu
+          isMe={isMe}
+          visible={isVisible}
+          onLikeMessage={() => reactToMessage(ReactionType.liked)}
+          onDislikeMessage={() => reactToMessage(ReactionType.disliked)}
+        />
+        <View
+          style={{
+            alignSelf: isMe ? "flex-end" : "flex-start",
+          }}
+        >
           <MultiGestureButton
             onPress={() => {
               if (message.imageUrl) {

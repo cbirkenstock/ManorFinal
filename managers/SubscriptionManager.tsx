@@ -1,8 +1,9 @@
 import { DataStore } from "aws-amplify";
 import { AppInitialStateProps } from "../navigation/InitialStates/AppInitialState";
 import { AuthInitialStateProps } from "../navigation/InitialStates/AuthInitialState";
-import { Chat, ChatUser, Message } from "../src/models";
+import { Chat, ChatUser, Message, User } from "../src/models";
 import { prependChat, removeChat } from "./ChatManager";
+import { sendNotification } from "./NotificationManager";
 
 /* -------------------------------------------------------------------------- */
 /*                               Function Types                               */
@@ -50,6 +51,20 @@ export const messageSubscription = (
     const isMe = message.chatuserID === chatUser?.id;
 
     if (object.opType === "INSERT" && includesChatUserID && !isMe) {
+      // const user = DataStore.query(User, chatUser?.userID ?? "").then(
+      //   (user) => {
+      //     if (user && chatUser) {
+      //       sendNotification(
+      //         user,
+      //         chat ?? undefined,
+      //         [chatUser],
+      //         message,
+      //         true
+      //       );
+      //     }
+      //   }
+      // );
+
       insertHandler(message, context);
     } else if (object.opType === "UPDATE") {
       updateHandler(message, context);
