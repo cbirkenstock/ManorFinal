@@ -1,7 +1,7 @@
 import { DataStore } from "aws-amplify";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
-import { Platform } from "react-native";
+import { Alert, Platform } from "react-native";
 import { Chat, ChatUser, Message, User } from "../src/models";
 
 /* -------------------------------------------------------------------------- */
@@ -30,10 +30,20 @@ export const getPushNotificationPermissions = async (
 };
 
 export const updateUserExpoToken = async (user: User | undefined) => {
+  // const token = (await Notifications.getDevicePushTokenAsync()).data;
+
+  // Alert.alert(token, token, [
+  //   { text: "OK", onPress: () => Clipboard.setString(token) },
+  //   {
+  //     text: "Cancel",
+  //     onPress: () => console.log(""),
+  //     style: "cancel",
+  //   },
+  // ]);
   if (user) {
     const upToDateUser = await DataStore.query(User, user.id);
 
-    const token = (await Notifications.getExpoPushTokenAsync()).data;
+    const token = (await Notifications.getDevicePushTokenAsync()).data;
 
     if (upToDateUser && upToDateUser?.expoPushToken !== token) {
       try {
@@ -63,7 +73,7 @@ export const setUpAndroidNotificationChanel = () => {
 export const setNotificationHandler = () => {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: true,
+      shouldShowAlert: false,
       shouldPlaySound: false,
       shouldSetBadge: false,
     }),
@@ -127,57 +137,68 @@ export const sendNotification = async (
   message: Message,
   announcement: boolean
 ) => {
-  console.log("triggered");
-  if (user && chat && members && message) {
-    const messageSender = await DataStore.query(
-      ChatUser,
-      message.chatuserID ?? ""
-    );
+  const https =
+    "https://tlvk01h5sc.execute-api.us-east-1.amazonaws.com/default/PushNotificationSender";
 
-    let recipientTokens;
-
-    if (announcement) {
-      recipientTokens = members.map((member) => member.user.expoPushToken);
-    } else {
-      recipientTokens = members
-        .filter((member) => member.notificationsEnabled)
-        .map((member) => member.user.expoPushToken);
-    }
-
-    if (recipientTokens && messageSender) {
-      const https =
-        "https://tlvk01h5sc.execute-api.us-east-1.amazonaws.com/default/PushNotificationSender";
-
-      const recipients = Array.from(recipientTokens).join(",");
-
-      const currentUserName = members
-        .map((member) => member.user)
-        .filter((member) => member.id === user.id)
-        .map((member) => member.name)[0];
-
-      const mediaMessage =
-        message.imageUrl?.split(".")[1] == "jpg" ? "an image" : "a video";
-
-      fetch(https, {
-        // @ts-ignore
-        headers: {
-          title: chat.isGroupChat ? chat.title : currentUserName,
-          message: announcement
-            ? encodeURIComponent(message.announcementBody ?? "")
-            : message.messageBody
-            ? encodeURIComponent(message.messageBody)
-            : `${messageSender.user.name} sent ${mediaMessage}`,
-          sender: chat.isGroupChat
-            ? message.messageBody
-              ? messageSender.nickname ?? undefined
-              : undefined
-            : undefined,
-          recipients: recipients,
-          chat: chat.id,
-          imageurl: message.imageUrl ? message.imageUrl : null,
-          messageid: message.id,
-        },
-      }).catch((error) => alert(error));
-    }
-  }
+  //fetch(https).catch((error) => Alert.alert(error.toString()));
+  // const jwt = require("jsonwebtoken");
+  // const authorizationToken = jwt.sign(
+  //   {
+  //     iss: "SV4GDKS298",
+  //     iat: Math.round(new Date().getTime() / 1000),
+  //   },
+  //   fs.readFileSync("./Manor_apns_key.p8", "utf8"),
+  //   {
+  //     header: {
+  //       alg: "ES256",
+  //       kid: "M9BCCQ227J",
+  //     },
+  //   }
+  // );
+  // console.log(authorizationToken);
+  // if (user && chat && members && message) {
+  //   const messageSender = await DataStore.query(
+  //     ChatUser,
+  //     message.chatuserID ?? ""
+  //   );
+  //   let recipientTokens;
+  //   if (announcement) {
+  //     recipientTokens = members.map((member) => member.user.expoPushToken);
+  //   } else {
+  //     recipientTokens = members
+  //       .filter((member) => member.notificationsEnabled)
+  //       .map((member) => member.user.expoPushToken);
+  //   }
+  //   if (recipientTokens && messageSender) {
+  //     const https =
+  //       "https://tlvk01h5sc.execute-api.us-east-1.amazonaws.com/default/PushNotificationSender";
+  //     const recipients = Array.from(recipientTokens).join(",");
+  //     const currentUserName = members
+  //       .map((member) => member.user)
+  //       .filter((member) => member.id === user.id)
+  //       .map((member) => member.name)[0];
+  //     const mediaMessage =
+  //       message.imageUrl?.split(".")[1] == "jpg" ? "an image" : "a video";
+  //     fetch(https, {
+  //       // @ts-ignore
+  //       headers: {
+  //         title: chat.isGroupChat ? chat.title : currentUserName,
+  //         message: announcement
+  //           ? encodeURIComponent(message.announcementBody ?? "")
+  //           : message.messageBody
+  //           ? encodeURIComponent(message.messageBody)
+  //           : `${messageSender.user.name} sent ${mediaMessage}`,
+  //         sender: chat.isGroupChat
+  //           ? message.messageBody
+  //             ? messageSender.nickname ?? undefined
+  //             : undefined
+  //           : undefined,
+  //         recipients: recipients,
+  //         chat: chat.id,
+  //         imageurl: message.imageUrl ? message.imageUrl : null,
+  //         messageid: message.id,
+  //       },
+  //     }).catch((error) => alert(error));
+  //   }
+  // }
 };

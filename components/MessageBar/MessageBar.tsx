@@ -53,9 +53,9 @@ export default function MessageBar(props: MessageBarProps) {
   const sendTextMessage = async () => {
     if (messageBody) {
       const newMessage = createTextMessageComponent(messageBody, context);
-      appendMessage(newMessage, context);
+      //appendMessage(newMessage, context);
       setChats(reOrderChats(chat, chats, newMessage.messageBody ?? undefined));
-      await uploadMessage(newMessage);
+      uploadMessage(newMessage);
       sendNotification(user ?? undefined, chat, members, newMessage, false);
       updateChatUserHasUnreadMessages(
         members.filter((member) => member.id !== chatUser?.id),

@@ -12,15 +12,15 @@ export const styles = StyleSheet.create({
 
   bubbleOutgoing: {
     backgroundColor: Colors.manorDarkPurple,
-    // borderWidth: 2,
-    // borderColor: "rgba(92, 106, 239, 0.5)",
+    borderWidth: 2,
+    borderColor: "rgba(92, 106, 239, 0.5)",
     alignSelf: "flex-end",
   },
 
   bubbleIncoming: {
     backgroundColor: Colors.manorBlueGray,
-    // borderWidth: 2,
-    // borderColor: "#535c69",
+    borderWidth: 2,
+    borderColor: "#535c69",
     alignSelf: "flex-start",
   },
 
