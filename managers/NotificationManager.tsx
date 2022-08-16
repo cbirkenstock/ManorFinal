@@ -1,7 +1,7 @@
 import { DataStore } from "aws-amplify";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
-import { Platform } from "react-native";
+import { Alert, Platform } from "react-native";
 import { Chat, ChatUser, Message, User } from "../src/models";
 
 /* -------------------------------------------------------------------------- */
@@ -30,10 +30,20 @@ export const getPushNotificationPermissions = async (
 };
 
 export const updateUserExpoToken = async (user: User | undefined) => {
+  // const token = (await Notifications.getDevicePushTokenAsync()).data;
+
+  // Alert.alert(token, token, [
+  //   { text: "OK", onPress: () => Clipboard.setString(token) },
+  //   {
+  //     text: "Cancel",
+  //     onPress: () => console.log(""),
+  //     style: "cancel",
+  //   },
+  // ]);
   if (user) {
     const upToDateUser = await DataStore.query(User, user.id);
 
-    const token = (await Notifications.getExpoPushTokenAsync()).data;
+    const token = (await Notifications.getDevicePushTokenAsync()).data;
 
     if (upToDateUser && upToDateUser?.expoPushToken !== token) {
       try {
@@ -63,7 +73,7 @@ export const setUpAndroidNotificationChanel = () => {
 export const setNotificationHandler = () => {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: true,
+      shouldShowAlert: false,
       shouldPlaySound: false,
       shouldSetBadge: false,
     }),
@@ -127,6 +137,7 @@ export const sendNotification = async (
   message: Message,
   announcement: boolean
 ) => {
+  console.log("triggered");
   if (user && chat && members && message) {
     const messageSender = await DataStore.query(
       ChatUser,

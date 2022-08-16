@@ -90,7 +90,6 @@ export default function MessageBar(props: MessageBarProps) {
         updateChatUserOfActiveChatStatus(members, true);
       }
     }
-  };
 
   /*
   This function creates a local message with full resolution image and appends
