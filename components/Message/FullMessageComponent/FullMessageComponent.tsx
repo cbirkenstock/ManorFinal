@@ -37,6 +37,8 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
   const { chatUser, members } = useAppContext();
 
   const isMe = message.chatuserID === chatUser?.id;
+  const containsMoreThanUrl =
+    (message.messageBody?.split(" ").length ?? 2) >= 2;
   const sender = members.find((member) => member.id === message.chatuserID);
   const isFirstOfGroup = message.marginTop === 10;
 
@@ -349,8 +351,13 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
             style={(message.likes ?? 0) >= 1 && styles.popularMessage}
             onDoublePress={() => setIsVisible(!isVisible)}
           >
-            {message.urlPreviewTitle && <UrlPreviewMessage message={message} />}
-            {message.messageBody && !message.urlPreviewTitle && (
+            {message.urlPreviewTitle && (
+              <UrlPreviewMessage
+                message={message}
+                containsMoreThanUrl={containsMoreThanUrl}
+              />
+            )}
+            {message.messageBody && containsMoreThanUrl && (
               <MessageBubble message={message} />
             )}
             {message.imageUrl && <MediaMessage message={message} />}

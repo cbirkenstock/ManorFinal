@@ -7,13 +7,14 @@ import { getPrettyUrl } from "../../../../managers/UrlPreviewManager";
 
 interface UrlPreviewProps {
   message: Message;
+  containsMoreThanUrl: boolean;
 }
 
 export default function UrlPreview(props: UrlPreviewProps) {
-  const { message } = props;
+  const { message, containsMoreThanUrl } = props;
 
   return (
-    <View style={{ width: 250 }}>
+    <View style={{ width: 250, marginBottom: containsMoreThanUrl ? 2 : 0 }}>
       <CacheImage
         needsSigning={false}
         source={message.urlPreviewImageUrl}
