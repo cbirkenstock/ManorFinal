@@ -354,12 +354,14 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
             {message.urlPreviewTitle && (
               <UrlPreviewMessage
                 message={message}
+                isMe={isMe}
                 containsMoreThanUrl={containsMoreThanUrl}
               />
             )}
-            {message.messageBody && containsMoreThanUrl && (
-              <MessageBubble message={message} />
-            )}
+            {message.messageBody &&
+              (!message.urlPreviewTitle || containsMoreThanUrl) && (
+                <MessageBubble message={message} />
+              )}
             {message.imageUrl && <MediaMessage message={message} />}
           </MultiGestureButton>
           <View

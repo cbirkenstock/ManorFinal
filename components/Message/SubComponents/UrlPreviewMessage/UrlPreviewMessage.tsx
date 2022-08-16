@@ -1,20 +1,26 @@
 import { Message } from "../../../../src/models";
-import { Image, View, Text } from "react-native";
-import { useEffect } from "react";
+import { View, Text } from "react-native";
 import CacheImage from "../../../CustomPrimitives/CacheImage";
 import Colors from "../../../../constants/Colors";
 import { getPrettyUrl } from "../../../../managers/UrlPreviewManager";
 
 interface UrlPreviewProps {
   message: Message;
+  isMe: boolean;
   containsMoreThanUrl: boolean;
 }
 
 export default function UrlPreview(props: UrlPreviewProps) {
-  const { message, containsMoreThanUrl } = props;
+  const { message, isMe, containsMoreThanUrl } = props;
 
   return (
-    <View style={{ width: 250, marginBottom: containsMoreThanUrl ? 2 : 0 }}>
+    <View
+      style={{
+        width: 250,
+        marginBottom: containsMoreThanUrl ? 2 : 0,
+        alignSelf: isMe ? "flex-end" : "flex-start",
+      }}
+    >
       <CacheImage
         needsSigning={false}
         source={message.urlPreviewImageUrl}
@@ -48,7 +54,7 @@ export default function UrlPreview(props: UrlPreviewProps) {
           {message.urlPreviewTitle}
         </Text>
         <Text numberOfLines={1} style={{ color: Colors.manorDarkWhite }}>
-          {getPrettyUrl(message.urlPreviewImageUrl)}
+          {getPrettyUrl(message.urlPreviewWebsiteUrl)}
         </Text>
       </View>
     </View>
