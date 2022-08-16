@@ -18,7 +18,7 @@ import {
   fetchMediaBlob,
   uploadMedia,
 } from "../../managers/MediaManager";
-import { Chat } from "../../src/models";
+import { Chat, Message } from "../../src/models";
 import Colors from "../../constants/Colors";
 import Dialog from "../Dialog/Dialog";
 import EventSuggestionForm from "../Dialog/DialogForms/EventSuggestionForm/EventSuggestionForm";
@@ -30,15 +30,17 @@ import {
 import { sendNotification } from "../../managers/NotificationManager";
 import useAuthContext from "../../hooks/useAuthContext";
 import { reOrderChats } from "../../managers/ChatManager";
+import { ContainsUrl, extractWebInfo } from "../../managers/UrlPreviewManager";
 
 interface MessageBarProps {
   chat?: Chat;
   chats: Chat[];
   setChats: React.Dispatch<React.SetStateAction<Chat[] | undefined>>;
+  messageToReplyTo?: Message;
 }
 
 export default function MessageBar(props: MessageBarProps) {
-  const { chat, chats, setChats } = props;
+  const { chat, chats, setChats, messageToReplyTo } = props;
   const context = useAppContext();
   const { chatUser, members, isForwardingEvent, setIsForwardingEvent } =
     context;
@@ -52,10 +54,30 @@ export default function MessageBar(props: MessageBarProps) {
 
   const sendTextMessage = async () => {
     if (messageBody) {
-      const newMessage = createTextMessageComponent(messageBody, context);
-      //appendMessage(newMessage, context);
+      let urlPreviewTitle: string | undefined = undefined;
+      let urlPreviewWebsiteUrl: string | undefined = undefined;
+      let urlPreviewImageUrl: string | undefined = undefined;
+
+      if (ContainsUrl(messageBody)) {
+        let webData = await extractWebInfo(messageBody);
+
+        urlPreviewTitle = (webData as any).title;
+        urlPreviewWebsiteUrl = (webData as any).url;
+        urlPreviewImageUrl = (webData as any).images[0];
+      }
+
+      const newMessage = createTextMessageComponent(
+        messageBody,
+        context,
+        messageToReplyTo,
+        urlPreviewTitle,
+        urlPreviewWebsiteUrl,
+        urlPreviewImageUrl
+      );
+
+      appendMessage(newMessage, context);
       setChats(reOrderChats(chat, chats, newMessage.messageBody ?? undefined));
-      uploadMessage(newMessage);
+      await uploadMessage(newMessage);
       sendNotification(user ?? undefined, chat, members, newMessage, false);
       updateChatUserHasUnreadMessages(
         members.filter((member) => member.id !== chatUser?.id),
@@ -68,7 +90,6 @@ export default function MessageBar(props: MessageBarProps) {
         updateChatUserOfActiveChatStatus(members, true);
       }
     }
-  };
 
   /*
   This function creates a local message with full resolution image and appends

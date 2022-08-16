@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, View } from "react-native";
+import { Animated, Linking, View } from "react-native";
 import useAppContext from "../../../hooks/useAppContext";
 import { Message, Reaction } from "../../../src/models";
 import { styles } from "./styles";
@@ -15,7 +15,8 @@ import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import MultiGestureButton from "../../CustomPrimitives/MultiGestureButton";
 import { animate } from "../../../managers/AnimationManager";
 import * as FileSystem from "expo-file-system";
-import CacheImage from "../../CustomPrimitives/CacheImage";
+import ReplyButton from "../SubComponents/ReplyButton/ReplyButton";
+import UrlPreviewMessage from "../SubComponents/UrlPreviewMessage";
 
 interface FullMessageComponentProps {
   message: Message;
@@ -26,13 +27,18 @@ interface FullMessageComponentProps {
       }[]
     >
   >;
+  setMessageToReplyTo: React.Dispatch<
+    React.SetStateAction<Message | undefined>
+  >;
 }
 
 export default function FullMessageComponent(props: FullMessageComponentProps) {
-  const { message, setZoomImage } = props;
+  const { message, setZoomImage, setMessageToReplyTo } = props;
   const { chatUser, members } = useAppContext();
 
   const isMe = message.chatuserID === chatUser?.id;
+  const containsMoreThanUrl =
+    (message.messageBody?.split(" ").length ?? 2) >= 2;
   const sender = members.find((member) => member.id === message.chatuserID);
   const isFirstOfGroup = message.marginTop === 10;
 
@@ -338,12 +344,22 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
             onPress={() => {
               if (message.imageUrl) {
                 getImageCachePath();
+              } else if (message.urlPreviewWebsiteUrl) {
+                Linking.openURL(message.urlPreviewWebsiteUrl);
               }
             }}
             style={(message.likes ?? 0) >= 1 && styles.popularMessage}
             onDoublePress={() => setIsVisible(!isVisible)}
           >
-            {message.messageBody && <MessageBubble message={message} />}
+            {message.urlPreviewTitle && (
+              <UrlPreviewMessage
+                message={message}
+                containsMoreThanUrl={containsMoreThanUrl}
+              />
+            )}
+            {message.messageBody && containsMoreThanUrl && (
+              <MessageBubble message={message} />
+            )}
             {message.imageUrl && <MediaMessage message={message} />}
           </MultiGestureButton>
           <View
@@ -413,6 +429,14 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
             ) : null}
           </View>
         </View>
+        <ReplyButton
+          isMe={isMe}
+          visible={isVisible}
+          onPress={() => {
+            setMessageToReplyTo(message);
+            setIsVisible(false);
+          }}
+        />
       </View>
     </View>
   );
