@@ -6,10 +6,11 @@ import { fetchSignedUrl } from "../../../managers/MediaManager";
 interface CachImageProps extends Omit<ImageProps, "source"> {
   cacheKey: string | undefined | null;
   source: string | undefined | null;
+  needsSigning?: boolean;
 }
 
 export default function CacheImage(props: CachImageProps) {
-  const { source, cacheKey, style } = props;
+  const { source, cacheKey, needsSigning = true, style } = props;
   const [cachePath, setCachePath] = useState<string>("");
 
   /*
@@ -27,12 +28,14 @@ export default function CacheImage(props: CachImageProps) {
         if (imgInfo.exists) {
           !unmounted && setCachePath(_cachePath);
         } else {
-          const signedUrl = await fetchSignedUrl(source);
+          const signedUrl = needsSigning
+            ? await fetchSignedUrl(source)
+            : source;
           const cached = await cacheImage(signedUrl, _cachePath);
           if (cached.path) {
             !unmounted && setCachePath(cached.path);
           } else {
-            Alert.alert(`Couldn't load Image!`);
+            console.log(`Couldn't load Image!`);
           }
         }
       }
@@ -75,6 +78,7 @@ export default function CacheImage(props: CachImageProps) {
       );
 
       const downloaded = await downloadImage.downloadAsync();
+
       return {
         cached: true,
         err: false,

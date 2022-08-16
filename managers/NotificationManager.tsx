@@ -127,7 +127,6 @@ export const sendNotification = async (
   message: Message,
   announcement: boolean
 ) => {
-  console.log("triggered");
   if (user && chat && members && message) {
     const messageSender = await DataStore.query(
       ChatUser,

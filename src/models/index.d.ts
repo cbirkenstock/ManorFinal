@@ -147,6 +147,12 @@ export declare class Message {
   readonly remindDate?: string | null;
   readonly createdAt?: string | null;
   readonly updatedAt?: string | null;
+  readonly replyToMessageID?: string | null;
+  readonly replyToMessageBody?: string | null;
+  readonly replyToMessageImageUrl?: string | null;
+  readonly urlPreviewImageUrl?: string;
+  readonly urlPreviewTitle?: string;
+  readonly urlPreviewWebsiteUrl?: string;
   constructor(init: ModelInit<Message, MessageMetaData>);
   static copyOf(
     source: Message,

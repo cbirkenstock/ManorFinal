@@ -106,4 +106,10 @@ type Message @model @auth(rules: [{ allow: public }]) {
   isAccepted: Boolean
   dateSuggestion: AWSDateTime
   remindDate: AWSDateTime
+  replyToMessageID: ID
+  replyToMessageBody: String
+  replyToMessageImageUrl: String
+  urlPreviewImageUrl: String
+  urlPreviewTitle: String
+  urlPreviewWebsiteUrl: String
 }

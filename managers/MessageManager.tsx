@@ -37,7 +37,11 @@ const getMarginTop = (context: AppInitialStateProps) => {
 
 export const createTextMessageComponent = (
   messageBody: string,
-  context: AppInitialStateProps
+  context: AppInitialStateProps,
+  messageToReplyTo?: Message,
+  urlPreviewTitle?: string,
+  urlPreviewWebsiteUrl?: string,
+  urlPreviewImageUrl?: string
 ) => {
   const { chat, chatUser } = context;
 
@@ -46,7 +50,12 @@ export const createTextMessageComponent = (
     chatuserID: chatUser?.id,
     chatID: chat?.id,
     marginTop: getMarginTop(context),
-    rerender: true,
+    replyToMessageID: messageToReplyTo?.id,
+    replyToMessageBody: messageToReplyTo?.messageBody,
+    replyToMessageImageUrl: messageToReplyTo?.imageUrl,
+    urlPreviewTitle: urlPreviewTitle,
+    urlPreviewWebsiteUrl: urlPreviewWebsiteUrl,
+    urlPreviewImageUrl: urlPreviewImageUrl,
   });
 
   return newMessage;

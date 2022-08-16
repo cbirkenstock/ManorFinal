@@ -46,9 +46,10 @@ import { hasBezels } from "../../constants/hasBezels";
 import { MemoizedFullMessageComponent } from "../../components/Message/FullMessageComponent/FullMessageComponent";
 import EventMessage from "../../components/Message/SubComponents/EventMessage";
 import EventSuggestionMessage from "../../components/Message/SubComponents/EventSuggestionMessage/EventSuggestionMessage";
-import { FontAwesome } from "@expo/vector-icons";
+import { AntDesign, FontAwesome } from "@expo/vector-icons";
 import { formatDateTime, formatTime } from "../../managers/DateTimeManager";
 import { MemoizedDefaultContactImage } from "../../components/DefaultContactImage/DefaultContactImage";
+import MessageBubble from "../../components/Message/SubComponents/MessageBubble";
 
 export default function ChatScreen({ navigation, route }: Props) {
   const context = useAppContext();
@@ -76,6 +77,8 @@ export default function ChatScreen({ navigation, route }: Props) {
 
   const [page, setPage] = useState<number>(0);
   const hasMoreMessages = useRef<boolean>(true);
+
+  const [messageToReplyTo, setMessageToReplyTo] = useState<Message>();
 
   const chatFlatlistButtonsHeightAnim = useRef(new Animated.Value(0)).current;
   const announcementSentNotificationOpacityAnim = useRef(
@@ -374,6 +377,50 @@ export default function ChatScreen({ navigation, route }: Props) {
     }
   }, [hasSentAnnouncement]);
 
+  const ReplyToMessage = () => {
+    return (
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderColor: Colors.manorDarkWhite,
+          borderTopWidth: 1,
+          borderBottomWidth: 1,
+          marginBottom: 5,
+          paddingVertical: 5,
+          paddingHorizontal: 10,
+        }}
+      >
+        <View>
+          <Text style={{ color: Colors.manorDarkWhite }}>Reply To Message</Text>
+          {messageToReplyTo ? (
+            <MessageBubble
+              message={messageToReplyTo}
+              style={{ alignSelf: "flex-start", marginTop: 5 }}
+            />
+          ) : null}
+        </View>
+        <IconButton
+          icon={
+            <AntDesign
+              name="closecircleo"
+              size={24}
+              color={Colors.manorPurple}
+            />
+          }
+          dimension={30}
+          color={"transparent"}
+          onPress={() => {
+            setMessageToReplyTo(undefined);
+          }}
+        ></IconButton>
+      </View>
+    );
+  };
+
+  useEffect(() => {}, [messageToReplyTo]);
+
   /* -------------------------------------------------------------------------- */
   /*                       Render Flatlist Item Functions                       */
   /* -------------------------------------------------------------------------- */
@@ -396,6 +443,7 @@ export default function ChatScreen({ navigation, route }: Props) {
         <MemoizedFullMessageComponent
           message={item}
           setZoomImage={setZoomImage}
+          setMessageToReplyTo={setMessageToReplyTo}
         />
       );
     }
@@ -446,13 +494,16 @@ export default function ChatScreen({ navigation, route }: Props) {
           keyExtractor={(message) => message?.id}
           renderItem={renderMessage}
         />
+        {messageToReplyTo ? <ReplyToMessage /> : null}
         <MessageBar
           chat={chat ?? undefined}
           chats={chats ?? []}
           setChats={chatScreenSetChats}
+          messageToReplyTo={messageToReplyTo}
         />
         <ChatFlatlistButtons />
         {hasSentAnnouncement ? <AnnouncementSent /> : null}
+
         <ZoomImageView />
       </KeyboardAvoidingView>
     </View>
