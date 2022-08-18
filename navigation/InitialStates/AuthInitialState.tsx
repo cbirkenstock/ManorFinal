@@ -1,10 +1,9 @@
-import { ImageInfo } from "expo-image-picker";
 import { CustomImageData } from "../../managers/MediaManager";
-import { Chat, User } from "../../src/models";
+import { User } from "../../src/models";
 
 export interface AuthInitialStateProps {
   loading: boolean;
-  user: User | null;
+  user: User | undefined;
   signUp: (
     name: string,
     phone: string,
@@ -26,7 +25,7 @@ export interface AuthInitialStateProps {
 
 export const initialState = {
   loading: true,
-  user: null,
+  user: undefined,
   signUp: () => Promise,
   confirmSignUp: () => Promise,
   signIn: () => Promise,

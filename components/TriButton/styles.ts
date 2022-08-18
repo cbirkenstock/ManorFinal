@@ -1,35 +1,36 @@
 import { StyleSheet } from "react-native";
 
-export const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    marginTop: 30,
-  },
+export default function Styles() {
+  const styles = StyleSheet.create({
+    container: {
+      alignSelf: "center",
+    },
 
-  button: {
-    width: "90%",
-    borderRadius: 20,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#5C6AEF",
-  },
+    button: {
+      borderRadius: 20,
+      height: 60,
+      backgroundColor: "#5C6AEF",
+      alignItems: "center",
+      justifyContent: "center",
+    },
 
-  buttonText: {
-    fontSize: 27,
-    color: "white",
-  },
+    buttonText: {
+      fontSize: 27,
+      color: "white",
+    },
 
-  smallButtonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "75%",
-    marginTop: 10,
-    paddingHorizontal: 10,
-  },
+    smallButtonContainer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: 10,
+      paddingHorizontal: 10,
+    },
 
-  smallButtonText: {
-    color: "#5C6AEF",
-    fontSize: 15,
-  },
-});
+    smallButtonText: {
+      color: "#5C6AEF",
+      fontSize: 15,
+    },
+  });
+
+  return styles;
+}

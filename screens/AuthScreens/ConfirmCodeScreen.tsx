@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { StyleSheet, View, TextInput, SafeAreaView, Alert } from "react-native";
 import TriButton from "../../components/TriButton";
 import Colors from "../../constants/Colors";
@@ -8,26 +8,21 @@ import { ConfirmCodeScreenProps as Props } from "../../navigation/NavTypes";
 export default function SignupScreen({ route, navigation }: Props) {
   const { confirmSignUp, signIn } = useAuth();
 
-  const [code, setCode] = useState<string | null>();
   const [isSigningIn, setIsSigningIn] = useState<boolean>(Boolean);
+
+  let code = useRef<string>().current;
 
   const phone = route.params?.phone;
   const password = route.params?.password;
   const userName = route.params?.name;
-  const profileImageData = route.params?.profileImageData;
 
   const openHomePage = async () => {
-    if (phone && code && password && profileImageData) {
+    if (phone && code && password) {
       setIsSigningIn(true);
       const confirmResult = await confirmSignUp(phone, code);
 
       if (confirmResult === "SUCCESS") {
-        const signInResult = await signIn(
-          phone,
-          password,
-          userName,
-          profileImageData
-        );
+        const signInResult = await signIn(phone, password, userName);
 
         if (signInResult !== "SUCCESS") {
           setIsSigningIn(false);
@@ -39,20 +34,21 @@ export default function SignupScreen({ route, navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={loginStyles.container}>
-      <View style={loginStyles.buttonContainer}>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.buttonContainer}>
         <TextInput
-          style={loginStyles.input}
+          style={styles.input}
           keyboardAppearance="dark"
           placeholder="Confirmation Code..."
           placeholderTextColor="#E1D9D1"
           onChangeText={(value) => {
-            setCode(value);
+            code = value;
           }}
           value={code?.toString()}
         />
 
         <TriButton
+          containerStyle={styles.triButtonContainer}
           mainButton={{ title: "Sign Up", onPress: openHomePage }}
           bottomLeftButton={{ title: "Forgot Password?", onPress: () => {} }}
           bottomRightButton={{
@@ -66,7 +62,7 @@ export default function SignupScreen({ route, navigation }: Props) {
   );
 }
 
-const loginStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.manorBackgroundGray,
@@ -88,7 +84,7 @@ const loginStyles = StyleSheet.create({
 
   buttonContainer: {
     marginTop: 30,
-    paddingHorizontal: "7.5%",
+    paddingHorizontal: "5%",
   },
 
   input: {
@@ -99,5 +95,10 @@ const loginStyles = StyleSheet.create({
     borderColor: "#5C6AEF",
     color: "white",
     fontSize: 19,
+  },
+
+  triButtonContainer: {
+    width: "90%",
+    marginTop: 60,
   },
 });

@@ -50,6 +50,7 @@ import { AntDesign, FontAwesome } from "@expo/vector-icons";
 import { formatDateTime, formatTime } from "../../managers/DateTimeManager";
 import { MemoizedDefaultContactImage } from "../../components/DefaultContactImage/DefaultContactImage";
 import MessageBubble from "../../components/Message/SubComponents/MessageBubble";
+import MediaMessage from "../../components/Message/SubComponents/MediaMessage";
 
 export default function ChatScreen({ navigation, route }: Props) {
   const context = useAppContext();
@@ -392,14 +393,18 @@ export default function ChatScreen({ navigation, route }: Props) {
           paddingHorizontal: 10,
         }}
       >
-        <View>
+        <View style={{ flex: 1, maxWidth: "90%" }}>
           <Text style={{ color: Colors.manorDarkWhite }}>Reply To Message</Text>
-          {messageToReplyTo ? (
-            <MessageBubble
-              message={messageToReplyTo}
-              style={{ alignSelf: "flex-start", marginTop: 5 }}
-            />
-          ) : null}
+          {messageToReplyTo?.imageUrl ? (
+            <MediaMessage message={messageToReplyTo} style={{ marginTop: 5 }} />
+          ) : (
+            messageToReplyTo && (
+              <MessageBubble
+                message={messageToReplyTo}
+                style={{ alignSelf: "flex-start", marginTop: 5 }}
+              />
+            )
+          )}
         </View>
         <IconButton
           icon={
@@ -500,6 +505,7 @@ export default function ChatScreen({ navigation, route }: Props) {
           chats={chats ?? []}
           setChats={chatScreenSetChats}
           messageToReplyTo={messageToReplyTo}
+          setMessageToReplyTo={setMessageToReplyTo}
         />
         <ChatFlatlistButtons />
         {hasSentAnnouncement ? <AnnouncementSent /> : null}

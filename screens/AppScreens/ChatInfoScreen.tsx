@@ -23,7 +23,7 @@ import { FontAwesome, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import {
   checkForPreExistingDMChat,
   createDMChat,
-  removeChat,
+  removeChatUser,
 } from "../../managers/ChatManager";
 import { ChatEnum } from "./UsersScreen";
 import EventCard from "../../components/Cards/EventCard/EventCard";
@@ -319,7 +319,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
 
             if (upToDateChatUser && chat) {
               await DataStore.delete(upToDateChatUser);
-              route.params.setChats(removeChat(chat, route.params.chats));
+              route.params.setChats(removeChatUser(chat, route.params.chats));
               navigation.navigate("ContactScreen");
             }
           },

@@ -1,5 +1,3 @@
-import { DataStore, SortDirection } from "aws-amplify";
-import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -7,35 +5,38 @@ import {
   StatusBar,
   StyleSheet,
   Pressable,
-  View,
   Dimensions,
 } from "react-native";
-import Colors from "../../constants/Colors";
-import Header from "../../components/Header";
-import Contact from "../../components/Contact";
-import useAuthContext from "../../hooks/useAuthContext";
-import { ContactScreenProps as Props } from "../../navigation/NavTypes";
-import { Chat, ChatUser } from "../../src/models";
-import { animate, animateTwoSequence } from "../../managers/AnimationManager";
-import { dropDown } from "../../constants/Dropdown";
-import DropdownItem, { DropdownItemProps } from "../../components/DropdownItem";
-import { getContactSubscription } from "../../managers/SubscriptionManager";
-import {
-  attachNotificationHandler,
-  fetchNotificationChat,
-  getPushNotificationPermissions,
-  setNotificationHandler,
-  setUpAndroidNotificationChanel,
-  updateUserExpoToken,
-} from "../../managers/NotificationManager";
+
+import { DataStore, SortDirection } from "aws-amplify";
+import { LinearGradient } from "expo-linear-gradient";
 import * as Notifications from "expo-notifications";
 import { Ionicons, Octicons } from "@expo/vector-icons";
+
+import useAuthContext from "../../hooks/useAuthContext";
+import { animate, animateTwoSequence } from "../../managers/AnimationManager";
+import { getContactSubscription } from "../../managers/SubscriptionManager";
+import {
+  fetchNotificationChat,
+  setUpNotifications,
+} from "../../managers/NotificationManager";
+
+import Header from "../../components/Header";
+import DropdownItem, { DropdownItemProps } from "../../components/DropdownItem";
+import { MemoizedContact } from "../../components/Contact/Contact";
+
+import Colors from "../../constants/Colors";
+import { ContactScreenProps as Props } from "../../navigation/NavTypes";
+import { Chat, ChatUser } from "../../src/models";
+import { dropDown } from "../../constants/Dropdown";
 import { hasBezels } from "../../constants/hasBezels";
 
 export default function ContactScreen({ route, navigation }: Props) {
   const context = useAuthContext();
   const { user } = context;
-  const [chats, setChats] = useState<Chat[]>();
+
+  const [chats, setChats] = useState<Chat[]>([]);
+
   const height = Dimensions.get("screen").height;
   const exitViewHeightAnim = useRef(new Animated.Value(0)).current;
   const exitViewOpacityAnim = useRef(new Animated.Value(0)).current;
@@ -44,6 +45,8 @@ export default function ContactScreen({ route, navigation }: Props) {
   /*                                 Fetch Chats                                */
   /* -------------------------------------------------------------------------- */
 
+  /* ------------------------------- Sort Chats ------------------------------- */
+
   const sortChats = (chat1: Chat, chat2: Chat) => {
     if (chat1.updatedAt && chat2.updatedAt) {
       if (chat1.updatedAt > chat2.updatedAt) {
@@ -51,39 +54,26 @@ export default function ContactScreen({ route, navigation }: Props) {
       } else {
         return 1;
       }
-    } else {
-      return 0;
     }
+
+    return 0;
   };
+
+  /* ------------------------------- fetch Chats ------------------------------ */
 
   useEffect(() => {
     const fetchChats = async () => {
-      if (!chats) {
-        const _chats = (
-          await DataStore.query(
-            ChatUser,
-            (chatUser) =>
-              chatUser.userID("eq", user?.id ?? "").isOfActiveChat("eq", true),
-            {
-              sort: (chat) => {
-                return chat.updatedAt(SortDirection.ASCENDING);
-              },
-            }
-          )
+      if (chats.length > 0) return;
+
+      const _chats = (
+        await DataStore.query(ChatUser, (chatUser) =>
+          chatUser.userID("eq", user?.id ?? "").isOfActiveChat("eq", true)
         )
-          .map((chatUser) => chatUser.chat)
-          .sort(sortChats);
+      )
+        .map((chatUser) => chatUser.chat)
+        .sort(sortChats);
 
-        //adds a fake contact if there are none so that at least the header is rendered
-        if (_chats.length === 0) {
-          const headerTrojanChat = new Chat({
-            title: "Header_Trojan_Horse",
-          });
-          _chats.push(headerTrojanChat);
-        }
-
-        setChats(_chats);
-      }
+      setChats(_chats);
     };
 
     fetchChats();
@@ -98,7 +88,7 @@ export default function ContactScreen({ route, navigation }: Props) {
   const notificationRespondedTo = async (
     response: Notifications.NotificationResponse
   ) => {
-    const results = await fetchNotificationChat(response, user ?? undefined);
+    const results = await fetchNotificationChat(response, user);
 
     if (results?.chat && results.chatUser) {
       // @ts-ignore
@@ -119,21 +109,7 @@ export default function ContactScreen({ route, navigation }: Props) {
   /* -------------------------- Set Up Notifications -------------------------- */
 
   useEffect(() => {
-    const setUpNotifications = async () => {
-      if (user) {
-        setUpAndroidNotificationChanel();
-
-        const notificationStatus = await getPushNotificationPermissions(user);
-
-        if (notificationStatus === "granted") {
-          updateUserExpoToken(user);
-          setNotificationHandler();
-          attachNotificationHandler(notificationRespondedTo);
-        }
-      }
-    };
-
-    setUpNotifications();
+    setUpNotifications(notificationRespondedTo, user);
   }, []);
 
   /* -------------------------------------------------------------------------- */
@@ -141,15 +117,47 @@ export default function ContactScreen({ route, navigation }: Props) {
   /* -------------------------------------------------------------------------- */
 
   useEffect(() => {
-    const contactSubscription = getContactSubscription(
-      context,
-      chats ?? [],
-      setChats
-    );
+    const contactSubscription = getContactSubscription(chats, setChats, user);
     return () => {
       contactSubscription.unsubscribe();
     };
   }, [chats]);
+
+  /* -------------------------------------------------------------------------- */
+  /*                               Sub-Components                               */
+  /* -------------------------------------------------------------------------- */
+
+  /* --------------------------------- Header --------------------------------- */
+
+  const ContactScreenHeader = () => {
+    return (
+      <Header
+        title="Messages"
+        buttons={[
+          <Pressable
+            key={"profileButton"}
+            onPress={() => navigation.navigate("ProfileScreen")}
+          >
+            <Ionicons
+              name={"person-circle-outline"}
+              size={35}
+              color={"white"}
+            />
+          </Pressable>,
+          <Pressable
+            key={"addChatButton"}
+            onPress={() => {
+              animate(exitViewHeightAnim, height, 0);
+              animate(exitViewOpacityAnim, 1, 150);
+            }}
+          >
+            <Octicons name="plus" size={35} color={"white"} />
+          </Pressable>,
+        ]}
+        style={styles.header}
+      />
+    );
+  };
 
   /* -------------------------------------------------------------------------- */
   /*                       Render Flatlist Item Functions                       */
@@ -157,82 +165,8 @@ export default function ContactScreen({ route, navigation }: Props) {
 
   /* --------------------------------- Contact -------------------------------- */
 
-  const renderContact = ({ index }: { index: number }) => {
-    const start = index === 0;
-    const end = index === chats!.length - 1;
-    const evenChat = index % 2 === 0;
-    const noChats = chats![index].title === "Header_Trojan_Horse";
-    const hangingChat = end && index % 2 === 0;
-
-    const ContactHeader = () => {
-      return (
-        <Header
-          title="Messages"
-          buttons={[
-            <Pressable
-              key={"profileButton"}
-              onPress={() => navigation.navigate("ProfileScreen")}
-            >
-              <Ionicons
-                name={"person-circle-outline"}
-                size={35}
-                color={"white"}
-              />
-            </Pressable>,
-            <Pressable
-              key={"addChatButton"}
-              onPress={() => {
-                animate(exitViewHeightAnim, height, 0);
-                animate(exitViewOpacityAnim, 1, 150);
-              }}
-            >
-              <Octicons name="plus" size={35} color={"white"} />
-            </Pressable>,
-          ]}
-          style={{
-            marginHorizontal: "5%",
-            marginTop: hasBezels ? "5%" : "12%",
-            marginBottom: "2%",
-          }}
-        />
-      );
-    };
-
-    const HangingChat = () => {
-      return (
-        <View style={styles.hangingChatContainer}>
-          <Contact
-            contact={chats![index]}
-            chats={chats ?? []}
-            setChats={setChats}
-          />
-        </View>
-      );
-    };
-
-    const ChatPair = () => {
-      return (
-        <View style={styles.chatPairContainer}>
-          <Contact
-            contact={chats![index]}
-            chats={chats ?? []}
-            setChats={setChats}
-          />
-          <Contact
-            contact={chats![index + 1]}
-            chats={chats ?? []}
-            setChats={setChats}
-          />
-        </View>
-      );
-    };
-
-    return (
-      <>
-        {start && <ContactHeader />}
-        {!noChats && evenChat && (hangingChat ? <HangingChat /> : <ChatPair />)}
-      </>
-    );
+  const renderContact = ({ item }: { item: Chat }) => {
+    return <MemoizedContact chat={item} chats={chats} setChats={setChats} />;
   };
 
   /* ----------------------------- Drop Down Item ----------------------------- */
@@ -243,7 +177,7 @@ export default function ContactScreen({ route, navigation }: Props) {
         tab={item}
         exitViewHeightAnim={exitViewHeightAnim}
         exitViewOpacityAnim={exitViewOpacityAnim}
-        chats={chats ?? []}
+        chats={chats}
         setChats={setChats}
       />
     );
@@ -263,10 +197,12 @@ export default function ContactScreen({ route, navigation }: Props) {
       <StatusBar hidden />
       <FlatList
         style={styles.FlatList}
+        numColumns={2}
         data={chats}
         renderItem={renderContact}
         keyExtractor={(item) => item?.id}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={<ContactScreenHeader />}
       />
       <Animated.View
         style={[
@@ -303,6 +239,12 @@ export default function ContactScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+
+  header: {
+    marginHorizontal: "5%",
+    marginTop: hasBezels ? "5%" : "12%",
+    marginBottom: "2%",
   },
 
   FlatList: {

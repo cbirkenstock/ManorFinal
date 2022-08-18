@@ -1,60 +1,47 @@
-import React, { useEffect, useState } from "react";
-import { StyleSheet, View, TextInput, SafeAreaView } from "react-native";
-import ToggleButton from "../../components/ToggleButton";
-import TriButton from "../../components/TriButton";
-import Colors from "../../constants/Colors";
-import useAuth from "../../hooks/useAuthContext";
-import { SignUpScreenProps as Props } from "../../navigation/NavTypes";
-import { AntDesign } from "@expo/vector-icons";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  fetchMediaBlob,
-  PickImageRequestEnum,
-  pickMedia,
-} from "../../managers/MediaManager";
-import { setProfileImage } from "../../managers/UserManager";
-import { ImageInfo } from "expo-image-picker";
+  StyleSheet,
+  View,
+  TextInput,
+  SafeAreaView,
+  Keyboard,
+  Pressable,
+} from "react-native";
+
+import useAuth from "../../hooks/useAuthContext";
+import usePhoneNumberFormatting from "../../hooks/usePhoneNumberFormatting";
+
+import TriButton from "../../components/TriButton";
+
+import Colors from "../../constants/Colors";
+import { SignUpScreenProps as Props } from "../../navigation/NavTypes";
 
 export default function SignUpScreen({ navigation }: Props) {
   const { signUp } = useAuth();
-  const [name, setName] = useState<string | null>();
-  const [phone, setPhone] = useState<string | null>();
-  const [password, setPassword] = useState<string | null>();
-  const [lastPhoneLength, setLastPhoneLength] = useState<Number>(0);
-  const [profileImageData, setProfileImageData] = useState<{
-    fullQualityImageMetaData: ImageInfo;
-    type: "video" | "image";
-    uri: string;
-    width: number;
-    height: number;
-    base64?: string | undefined;
-  } | null>();
 
-  useEffect(() => {
-    if (phone) {
-      if (phone.length > lastPhoneLength) {
-        if (phone?.length === 3) {
-          setPhone("(" + phone + ")" + " ");
-        } else if (phone?.length === 9) {
-          setPhone(phone + "-");
-        }
-      }
-      setLastPhoneLength(phone.length);
-    } else {
-      setLastPhoneLength(0);
-    }
-  }, [phone]);
+  const [phoneNumber, setPhoneNumber] = useState<string>();
+
+  let name = useRef<string>().current;
+  let password = useRef<string>().current;
+
+  /* -------------------------------------------------------------------------- */
+  /*                          Go To Confirmation Screen                         */
+  /* -------------------------------------------------------------------------- */
 
   const goToConfirmationScreen = async () => {
-    if (name && phone && password && profileImageData) {
-      signUp(name, phone, password);
+    if (name && phoneNumber && password) {
+      signUp(name, phoneNumber, password);
       navigation.navigate("ConfirmCodeScreen", {
         name: name,
-        phone: phone,
+        phone: phoneNumber,
         password: password,
-        profileImageData: profileImageData,
       });
     }
   };
+
+  /* -------------------------------------------------------------------------- */
+  /*                                   Render                                   */
+  /* -------------------------------------------------------------------------- */
 
   return (
     <SafeAreaView
@@ -63,65 +50,42 @@ export default function SignUpScreen({ navigation }: Props) {
         backgroundColor: Colors.manorBackgroundGray,
       }}
     >
-      <View style={{ paddingHorizontal: "7.5%" }}>
+      <Pressable
+        onPress={() => Keyboard.dismiss()}
+        style={styles.paddingContainer}
+      >
         <TextInput
-          style={[loginStyles.input, { marginTop: 40 }]}
+          style={styles.input}
           placeholder="First + Last Name..."
           placeholderTextColor="#E1D9D1"
           onChangeText={(value) => {
-            setName(value);
+            name = value;
           }}
           value={name?.toString()}
         />
 
         <TextInput
-          style={loginStyles.input}
+          style={styles.input}
           placeholder="Phone..."
           placeholderTextColor="#E1D9D1"
           keyboardType="numeric"
           onChangeText={(value) => {
-            setPhone(value);
+            setPhoneNumber(usePhoneNumberFormatting(value, phoneNumber ?? ""));
           }}
-          value={phone?.toString()}
+          value={phoneNumber?.toString()}
         />
         <TextInput
-          style={loginStyles.input}
+          style={styles.input}
           placeholder="Password..."
           secureTextEntry
           placeholderTextColor="#E1D9D1"
           onChangeText={(value) => {
-            setPassword(value);
+            password = value;
           }}
           value={password?.toString()}
         />
-
-        <ToggleButton
-          text={profileImageData ? "Picure Added" : "Add Profile Picture"}
-          startAdornment={
-            !profileImageData && (
-              <AntDesign name="plus" size={24} color="white" />
-            )
-          }
-          toggleStyle={[
-            loginStyles.input,
-            { backgroundColor: "transparent", justifyContent: "flex-start" },
-            {
-              borderColor: profileImageData
-                ? Colors.manorGreen
-                : Colors.manorPurple,
-            },
-          ]}
-          textStyle={{ color: "#E1D9D1", fontSize: 19 }}
-          onPress={async () => {
-            const imageData = await pickMedia(
-              PickImageRequestEnum.setProfileImage
-            );
-
-            setProfileImageData(imageData);
-          }}
-        />
-
         <TriButton
+          containerStyle={styles.triButtonContainer}
           mainButton={{
             title: "Sign Up",
             onPress: () => goToConfirmationScreen(),
@@ -138,57 +102,21 @@ export default function SignUpScreen({ navigation }: Props) {
           }}
           isLoading={false}
         />
-      </View>
+      </Pressable>
     </SafeAreaView>
   );
 }
 
-const loginStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.manorBackgroundGray,
   },
 
-  ManorView: {
-    height: 75,
-    width: "100%",
-    marginTop: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    flexDirection: "row",
-  },
-
-  text: {
-    fontSize: 70,
-    fontWeight: "600",
-    color: "#5C6AEF",
-  },
-
-  logo: {
-    height: 75,
-    width: 75,
-    marginRight: 5,
-    marginTop: 5,
-  },
-
-  buttonContainer: {
-    flex: 0.9,
-    marginTop: 0,
-    justifyContent: "space-between",
-  },
-
-  button: {
-    width: "75%",
-    borderRadius: 20,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#5C6AEF",
-  },
-
-  buttonText: {
-    fontSize: 27,
-    color: "white",
+  paddingContainer: {
+    flex: 1,
+    paddingVertical: "2%",
+    paddingHorizontal: "5%",
   },
 
   input: {
@@ -201,4 +129,6 @@ const loginStyles = StyleSheet.create({
     fontSize: 19,
     marginTop: 15,
   },
+
+  triButtonContainer: { width: "90%", marginTop: 60 },
 });

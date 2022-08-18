@@ -78,51 +78,37 @@ export const messageSubscription = (
 
 /*kinda a hack rn -- not sure why update getting called several times
 and also called after INSERT */
-export const chatsIncludeSpecificChat = (chats: Chat[], specificChat: Chat) => {
+export const chatIncluded = (chats: Chat[], specificChat: Chat) => {
   return chats.map((chat) => chat.id).includes(specificChat.id);
 };
 
 export const getContactSubscription = (
-  context: AuthInitialStateProps,
   chats: Chat[],
-  setChats: SetChatsHandler
+  setChats: React.Dispatch<React.SetStateAction<Chat[]>>,
+  user?: User
 ) => {
-  const { user } = context;
-
   const subscription = DataStore.observe(ChatUser, (chatUser) =>
     chatUser.userID("eq", user?.id ?? "")
   ).subscribe((object) => {
     const chatUser = object.element;
+    const chat = chatUser.chat;
 
     if (object.opType === "INSERT") {
-      DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chatID)).then(
-        (newChat) => {
-          if (!chatsIncludeSpecificChat(chats, newChat[0])) {
-            return setChats(prependChat(newChat[0], chats));
-          }
-        }
-      );
-    } else if (object.opType === "UPDATE") {
-      const isOfActiveChat = !chatUser.isOfActiveChat;
+      if (!chatIncluded(chats, chat)) {
+        setChats(prependChat(chat, chats));
+      }
+    }
 
-      DataStore.query(Chat, (chat) => chat.id("eq", chatUser.chatID)).then(
-        (updatedChat) => {
-          let chatsList = chats;
-          if (
-            chatsIncludeSpecificChat(chats, updatedChat[0]) &&
-            isOfActiveChat
-          ) {
-            chatsList = removeChat(updatedChat[0], chats);
-          } else if (
-            !chatsIncludeSpecificChat(chats, updatedChat[0]) &&
-            !isOfActiveChat
-          ) {
-            chatsList = prependChat(updatedChat[0], chatsList);
-          }
+    if (object.opType === "UPDATE") {
+      const isOfActiveChat = chatUser.isOfActiveChat;
 
-          return setChats(chatsList);
-        }
-      );
+      if (chatIncluded(chats, chat) && !isOfActiveChat) {
+        setChats(removeChat(chat, chats));
+      }
+
+      if (!chatIncluded(chats, chat) && isOfActiveChat) {
+        setChats(prependChat(chat, chats));
+      }
     }
   });
 

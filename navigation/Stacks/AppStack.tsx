@@ -38,18 +38,18 @@ export type InnerAppStackParamList = {
     members: ChatUser[] | undefined;
     displayUser: User | undefined;
     chats: Chat[];
-    setChats: (value: React.SetStateAction<Chat[] | undefined>) => void;
+    setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
   };
   ChatInfoScreen: {
     displayUser: User | undefined;
     eventMessages: Message[] | undefined;
     chats: Chat[];
-    setChats: (value: React.SetStateAction<Chat[] | undefined>) => void;
+    setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
   };
   UsersScreen: {
     chatType: ChatEnum;
     chats: Chat[];
-    setChats: (value: React.SetStateAction<Chat[] | undefined>) => void;
+    setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
   };
   GoogleMapsScreen: {
     link: string | undefined;

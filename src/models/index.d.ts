@@ -148,6 +148,7 @@ export declare class Message {
   readonly createdAt?: string | null;
   readonly updatedAt?: string | null;
   readonly replyToMessageID?: string | null;
+  readonly replyToMessageSenderName?: string | null;
   readonly replyToMessageBody?: string | null;
   readonly replyToMessageImageUrl?: string | null;
   readonly urlPreviewImageUrl?: string;

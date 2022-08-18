@@ -14,7 +14,7 @@ export interface DropdownItemProps {
     type: string;
   };
   chats: Chat[];
-  setChats: (value: React.SetStateAction<Chat[] | undefined>) => void;
+  setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
   exitViewHeightAnim: Animated.Value;
   exitViewOpacityAnim: Animated.Value;
 }

@@ -30,16 +30,6 @@ export const getPushNotificationPermissions = async (
 };
 
 export const updateUserExpoToken = async (user: User | undefined) => {
-  // const token = (await Notifications.getDevicePushTokenAsync()).data;
-
-  // Alert.alert(token, token, [
-  //   { text: "OK", onPress: () => Clipboard.setString(token) },
-  //   {
-  //     text: "Cancel",
-  //     onPress: () => console.log(""),
-  //     style: "cancel",
-  //   },
-  // ]);
   if (user) {
     const upToDateUser = await DataStore.query(User, user.id);
 
@@ -137,7 +127,6 @@ export const sendNotification = async (
   message: Message,
   announcement: boolean
 ) => {
-  console.log("triggered");
   if (user && chat && members && message) {
     const messageSender = await DataStore.query(
       ChatUser,
@@ -189,5 +178,28 @@ export const sendNotification = async (
         },
       }).catch((error) => alert(error));
     }
+  }
+};
+
+/* -------------------------------------------------------------------------- */
+/*                            Set Up Notifications                            */
+/* -------------------------------------------------------------------------- */
+
+export const setUpNotifications = async (
+  notificationsHandler: (
+    response: Notifications.NotificationResponse
+  ) => Promise<void>,
+  user?: User
+) => {
+  if (!user) return;
+
+  setUpAndroidNotificationChanel();
+
+  const notificationStatus = await getPushNotificationPermissions(user);
+
+  if (notificationStatus === "granted") {
+    updateUserExpoToken(user);
+    setNotificationHandler();
+    attachNotificationHandler(notificationsHandler);
   }
 };

@@ -107,6 +107,7 @@ type Message @model @auth(rules: [{ allow: public }]) {
   dateSuggestion: AWSDateTime
   remindDate: AWSDateTime
   replyToMessageID: ID
+  replyToMessageSenderName: String
   replyToMessageBody: String
   replyToMessageImageUrl: String
   urlPreviewImageUrl: String

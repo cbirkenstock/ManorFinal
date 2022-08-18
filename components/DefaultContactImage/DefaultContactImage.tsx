@@ -6,44 +6,35 @@ import { DataStore } from "aws-amplify";
 
 interface DefaultContactImageProps {
   members?: ChatUser[];
-  chat?: Chat;
 }
 
 export default function DefaultContactImage(props: DefaultContactImageProps) {
-  const { members, chat } = props;
+  const { members } = props;
 
-  const [membersCount, setMembersCount] = useState<number>(2);
-  const [formattedMembers, setFormattedMembers] = useState<ChatUser[]>(
-    members ?? []
-  );
-
-  // useEffect(() => {
-  //   setMembersCount(members?.length ?? 0);
-  //   setFormattedMembers(members ?? []);
-  // }, [members]);
+  const membersCount = members?.length;
 
   /* -------------------------------------------------------------------------- */
   /*                                Fetch Members                               */
   /* -------------------------------------------------------------------------- */
 
-  useEffect(() => {
-    const fetchChatMembers = () => {
-      if (chat) {
-        DataStore.query(Chat, chat.id)
-          .then((coreChat) =>
-            DataStore.query(ChatUser, (chatUser) =>
-              chatUser.chatID("eq", coreChat?.id ?? "")
-            )
-          )
-          .then((members) => {
-            setFormattedMembers(members);
-            setMembersCount(members.length);
-          });
-      }
-    };
+  // useEffect(() => {
+  //   const fetchChatMembers = () => {
+  //     if (chat) {
+  //       DataStore.query(Chat, chat.id)
+  //         .then((coreChat) =>
+  //           DataStore.query(ChatUser, (chatUser) =>
+  //             chatUser.chatID("eq", coreChat?.id ?? "")
+  //           )
+  //         )
+  //         .then((members) => {
+  //           setFormattedMembers(members);
+  //           setMembersCount(members.length);
+  //         });
+  //     }
+  //   };
 
-    fetchChatMembers();
-  }, [chat]);
+  //   fetchChatMembers();
+  // }, [chat]);
 
   /* -------------------------------------------------------------------------- */
   /*                                   Render                                   */
@@ -54,6 +45,11 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
   a lot, would actually pick up if the quality was low, and there are only
   at max six photos
   */
+
+  if (!members) {
+    return <View />;
+  }
+
   switch (membersCount) {
     case 0:
       return null;
@@ -72,8 +68,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
           }}
         >
           <CacheImage
-            source={formattedMembers[0].profileImageUrl ?? ""}
-            cacheKey={formattedMembers[0].id}
+            source={members[0].profileImageUrl ?? ""}
+            cacheKey={members[0].id}
             style={{
               height: "60%",
               width: "60%",
@@ -100,8 +96,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
             }}
           >
             <CacheImage
-              source={formattedMembers[0]?.profileImageUrl ?? ""}
-              cacheKey={formattedMembers[0]?.id}
+              source={members[0]?.profileImageUrl ?? ""}
+              cacheKey={members[0]?.id}
               style={{
                 height: "90%",
                 width: "45%",
@@ -119,8 +115,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
             }}
           >
             <CacheImage
-              source={formattedMembers[1]?.profileImageUrl ?? ""}
-              cacheKey={formattedMembers[1]?.id}
+              source={members[1]?.profileImageUrl ?? ""}
+              cacheKey={members[1]?.id}
               style={{
                 height: "90%",
                 width: "45%",
@@ -151,8 +147,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
             }}
           >
             <CacheImage
-              source={formattedMembers[0].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[0].id}
+              source={members[0].profileImageUrl ?? ""}
+              cacheKey={members[0].id}
               style={{
                 height: "95%",
                 width: "40%",
@@ -168,8 +164,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
             }}
           >
             <CacheImage
-              source={formattedMembers[1].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[1].id}
+              source={members[1].profileImageUrl ?? ""}
+              cacheKey={members[1].id}
               style={{
                 height: "65%",
                 width: "40%",
@@ -180,8 +176,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               }}
             />
             <CacheImage
-              source={formattedMembers[2].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[2].id}
+              source={members[2].profileImageUrl ?? ""}
+              cacheKey={members[2].id}
               style={{
                 height: "65%",
                 width: "40%",
@@ -213,8 +209,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
             }}
           >
             <CacheImage
-              source={formattedMembers[0].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[0].id}
+              source={members[0].profileImageUrl ?? ""}
+              cacheKey={members[0].id}
               style={{
                 height: "90%",
                 width: "45%",
@@ -222,8 +218,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               }}
             />
             <CacheImage
-              source={formattedMembers[1].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[1].id}
+              source={members[1].profileImageUrl ?? ""}
+              cacheKey={members[1].id}
               style={{
                 height: "90%",
                 width: "45%",
@@ -240,8 +236,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
             }}
           >
             <CacheImage
-              source={formattedMembers[2].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[2].id}
+              source={members[2].profileImageUrl ?? ""}
+              cacheKey={members[2].id}
               style={{
                 height: "90%",
                 width: "45%",
@@ -249,8 +245,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               }}
             />
             <CacheImage
-              source={formattedMembers[3].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[3].id}
+              source={members[3].profileImageUrl ?? ""}
+              cacheKey={members[3].id}
               style={{
                 height: "90%",
                 width: "45%",
@@ -279,8 +275,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
             }}
           >
             <CacheImage
-              source={formattedMembers[0].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[0].id}
+              source={members[0].profileImageUrl ?? ""}
+              cacheKey={members[0].id}
               style={{
                 height: "110%",
                 width: "37.5%",
@@ -300,8 +296,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
             }}
           >
             <CacheImage
-              source={formattedMembers[1].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[1].id}
+              source={members[1].profileImageUrl ?? ""}
+              cacheKey={members[1].id}
               style={{
                 height: "110%",
                 width: "36%",
@@ -310,8 +306,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               }}
             />
             <CacheImage
-              source={formattedMembers[2].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[2].id}
+              source={members[2].profileImageUrl ?? ""}
+              cacheKey={members[2].id}
               style={{
                 height: "110%",
                 width: "36%",
@@ -330,8 +326,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
             }}
           >
             <CacheImage
-              source={formattedMembers[3].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[3].id}
+              source={members[3].profileImageUrl ?? ""}
+              cacheKey={members[3].id}
               style={{
                 height: "110%",
                 width: "43%",
@@ -340,8 +336,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               }}
             />
             <CacheImage
-              source={formattedMembers[4].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[4].id}
+              source={members[4].profileImageUrl ?? ""}
+              cacheKey={members[4].id}
               style={{
                 height: "110%",
                 width: "43%",
@@ -371,8 +367,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
             }}
           >
             <CacheImage
-              source={formattedMembers[0].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[0].id}
+              source={members[0].profileImageUrl ?? ""}
+              cacheKey={members[0].id}
               style={{
                 height: "110%",
                 width: "37.5%",
@@ -392,8 +388,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
             }}
           >
             <CacheImage
-              source={formattedMembers[1].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[1].id}
+              source={members[1].profileImageUrl ?? ""}
+              cacheKey={members[1].id}
               style={{
                 height: "110%",
                 width: "36%",
@@ -402,8 +398,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               }}
             />
             <CacheImage
-              source={formattedMembers[2].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[2].id}
+              source={members[2].profileImageUrl ?? ""}
+              cacheKey={members[2].id}
               style={{
                 height: "110%",
                 width: "36%",
@@ -422,8 +418,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
             }}
           >
             <CacheImage
-              source={formattedMembers[3].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[3].id}
+              source={members[3].profileImageUrl ?? ""}
+              cacheKey={members[3].id}
               style={{
                 height: "110%",
                 width: "43%",
@@ -432,8 +428,8 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               }}
             />
             <CacheImage
-              source={formattedMembers[4].profileImageUrl ?? ""}
-              cacheKey={formattedMembers[4].id}
+              source={members[4].profileImageUrl ?? ""}
+              cacheKey={members[4].id}
               style={{
                 height: "110%",
                 width: "43%",
@@ -456,5 +452,7 @@ function membersHaveChanged(
 
 export const MemoizedDefaultContactImage = React.memo(
   DefaultContactImage,
-  membersHaveChanged
+  () => {
+    return true;
+  }
 );

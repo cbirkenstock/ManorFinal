@@ -1,33 +1,49 @@
 import React from "react";
-import { TouchableOpacity, View, Text, ActivityIndicator } from "react-native";
-import { styles } from "./styles";
+import {
+  TouchableOpacity,
+  View,
+  Text,
+  ActivityIndicator,
+  StyleProp,
+  ViewStyle,
+  TextStyle,
+} from "react-native";
+import Styles from "./styles";
 
 interface Tributton {
+  containerStyle?: StyleProp<ViewStyle>;
   mainButton: {
     title: string;
     onPress: () => void;
+    style?: StyleProp<ViewStyle>;
   };
   bottomLeftButton: {
     title: string;
     onPress: () => void;
+    style?: StyleProp<TextStyle>;
   };
   bottomRightButton: {
     title: string;
     onPress: () => void;
+    style?: StyleProp<TextStyle>;
   };
   isLoading: boolean;
 }
 
 export default function TriButton(props: Tributton) {
-  const { mainButton, bottomLeftButton, bottomRightButton, isLoading } = props;
+  const {
+    containerStyle,
+    mainButton,
+    bottomLeftButton,
+    bottomRightButton,
+    isLoading,
+  } = props;
+  const styles = Styles();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerStyle]}>
       <TouchableOpacity
-        style={[
-          styles.button,
-          { marginTop: mainButton.title === "Log In" ? 40 : 0 },
-        ]}
+        style={[styles.button, mainButton.style]}
         onPress={mainButton.onPress}
       >
         {isLoading ? (
@@ -38,10 +54,14 @@ export default function TriButton(props: Tributton) {
       </TouchableOpacity>
       <View style={styles.smallButtonContainer}>
         <TouchableOpacity onPress={bottomLeftButton.onPress}>
-          <Text style={styles.smallButtonText}>{bottomLeftButton.title}</Text>
+          <Text style={[styles.smallButtonText, bottomLeftButton.style]}>
+            {bottomLeftButton.title}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={bottomRightButton.onPress}>
-          <Text style={styles.smallButtonText}>{bottomRightButton.title}</Text>
+          <Text style={[styles.smallButtonText, bottomRightButton.style]}>
+            {bottomRightButton.title}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

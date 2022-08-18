@@ -35,12 +35,16 @@ import { ContainsUrl, extractWebInfo } from "../../managers/UrlPreviewManager";
 interface MessageBarProps {
   chat?: Chat;
   chats: Chat[];
-  setChats: React.Dispatch<React.SetStateAction<Chat[] | undefined>>;
+  setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
   messageToReplyTo?: Message;
+  setMessageToReplyTo: React.Dispatch<
+    React.SetStateAction<Message | undefined>
+  >;
 }
 
 export default function MessageBar(props: MessageBarProps) {
-  const { chat, chats, setChats, messageToReplyTo } = props;
+  const { chat, chats, setChats, messageToReplyTo, setMessageToReplyTo } =
+    props;
   const context = useAppContext();
   const { chatUser, members, isForwardingEvent, setIsForwardingEvent } =
     context;
@@ -66,17 +70,25 @@ export default function MessageBar(props: MessageBarProps) {
         urlPreviewImageUrl = (webData as any).images[0];
       }
 
+      const messageToReplyToSenderName = members.find(
+        (member) => member.id === messageToReplyTo?.chatuserID
+      )?.user.name;
+
       const newMessage = createTextMessageComponent(
         messageBody,
         context,
         messageToReplyTo,
+        messageToReplyToSenderName,
         urlPreviewTitle,
         urlPreviewWebsiteUrl,
         urlPreviewImageUrl
       );
 
       appendMessage(newMessage, context);
-      setChats(reOrderChats(chat, chats, newMessage.messageBody ?? undefined));
+      setMessageToReplyTo(undefined);
+      setChats(
+        reOrderChats(chat, chats, newMessage.messageBody ?? undefined) ?? []
+      );
       await uploadMessage(newMessage);
       sendNotification(user ?? undefined, chat, members, newMessage, false);
       updateChatUserHasUnreadMessages(

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Image } from "react-native";
+import { View, Image, StyleProp, ViewStyle } from "react-native";
 import { Message } from "../../../../src/models";
 import CacheImage from "../../../CustomPrimitives/CacheImage";
 import { resizeImage } from "../../../../managers/MediaManager";
@@ -9,10 +9,11 @@ import SignedVideo from "../../../CustomPrimitives/SignedVideo/SignedVideo";
 
 interface MediaMessageProps {
   message: Message;
+  style?: StyleProp<ViewStyle>;
 }
 
 export default function MediaMessage(props: MediaMessageProps) {
-  const { message } = props;
+  const { message, style } = props;
   const isLocal = message.imageUrl?.includes("file:///");
   const isImage = message.imageUrl?.split(".")[1] === "jpg";
   const [imageHeight, setImageHeight] = useState<number>();
@@ -40,6 +41,7 @@ export default function MediaMessage(props: MediaMessageProps) {
           height: imageHeight,
           width: imageWidth,
         },
+        style,
       ]}
     >
       {isLocal ? (

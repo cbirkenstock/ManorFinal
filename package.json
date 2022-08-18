@@ -27,7 +27,7 @@
     "@types/react": "^17.0.41",
     "@types/react-native-snap-carousel": "^3.8.5",
     "amazon-cognito-identity-js": "^5.2.10",
-    "aws-amplify": "4.3.24",
+    "aws-amplify": "4.3.31",
     "aws-amplify-react-native": "^6.0.5",
     "cheerio": "^1.0.0-rc.12",
     "expo": "~45.0.0",

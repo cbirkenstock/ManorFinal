@@ -11,14 +11,6 @@ export type AuthStackParamList = {
     name: string;
     phone: string;
     password: string;
-    profileImageData: {
-      fullQualityImageMetaData: ImageInfo;
-      type: "video" | "image";
-      uri: string;
-      width: number;
-      height: number;
-      base64?: string | undefined;
-    } | null;
   };
 };
 

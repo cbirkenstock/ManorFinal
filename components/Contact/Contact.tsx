@@ -1,39 +1,38 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Image } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/core";
 import { useState, useEffect } from "react";
 import { ChatUser, User } from "../../src/models";
 import { DataStore } from "@aws-amplify/datastore";
-import { Chat, Message } from "../../src/models";
+import { Chat } from "../../src/models";
 import Colors from "../../constants/Colors";
 import useAuthContext from "../../hooks/useAuthContext";
 import { OuterContactScreenNavigationProps } from "../../navigation/NavTypes";
 import CacheImage from "../CustomPrimitives/CacheImage";
-import DefaultContactImage from "../DefaultContactImage";
 import { styles } from "./styles";
 import {
   extractDisplayUser,
   prependChat,
   removeChat,
 } from "../../managers/ChatManager";
-import { chatsIncludeSpecificChat } from "../../managers/SubscriptionManager";
+import { chatIncluded } from "../../managers/SubscriptionManager";
+import { MemoizedDefaultContactImage } from "../DefaultContactImage/DefaultContactImage";
 
 interface ContactProps {
-  contact: Chat;
+  chat: Chat;
   chats: Chat[];
-  setChats: (value: React.SetStateAction<Chat[] | undefined>) => void;
+  setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
 }
 
 export default function Contact(props: ContactProps) {
-  const { contact, chats, setChats } = props;
+  const { chat, chats, setChats } = props;
+
   const { user } = useAuthContext();
   const navigation = useNavigation<OuterContactScreenNavigationProps>();
 
   const [members, setMembers] = useState<ChatUser[]>([]);
   const [displayUser, setDisplayUser] = useState<User | undefined>();
-  const [contactChatUser, setContactChatUser] = useState<
-    ChatUser | undefined
-  >();
+  const [contactChatUser, setContactChatUser] = useState<ChatUser>();
 
   /* -------------------------------------------------------------------------- */
   /*                                Subscription                                */
@@ -45,40 +44,31 @@ export default function Contact(props: ContactProps) {
   */
   useEffect(() => {
     const subscription = DataStore.observe(ChatUser, (chatUser) =>
-      chatUser.chatID("eq", contact?.id)
+      chatUser.chatID("eq", chat?.id)
     ).subscribe((msg) => {
       const chatUser = msg.element;
 
       if (msg.opType === "INSERT") {
-        const newMembers = [...members, msg.element];
-        setMembers(newMembers);
-      } else if (msg.opType === "UPDATE") {
-        if (contact?.id == chatUser?.chatID && user?.id == chatUser?.userID) {
-          setContactChatUser(chatUser);
-        }
+        setMembers([...members, chatUser]);
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [members]);
 
   useEffect(() => {
-    const subscription = DataStore.observe(Chat, (chat) =>
-      chat.id("eq", contact?.id)
+    const subscription = DataStore.observe(Chat, (_chat) =>
+      _chat.id("eq", chat.id)
     ).subscribe((msg) => {
-      const chat = msg.element;
-
+      const _chat = msg.element;
       if (msg.opType === "UPDATE") {
-        if (chatsIncludeSpecificChat(chats, chat)) {
-          if (
-            chats[0].id === chat.id &&
-            chats[0].lastMessage === chat.lastMessage
-          ) {
-            return;
-          }
+        if (chatIncluded(chats, _chat)) {
+          if (chats[0].lastMessage === _chat.lastMessage) return;
 
-          let chatsList = removeChat(chat, chats);
-          chatsList = prependChat(chat, chatsList);
+          let chatsList = removeChat(_chat, chats);
+          chatsList = prependChat(_chat, chatsList);
           setChats(chatsList);
         }
       }
@@ -94,8 +84,8 @@ export default function Contact(props: ContactProps) {
   /* ---------------------------- Set Display User ---------------------------- */
 
   useEffect(() => {
-    if (!contact?.isGroupChat) {
-      const _displayUser = extractDisplayUser(contact, user ?? undefined);
+    if (!chat?.isGroupChat) {
+      const _displayUser = extractDisplayUser(chat, user ?? undefined);
       _displayUser && setDisplayUser(_displayUser);
     }
   }, []);
@@ -106,7 +96,7 @@ export default function Contact(props: ContactProps) {
     let unmounted = false;
 
     DataStore.query(ChatUser, (chatUser) =>
-      chatUser.userID("eq", user?.id ?? "").chatID("eq", contact?.id)
+      chatUser.userID("eq", user?.id ?? "").chatID("eq", chat?.id)
     ).then((chatUserArray) => {
       !unmounted && chatUserArray[0] && setContactChatUser(chatUserArray[0]);
     });
@@ -121,9 +111,9 @@ export default function Contact(props: ContactProps) {
   useEffect(() => {
     let unmounted = false;
 
-    if (!contact?.chatImageUrl) {
+    if (!chat?.chatImageUrl) {
       DataStore.query(ChatUser, (chatUser) =>
-        chatUser.chatID("eq", contact?.id)
+        chatUser.chatID("eq", chat?.id)
       ).then((members) => {
         !unmounted && setMembers(members);
       });
@@ -135,15 +125,25 @@ export default function Contact(props: ContactProps) {
   }, []);
 
   /* -------------------------------------------------------------------------- */
-  /*                                Nav Function                                */
+  /*                                  On Press                                  */
   /* -------------------------------------------------------------------------- */
 
+  const changeToUnread = () => {
+    const updatedChatUser = {
+      ...contactChatUser,
+      hasUnreadMessage: false,
+      hasUnreadAnnouncement: false,
+    } as ChatUser;
+
+    setContactChatUser(updatedChatUser);
+  };
+
   const openChat = () => {
-    if (contactChatUser) {
+    if (chat && contactChatUser) {
       navigation.navigate("ChatNav", {
         screen: "ChatScreen",
         params: {
-          chat: contact,
+          chat: chat,
           chatUser: contactChatUser,
           members: members,
           displayUser: displayUser,
@@ -159,12 +159,18 @@ export default function Contact(props: ContactProps) {
   /* -------------------------------------------------------------------------- */
 
   const requiresDefaultContactImage = !(
-    contact?.chatImageUrl || displayUser?.profileImageUrl
+    chat?.chatImageUrl || displayUser?.profileImageUrl
   );
 
   const ContactIcon = () => {
     return (
-      <TouchableOpacity style={styles.container} onPress={openChat}>
+      <TouchableOpacity
+        style={styles.container}
+        onPress={() => {
+          openChat();
+          changeToUnread();
+        }}
+      >
         <View
           style={[
             styles.newMessageView,
@@ -179,12 +185,12 @@ export default function Contact(props: ContactProps) {
         >
           {requiresDefaultContactImage ? (
             <View style={styles.contactImage}>
-              <DefaultContactImage members={members} />
+              <MemoizedDefaultContactImage members={members} />
             </View>
           ) : (
             <CacheImage
-              source={contact?.chatImageUrl ?? displayUser?.profileImageUrl!}
-              cacheKey={contact?.chatImageUrl ?? displayUser?.profileImageUrl!}
+              source={chat?.chatImageUrl ?? displayUser?.profileImageUrl!}
+              cacheKey={chat?.chatImageUrl ?? displayUser?.profileImageUrl!}
               style={styles.contactImage}
             />
           )}
@@ -194,16 +200,16 @@ export default function Contact(props: ContactProps) {
             styles.contactNameText,
             {
               color:
-                contact?.isEventChat || contact?.isCoordinationChat
+                chat?.isEventChat || chat?.isCoordinationChat
                   ? Colors.manorPurple
                   : "white",
             },
           ]}
         >
-          {contact?.title ?? displayUser?.name}
+          {chat?.title ?? displayUser?.name}
         </Text>
         <Text style={styles.messagePreviewText} numberOfLines={1}>
-          {contact?.lastMessage}
+          {chat?.lastMessage}
         </Text>
       </TouchableOpacity>
     );
@@ -212,6 +218,8 @@ export default function Contact(props: ContactProps) {
   return <ContactIcon />;
 }
 
-export const MemoizedContact = React.memo(Contact, () => {
-  return false;
-});
+const areEqual = (prevContact: ContactProps, newContact: ContactProps) => {
+  return prevContact.chat.lastMessage === newContact.chat.lastMessage;
+};
+
+export const MemoizedContact = React.memo(Contact, areEqual);

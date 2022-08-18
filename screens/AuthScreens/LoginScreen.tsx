@@ -1,50 +1,44 @@
-import React, { useEffect, useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   StyleSheet,
   Text,
-  View,
   TextInput,
-  KeyboardAvoidingView,
   Alert,
+  Pressable,
+  Keyboard,
 } from "react-native";
-import { useAuthContext } from "../../hooks/useAuthContext";
+
 import { SafeAreaView } from "react-native-safe-area-context";
-import Colors from "../../constants/Colors";
-import { LoginScreenProps as Props } from "../../navigation/NavTypes";
+
+import usePhoneNumberFormatting from "../../hooks/usePhoneNumberFormatting";
+
 import TriButton from "../../components/TriButton";
-import { DataStore } from "aws-amplify";
-import { User } from "../../src/models";
+
+import { LoginScreenProps as Props } from "../../navigation/NavTypes";
+import Colors from "../../constants/Colors";
+import useAuthContext from "../../hooks/useAuthContext";
 
 export default function LoginScreen({ navigation }: Props) {
   const { signIn } = useAuthContext();
-  const [phone, setPhone] = useState<string | null>();
-  const [password, setPassword] = useState<string | null>();
-  const [lastPhoneLength, setLastPhoneLength] = useState<Number>(0);
-  const [isSigningIn, setIsSigningIn] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (phone) {
-      if (phone.length > lastPhoneLength) {
-        if (phone?.length === 3) {
-          setPhone("(" + phone + ")" + " ");
-        } else if (phone?.length === 9) {
-          setPhone(phone + "-");
-        }
-      }
-      setLastPhoneLength(phone.length);
-    } else {
-      setLastPhoneLength(0);
-    }
-  }, [phone]);
+  const [isSigningIn, setIsSigningIn] = useState<boolean>(false);
+  const [phoneNumber, setPhoneNumber] = useState<string>();
+
+  let password = useRef<string>().current;
+
+  /* -------------------------------------------------------------------------- */
+  /*                               Sign In Handler                              */
+  /* -------------------------------------------------------------------------- */
 
   const _signIn = async () => {
-    if (phone?.length !== 14) {
+    if (phoneNumber?.length !== 14) {
       Alert.alert("Please Input Correct Phone Number");
       return;
     }
-    if (phone && password) {
+
+    if (phoneNumber && password) {
       setIsSigningIn(true);
-      const result = await signIn(phone!, password!);
+      const result = await signIn(phoneNumber!, password!);
       if (result !== "SUCCESS") {
         setIsSigningIn(false);
         Alert.alert(result);
@@ -52,40 +46,40 @@ export default function LoginScreen({ navigation }: Props) {
     }
   };
 
+  /* -------------------------------------------------------------------------- */
+  /*                                   Render                                   */
+  /* -------------------------------------------------------------------------- */
+
   return (
-    <SafeAreaView style={loginStyles.container}>
-      <View style={loginStyles.ManorView}>
-        <Text style={loginStyles.text}>Manor</Text>
-      </View>
-      <View style={{ paddingHorizontal: "7.5%" }}>
+    <SafeAreaView style={styles.container}>
+      <Pressable
+        onPress={() => Keyboard.dismiss()}
+        style={styles.paddingContainer}
+      >
+        <Text style={styles.title}>Manor</Text>
         <TextInput
-          style={[loginStyles.input, { marginTop: 30 }]}
-          keyboardAppearance="dark"
+          style={[styles.input]}
           placeholder="Phone..."
           placeholderTextColor="#E1D9D1"
           keyboardType="numeric"
           onChangeText={(value) => {
-            setPhone(value);
+            setPhoneNumber(usePhoneNumberFormatting(value, phoneNumber ?? ""));
           }}
-          value={phone?.toString()}
+          value={phoneNumber}
         />
         <TextInput
-          style={loginStyles.input}
+          style={styles.input}
           keyboardAppearance="dark"
           placeholder="Password..."
           secureTextEntry
           placeholderTextColor="#E1D9D1"
           onChangeText={(value) => {
-            setPassword(value);
+            password = value;
           }}
-          value={password?.toString()}
         />
-
         <TriButton
-          mainButton={{
-            title: "Log In",
-            onPress: _signIn,
-          }}
+          containerStyle={styles.triButtonContainer}
+          mainButton={{ title: "Log In", onPress: _signIn }}
           bottomLeftButton={{
             title: "Forgot Password?",
             onPress: () => {
@@ -98,27 +92,26 @@ export default function LoginScreen({ navigation }: Props) {
           }}
           isLoading={isSigningIn}
         />
-      </View>
+      </Pressable>
     </SafeAreaView>
   );
 }
 
-const loginStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.manorBackgroundGray,
   },
 
-  ManorView: {
-    height: 75,
-    marginTop: 10,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+  paddingContainer: {
+    flex: 1,
+    paddingTop: "2%",
+    paddingHorizontal: "5%",
   },
 
-  text: {
+  title: {
     fontSize: 70,
+    textAlign: "center",
     fontWeight: "600",
     color: "#5C6AEF",
   },
@@ -132,5 +125,13 @@ const loginStyles = StyleSheet.create({
     color: "white",
     fontSize: 19,
     marginTop: 20,
+  },
+
+  triButtonContainer: {
+    width: "90%",
+    marginTop: 60,
+    borderRadius: 20,
+    height: 60,
+    backgroundColor: "#5C6AEF",
   },
 });

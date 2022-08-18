@@ -17,6 +17,7 @@ import { animate } from "../../../managers/AnimationManager";
 import * as FileSystem from "expo-file-system";
 import ReplyButton from "../SubComponents/ReplyButton/ReplyButton";
 import UrlPreviewMessage from "../SubComponents/UrlPreviewMessage";
+import ResponseMessage from "../SubComponents/ResponseMessage/ResponseMessage";
 
 interface FullMessageComponentProps {
   message: Message;
@@ -325,7 +326,7 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
           )}
         </View>
       )}
-      <View style={{ maxWidth: "68%" }}>
+      <View style={{ maxWidth: "75%" }}>
         {!isMe && isFirstOfGroup && !isVisible && (
           <ContactNameLabel contactName={sender?.nickname} />
         )}
@@ -351,6 +352,9 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
             style={(message.likes ?? 0) >= 1 && styles.popularMessage}
             onDoublePress={() => setIsVisible(!isVisible)}
           >
+            {message.replyToMessageID && (
+              <ResponseMessage message={message} isMe={isMe} />
+            )}
             {message.urlPreviewTitle && (
               <UrlPreviewMessage
                 message={message}
@@ -359,9 +363,8 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
               />
             )}
             {message.messageBody &&
-              (!message.urlPreviewTitle || containsMoreThanUrl) && (
-                <MessageBubble message={message} />
-              )}
+              (!message.urlPreviewTitle || containsMoreThanUrl) &&
+              !message.replyToMessageID && <MessageBubble message={message} />}
             {message.imageUrl && <MediaMessage message={message} />}
           </MultiGestureButton>
           <View

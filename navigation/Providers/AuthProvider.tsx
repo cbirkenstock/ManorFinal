@@ -160,14 +160,14 @@ export const AuthProvider = (props: AuthProviderProps) => {
   const signOut = async () => {
     try {
       await Auth.signOut();
-      setUser(null);
+      setUser(undefined);
       AsyncStorage.setItem("currentUser", "");
     } catch (error) {
       console.log("error signing out: ", error);
     }
   };
 
-  const setUser = async (user: User | null) => {
+  const setUser = async (user?: User) => {
     dispatch({
       type: UserActionCase.setUser,
       payload: user,

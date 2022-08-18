@@ -779,6 +779,13 @@ export const schema = {
           isRequired: false,
           attributes: [],
         },
+        replyToMessageSenderName: {
+          name: "replyToMessageSenderName",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
         replyToMessageBody: {
           name: "replyToMessageBody",
           isArray: false,

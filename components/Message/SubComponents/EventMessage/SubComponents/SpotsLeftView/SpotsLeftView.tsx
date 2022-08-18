@@ -17,7 +17,6 @@ export default function SpotsLeftView(props: SpotsLeftViewProps) {
   /*                            Spots Left Calculator                           */
   /* -------------------------------------------------------------------------- */
 
-  //console.log(eventMessage);
   let spotsLeft: number = 0;
 
   if (

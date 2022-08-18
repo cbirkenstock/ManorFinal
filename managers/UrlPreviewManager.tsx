@@ -17,6 +17,10 @@ export const extractWebInfo = async (url: string) => {
 
 export const getPrettyUrl = (url?: string) => {
   if (url) {
-    return url.split("www.")[1].slice(0, -1);
+    if (url.includes("www.")) {
+      return url.split("www.")[1].slice(0, -1);
+    } else {
+      return url.split("://")[1].slice(0, -1);
+    }
   }
 };

@@ -4,10 +4,7 @@ import { Chat, User } from "../src/models";
 import { createChatUsers } from "./ChatUserManager";
 
 export const prependChat = (newChat: Chat, chats: Chat[]) => {
-  return [
-    newChat,
-    ...chats.filter((chat) => chat.title !== "Header_Trojan_Horse"),
-  ];
+  return [newChat, ...chats];
 };
 
 export const removeChat = (removedChat: Chat, chats: Chat[]) => {

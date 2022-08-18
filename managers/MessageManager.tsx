@@ -39,6 +39,7 @@ export const createTextMessageComponent = (
   messageBody: string,
   context: AppInitialStateProps,
   messageToReplyTo?: Message,
+  messageToReplyToSenderName?: string,
   urlPreviewTitle?: string,
   urlPreviewWebsiteUrl?: string,
   urlPreviewImageUrl?: string
@@ -51,6 +52,7 @@ export const createTextMessageComponent = (
     chatID: chat?.id,
     marginTop: getMarginTop(context),
     replyToMessageID: messageToReplyTo?.id,
+    replyToMessageSenderName: messageToReplyToSenderName,
     replyToMessageBody: messageToReplyTo?.messageBody,
     replyToMessageImageUrl: messageToReplyTo?.imageUrl,
     urlPreviewTitle: urlPreviewTitle,

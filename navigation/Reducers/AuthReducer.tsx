@@ -15,7 +15,7 @@ export enum UserActionCase {
 
 interface UserAction {
   type: UserActionCase.setUser;
-  payload: User | null;
+  payload: User | undefined;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -23,7 +23,7 @@ interface UserAction {
 /* -------------------------------------------------------------------------- */
 
 interface AppState {
-  user: User | null;
+  user: User | undefined;
 }
 
 /* -------------------------------------------------------------------------- */
