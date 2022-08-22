@@ -1,6 +1,13 @@
 import { Chat, ChatUser, Message } from "../../../../src/models";
 import React, { useState } from "react";
-import { Pressable, View, Text, Alert } from "react-native";
+import {
+  Pressable,
+  View,
+  Text,
+  Alert,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Colors from "../../../../constants/Colors";
 import { months } from "../../../../constants/Months";
@@ -17,6 +24,7 @@ import { updateChatUserOfActiveChatStatus } from "../../../../managers/ChatUserM
 
 interface EventSuggestionMessageProps {
   message: Message;
+  style?: StyleProp<ViewStyle>;
 }
 
 export enum EventStatus {
@@ -28,7 +36,7 @@ export enum EventStatus {
 export default function EventSuggestionMessage(
   props: EventSuggestionMessageProps
 ) {
-  const { message } = props;
+  const { message, style } = props;
   const context = useAppContext();
   const { chat, members, chatUser } = context;
 
@@ -155,7 +163,7 @@ export default function EventSuggestionMessage(
 
   return (
     <Pressable
-      style={styles.container}
+      style={[styles.container, style]}
       disabled={message.suggestionStatus === EventStatus.accepted}
       onPress={eventSuggestionClicked}
     >

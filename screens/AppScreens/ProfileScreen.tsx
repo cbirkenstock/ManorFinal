@@ -36,7 +36,7 @@ export default function ProfileScreen() {
   /* ------------------------------ Section Input ----------------------------- */
 
   const updateVenmoHandle = async (currentInfo: string) => {
-    const updatedUser = await updateUserVenmoHandle(user, currentInfo);
+    const updatedUser = await updateUserVenmoHandle(currentInfo, user);
 
     updatedUser && setUser(updatedUser);
   };
@@ -163,6 +163,7 @@ const styles = StyleSheet.create({
     height: 130,
     width: 130,
     borderRadius: 65,
+    backgroundColor: Colors.manorBlueGray,
   },
 
   nameText: {

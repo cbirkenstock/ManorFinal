@@ -10,6 +10,7 @@ import {
   appendMessage,
   uploadMessage,
   updateLastMessage,
+  createTimeCardComponent,
 } from "../../managers/MessageManager";
 import { requestCameraPermissionsAsync } from "expo-image-picker";
 import {
@@ -31,6 +32,8 @@ import { sendNotification } from "../../managers/NotificationManager";
 import useAuthContext from "../../hooks/useAuthContext";
 import { reOrderChats } from "../../managers/ChatManager";
 import { ContainsUrl, extractWebInfo } from "../../managers/UrlPreviewManager";
+import { dayHasPassed } from "../../managers/DateTimeManager";
+import { DataStore } from "aws-amplify";
 
 interface MessageBarProps {
   chat?: Chat;
@@ -46,8 +49,13 @@ export default function MessageBar(props: MessageBarProps) {
   const { chat, chats, setChats, messageToReplyTo, setMessageToReplyTo } =
     props;
   const context = useAppContext();
-  const { chatUser, members, isForwardingEvent, setIsForwardingEvent } =
-    context;
+  const {
+    chatUser,
+    members,
+    messages,
+    isForwardingEvent,
+    setIsForwardingEvent,
+  } = context;
   const { user } = useAuthContext();
 
   const [messageBody, setMessageBody] = useState<string>("");
@@ -58,9 +66,11 @@ export default function MessageBar(props: MessageBarProps) {
 
   const sendTextMessage = async () => {
     if (messageBody) {
-      let urlPreviewTitle: string | undefined = undefined;
-      let urlPreviewWebsiteUrl: string | undefined = undefined;
-      let urlPreviewImageUrl: string | undefined = undefined;
+      setMessageBody("");
+
+      let urlPreviewTitle = undefined;
+      let urlPreviewWebsiteUrl = undefined;
+      let urlPreviewImageUrl = undefined;
 
       if (ContainsUrl(messageBody)) {
         let webData = await extractWebInfo(messageBody);
@@ -74,7 +84,7 @@ export default function MessageBar(props: MessageBarProps) {
         (member) => member.id === messageToReplyTo?.chatuserID
       )?.user.name;
 
-      const newMessage = createTextMessageComponent(
+      let newMessage = createTextMessageComponent(
         messageBody,
         context,
         messageToReplyTo,
@@ -84,23 +94,29 @@ export default function MessageBar(props: MessageBarProps) {
         urlPreviewImageUrl
       );
 
-      appendMessage(newMessage, context);
-      setMessageToReplyTo(undefined);
+      if (dayHasPassed(messages[0]?.createdAt ?? undefined)) {
+        const timeCard = createTimeCardComponent(new Date(), context);
+        newMessage = new Message({ ...newMessage, marginTop: 10 });
+        appendMessage(newMessage, context, timeCard);
+        uploadMessage(timeCard);
+      } else {
+        appendMessage(newMessage, context);
+      }
+
+      messageToReplyTo && setMessageToReplyTo(undefined);
       setChats(
         reOrderChats(chat, chats, newMessage.messageBody ?? undefined) ?? []
       );
-      await uploadMessage(newMessage);
+
+      uploadMessage(newMessage);
       sendNotification(user ?? undefined, chat, members, newMessage, false);
       updateChatUserHasUnreadMessages(
         members.filter((member) => member.id !== chatUser?.id),
         true
       );
-      updateLastMessage(newMessage, context);
-      setMessageBody("");
+      updateLastMessage(newMessage.messageBody ?? "", context);
 
-      if (chat?.isCoordinationChat) {
-        updateChatUserOfActiveChatStatus(members, true);
-      }
+      updateChatUserOfActiveChatStatus(members, true);
     }
   };
 
@@ -115,14 +131,21 @@ export default function MessageBar(props: MessageBarProps) {
     const mediaData = await pickMedia(PickImageRequestEnum.sendChatImage);
 
     if (mediaData && mediaData.type) {
-      const newLocalMessage = createMediaMessageComponent(
+      let newLocalMessage = createMediaMessageComponent(
         mediaData.fullQualityImageMetaData.uri,
         mediaData.height,
         mediaData.width,
         context
       );
 
-      appendMessage(newLocalMessage, context);
+      if (dayHasPassed(messages[0]?.createdAt ?? undefined)) {
+        const timeCard = createTimeCardComponent(new Date(), context);
+        newLocalMessage = new Message({ ...newLocalMessage, marginTop: 10 });
+        appendMessage(newLocalMessage, context, timeCard);
+        uploadMessage(timeCard);
+      } else {
+        appendMessage(newLocalMessage, context);
+      }
 
       const blob = await fetchMediaBlob(mediaData.uri);
       const key = await uploadMedia(mediaData.type, blob);
@@ -135,13 +158,11 @@ export default function MessageBar(props: MessageBarProps) {
       );
 
       uploadMedia(mediaData.type, blob);
-      await uploadMessage(newDataMessage);
+      uploadMessage(newDataMessage);
       sendNotification(user ?? undefined, chat, members, newDataMessage, false);
       updateChatUserHasUnreadMessages(members, true);
 
-      if (chat?.isCoordinationChat) {
-        updateChatUserOfActiveChatStatus(members, true);
-      }
+      updateChatUserOfActiveChatStatus(members, true);
     }
   };
 

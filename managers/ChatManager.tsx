@@ -1,5 +1,5 @@
 import { DataStore } from "aws-amplify";
-import { ChatUser } from "../src/models";
+import { ChatUser, Message } from "../src/models";
 import { Chat, User } from "../src/models";
 import { createChatUsers } from "./ChatUserManager";
 

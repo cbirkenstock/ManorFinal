@@ -443,16 +443,26 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
   }
 }
 
-function membersHaveChanged(
-  prevDefaultContactImageProps: DefaultContactImageProps,
-  nextDefaultContactImageProps: DefaultContactImageProps
-) {
-  return true;
-}
+const areEqual = (
+  props1: DefaultContactImageProps,
+  props2: DefaultContactImageProps
+) => {
+  if (props1.members?.length !== props2.members?.length) return false;
+
+  const length = props1.members?.length;
+  const members1 = props1.members?.slice(0, length);
+  const members2 = props2.members?.slice(0, length);
+
+  let areEqual = true;
+
+  areEqual =
+    members1?.every((member, index) => member.id === members2?.[index].id) ??
+    false;
+
+  return areEqual;
+};
 
 export const MemoizedDefaultContactImage = React.memo(
   DefaultContactImage,
-  () => {
-    return true;
-  }
+  areEqual
 );

@@ -35,6 +35,26 @@ const getMarginTop = (context: AppInitialStateProps) => {
 /*                            Create Message Object                           */
 /* -------------------------------------------------------------------------- */
 
+export const createTimeCardComponent = (
+  dateTime: Date,
+  context: AppInitialStateProps
+) => {
+  const { chat } = context;
+
+  const date = dateTime;
+
+  const simpleDate =
+    date.getMonth() + 1 + "/" + date.getDate() + "/" + date.getFullYear();
+
+  const timeCard = new Message({
+    timeCardDateTime: simpleDate,
+    chatID: chat?.id,
+    marginTop: getMarginTop(context),
+  });
+
+  return timeCard;
+};
+
 export const createTextMessageComponent = (
   messageBody: string,
   context: AppInitialStateProps,
@@ -156,11 +176,25 @@ export const createAnnouncementComponent = (
 
 export const appendMessage = (
   newMessage: Message,
-  context: AppInitialStateProps
+  context: AppInitialStateProps,
+  timeCard?: Message
 ) => {
   const { messages, setMessages } = context;
 
-  setMessages([newMessage, ...messages]);
+  if (timeCard) {
+    setMessages([newMessage, timeCard, ...messages]);
+  } else {
+    setMessages([newMessage, ...messages]);
+  }
+};
+
+export const appendPendingAnnouncement = (
+  newPendingAnnouncement: PendingAnnouncement,
+  context: AppInitialStateProps
+) => {
+  const { pendingAnnouncements, setPendingAnnouncements } = context;
+
+  setPendingAnnouncements([newPendingAnnouncement, ...pendingAnnouncements]);
 };
 
 export const removeAnnouncement = (
@@ -254,7 +288,7 @@ export const deletePendingAnnouncement = (
 };
 
 export const updateLastMessage = async (
-  newMessage: Message,
+  newMessage: string,
   context: AppInitialStateProps
 ) => {
   const { chat, setChat } = context;
@@ -264,8 +298,7 @@ export const updateLastMessage = async (
   if (upToDateChat) {
     DataStore.save(
       Chat.copyOf(upToDateChat, (updatedChat) => {
-        updatedChat.lastMessage =
-          newMessage.messageBody ?? newMessage.announcementBody;
+        updatedChat.lastMessage = newMessage;
       })
     ).then(async (chat) => {
       setChat(chat);

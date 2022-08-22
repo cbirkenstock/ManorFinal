@@ -5,20 +5,19 @@ import { TouchableOpacity } from "react-native-gesture-handler";
 export interface IconButtonProps {
   style?: StyleProp<ViewStyle>;
   icon: React.ReactNode;
-  dimension: number;
+  padding: number;
   color: string;
   onPress: () => void;
 }
 
 export default function IconButton(props: IconButtonProps) {
-  const { style, icon, dimension, color, onPress } = props;
+  const { style, icon, padding, color, onPress } = props;
   return (
     <TouchableOpacity
       style={[
         {
-          height: dimension,
-          width: dimension,
-          borderRadius: dimension,
+          padding: padding,
+          borderRadius: 30,
           backgroundColor: color,
           alignItems: "center",
           justifyContent: "center",

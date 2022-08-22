@@ -3,14 +3,20 @@ import { StyleProp, Text, View, ViewStyle } from "react-native";
 import { Message } from "../../../../src/models";
 import useAppContext from "../../../../hooks/useAppContext";
 import { styles } from "./styles";
+import {
+  containsVenmo,
+  extractVenmoAmount,
+  getVenmoHandle,
+} from "../../../../managers/VenmoManager";
 
 interface MessageBubbleProps {
   message: Message;
+  isValidVenmoRequest?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
 export default function MessageBubble(props: MessageBubbleProps) {
-  const { message, style } = props;
+  const { message, isValidVenmoRequest = false, style } = props;
   const { chatUser } = useAppContext();
   const isMe = message?.chatuserID === chatUser?.id;
 
@@ -23,6 +29,7 @@ export default function MessageBubble(props: MessageBubbleProps) {
       style={[
         styles.messageBubble,
         isMe ? styles.bubbleOutgoing : styles.bubbleIncoming,
+        isValidVenmoRequest ? styles.venmo : null,
         style,
       ]}
     >
@@ -30,3 +37,7 @@ export default function MessageBubble(props: MessageBubbleProps) {
     </View>
   );
 }
+
+export const MemoMessage = React.memo(MessageBubble, () => {
+  return true;
+});

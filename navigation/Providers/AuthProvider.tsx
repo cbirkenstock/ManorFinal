@@ -29,7 +29,6 @@ export const AuthProvider = (props: AuthProviderProps) => {
   const [state, dispatch] = useReducer(AuthReducer, initialState);
 
   useEffect(() => {
-    DataStore.start();
     loadStorageData();
   }, []);
 
@@ -84,12 +83,7 @@ export const AuthProvider = (props: AuthProviderProps) => {
     }
   };
 
-  const signIn = async (
-    phone: string,
-    password: string,
-    name?: string,
-    profileImageData?: CustomImageData
-  ) => {
+  const signIn = async (phone: string, password: string, name?: string) => {
     if (phone === "(111) 111-1111") {
       const fakeUser = await DataStore.query(
         User,
@@ -114,24 +108,23 @@ export const AuthProvider = (props: AuthProviderProps) => {
       let key: string = "";
 
       //if signing in for first time, get profile image ready
-      if (profileImageData) {
-        const blob = await fetchMediaBlob(profileImageData.uri ?? "");
-        key = await uploadMedia("image", blob);
-      }
+      // if (profileImageData) {
+      //   const blob = await fetchMediaBlob(profileImageData.uri ?? "");
+      //   key = await uploadMedia("image", blob);
+      // }
 
       //if signing in for first time, create user in DB to go with Cognito User
-      if (name && key) {
+      if (name) {
         const userItem = new User({
           name: name,
           phoneNumber: phone_number,
-          profileImageUrl: key,
           cognitoUserSub: cognitoUser.attributes.sub,
         });
 
         user = await DataStore.save(userItem);
 
         //also create chatUser image equivalent like changing profile picture
-        setChatUserImage(user, profileImageData!, key);
+        // setChatUserImage(user, profileImageData!, key);
       }
       //else there should already be a user in the DB so retrieve it
       else {
@@ -149,7 +142,7 @@ export const AuthProvider = (props: AuthProviderProps) => {
       }
 
       //if no user, return error message
-      return profileImageData
+      return name
         ? "User Could Not Be Created"
         : "User Not Found in Database. Please Try Again.";
     } catch (error) {

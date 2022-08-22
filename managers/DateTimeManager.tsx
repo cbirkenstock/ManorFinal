@@ -39,3 +39,13 @@ export const formatDate = (dateTime?: Date) => {
     return `${day}, ${month} ${date}`;
   }
 };
+
+export const dayHasPassed = (oldMessageDateTime?: string) => {
+  if (oldMessageDateTime) {
+    if (new Date(oldMessageDateTime).getDate() !== new Date().getDate()) {
+      return true;
+    }
+  }
+
+  return false;
+};

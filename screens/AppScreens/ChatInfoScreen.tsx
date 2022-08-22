@@ -12,7 +12,7 @@ import {
 import useAppContext from "../../hooks/useAppContext";
 import useAuthContext from "../../hooks/useAuthContext";
 import { ChatInfoScreenProps as Props } from "../../navigation/NavTypes";
-import { ChatUser, Message, User } from "../../src/models";
+import { ChatUser, Message, Reaction, User } from "../../src/models";
 import Colors from "../../constants/Colors";
 import { DataStore, SortDirection } from "aws-amplify";
 import SectionButton, {
@@ -23,13 +23,14 @@ import { FontAwesome, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import {
   checkForPreExistingDMChat,
   createDMChat,
-  removeChatUser,
+  removeChat,
 } from "../../managers/ChatManager";
 import { ChatEnum } from "./UsersScreen";
 import EventCard from "../../components/Cards/EventCard/EventCard";
 import { FlatList } from "react-native-gesture-handler";
 import CacheImage from "../../components/CustomPrimitives/CacheImage";
 import { AllItemType } from "./AllItemsScreen";
+import { PendingAnnouncement } from "../../src/models";
 
 export type ChatInfoDataType = {
   title: string | undefined;
@@ -318,8 +319,26 @@ export default function ProfileScreen({ navigation, route }: Props) {
             );
 
             if (upToDateChatUser && chat) {
+              const reactions = await DataStore.query(Reaction, (reaction) =>
+                reaction.chatUserID("eq", upToDateChatUser.id)
+              );
+              for (const reaction of reactions) {
+                DataStore.delete(reaction);
+              }
+
+              const pendingAnnouncements = await DataStore.query(
+                PendingAnnouncement,
+                (pendingAnnouncement) =>
+                  pendingAnnouncement.chatUserID("eq", upToDateChatUser.id)
+              );
+
+              for (const pendingAnnouncement of pendingAnnouncements) {
+                DataStore.delete(pendingAnnouncement);
+              }
+
               await DataStore.delete(upToDateChatUser);
-              route.params.setChats(removeChatUser(chat, route.params.chats));
+
+              route.params.setChats(removeChat(chat, route.params.chats));
               navigation.navigate("ContactScreen");
             }
           },

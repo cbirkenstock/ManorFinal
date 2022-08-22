@@ -82,7 +82,7 @@ export default function EventCard(props: EventCardProps) {
           <Text style={{ color: "white", fontSize: 15, fontWeight: "500" }}>
             {typeof dateTime === "string" ? dateTime : formatDate(dateTime)}
           </Text>
-          {location && (
+          {location ? (
             <Text
               style={{
                 color: Colors.manorPaymentBlue,
@@ -92,7 +92,7 @@ export default function EventCard(props: EventCardProps) {
             >
               {getShortenedAddress(location)}
             </Text>
-          )}
+          ) : null}
         </View>
       </ImageBackground>
     </TouchableOpacity>

@@ -33,7 +33,7 @@ export const updateUserExpoToken = async (user: User | undefined) => {
   if (user) {
     const upToDateUser = await DataStore.query(User, user.id);
 
-    const token = (await Notifications.getDevicePushTokenAsync()).data;
+    const token = (await Notifications.getExpoPushTokenAsync()).data;
 
     if (upToDateUser && upToDateUser?.expoPushToken !== token) {
       try {

@@ -79,7 +79,7 @@ type User @model @auth(rules: [{ allow: public }]) {
 type Message @model @auth(rules: [{ allow: public }]) {
   id: ID!
   marginTop: Int
-  rerender: Boolean
+  timeCardDateTime: String
   isEventMessage: Boolean
   eventChatID: String
   eventTitle: String

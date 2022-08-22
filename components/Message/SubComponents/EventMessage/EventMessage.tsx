@@ -5,12 +5,14 @@ import SpotsLeftView from "./SubComponents/SpotsLeftView";
 import React, { useEffect, useState } from "react";
 import { DataStore } from "aws-amplify";
 import useAuthContext from "../../../../hooks/useAuthContext";
+import { StyleProp, View, ViewStyle } from "react-native";
 
 interface EventMessageProps {
   message: Message;
+  style?: StyleProp<ViewStyle>;
 }
 export default function EventMessage(props: EventMessageProps) {
-  const { message } = props;
+  const { message, style } = props;
   const { user } = useAuthContext();
   const [isMember, setIsMember] = useState<boolean>();
 
@@ -43,12 +45,12 @@ export default function EventMessage(props: EventMessageProps) {
     message.eventChatID && (message.eventMembersCount ?? 0) >= 3;
 
   return (
-    <>
+    <View style={style}>
       {hasCapacity && (
         <SpotsLeftView eventMessage={message} isMember={isMember} />
       )}
       <EventBox eventMessage={message} isMember={isMember} />
       {hasAmpleEventMembers && <AttendeesView eventMessage={message} />}
-    </>
+    </View>
   );
 }

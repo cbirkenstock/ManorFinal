@@ -11,7 +11,8 @@ export const styles = StyleSheet.create({
     height: 30,
     width: 30,
     marginRight: 5,
-    alignSelf: "flex-end",
+    marginTop: 14,
+    alignSelf: "flex-start",
   },
 
   iconCounterContainer: {
@@ -30,5 +31,12 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.75,
     shadowRadius: 5,
     elevation: 5,
+  },
+
+  messageActivated: {
+    shadowColor: Colors.manorPurple,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 5,
   },
 });

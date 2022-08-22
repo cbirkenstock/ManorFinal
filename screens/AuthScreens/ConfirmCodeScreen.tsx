@@ -10,7 +10,7 @@ export default function SignupScreen({ route, navigation }: Props) {
 
   const [isSigningIn, setIsSigningIn] = useState<boolean>(Boolean);
 
-  let code = useRef<string>().current;
+  let code = useRef<string>();
 
   const phone = route.params?.phone;
   const password = route.params?.password;
@@ -19,7 +19,7 @@ export default function SignupScreen({ route, navigation }: Props) {
   const openHomePage = async () => {
     if (phone && code && password) {
       setIsSigningIn(true);
-      const confirmResult = await confirmSignUp(phone, code);
+      const confirmResult = await confirmSignUp(phone, code.current ?? "");
 
       if (confirmResult === "SUCCESS") {
         const signInResult = await signIn(phone, password, userName);
@@ -42,9 +42,9 @@ export default function SignupScreen({ route, navigation }: Props) {
           placeholder="Confirmation Code..."
           placeholderTextColor="#E1D9D1"
           onChangeText={(value) => {
-            code = value;
+            code.current = value;
           }}
-          value={code?.toString()}
+          value={code?.current}
         />
 
         <TriButton

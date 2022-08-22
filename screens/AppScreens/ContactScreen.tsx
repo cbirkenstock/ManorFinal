@@ -6,9 +6,11 @@ import {
   StyleSheet,
   Pressable,
   Dimensions,
+  AppState,
+  AppStateStatus,
 } from "react-native";
 
-import { DataStore, SortDirection } from "aws-amplify";
+import { DataStore, Hub } from "aws-amplify";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Notifications from "expo-notifications";
 import { Ionicons, Octicons } from "@expo/vector-icons";
@@ -36,6 +38,10 @@ export default function ContactScreen({ route, navigation }: Props) {
   const { user } = context;
 
   const [chats, setChats] = useState<Chat[]>([]);
+  const [appState, setAppState] = useState<AppStateStatus>(
+    AppState.currentState
+  );
+  const [downloadData, setDownloadData] = useState<boolean>(true);
 
   const height = Dimensions.get("screen").height;
   const exitViewHeightAnim = useRef(new Animated.Value(0)).current;
@@ -49,7 +55,10 @@ export default function ContactScreen({ route, navigation }: Props) {
 
   const sortChats = (chat1: Chat, chat2: Chat) => {
     if (chat1.updatedAt && chat2.updatedAt) {
-      if (chat1.updatedAt > chat2.updatedAt) {
+      const chat1Date = new Date(chat1.updatedAt);
+      const chat2Date = new Date(chat2.updatedAt);
+
+      if (chat1Date.getTime() > chat2Date.getTime()) {
         return -1;
       } else {
         return 1;
@@ -63,21 +72,38 @@ export default function ContactScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     const fetchChats = async () => {
-      if (chats.length > 0) return;
+      if (!downloadData) return;
 
       const _chats = (
         await DataStore.query(ChatUser, (chatUser) =>
           chatUser.userID("eq", user?.id ?? "").isOfActiveChat("eq", true)
         )
       )
-        .map((chatUser) => chatUser.chat)
+        .map((chatUser) => {
+          return chatUser.chat;
+        })
         .sort(sortChats);
 
       setChats(_chats);
+      setDownloadData(false);
     };
 
     fetchChats();
-  }, []);
+  }, [appState, downloadData]);
+
+  useEffect(() => {
+    // Create listener
+    if (appState !== "active") return;
+    const listener = Hub.listen("datastore", async (hubData) => {
+      const { event, data } = hubData.payload;
+      if (event === "ready") {
+        setDownloadData(true);
+      }
+    });
+
+    // Remove listener
+    return () => listener();
+  }, [appState]);
 
   /* -------------------------------------------------------------------------- */
   /*                             Notification Set Up                            */
@@ -116,12 +142,27 @@ export default function ContactScreen({ route, navigation }: Props) {
   /*                                Subscriptions                               */
   /* -------------------------------------------------------------------------- */
 
+  /* ------------------------------ App Listener ------------------------------ */
+
   useEffect(() => {
+    const subscription = AppState.addEventListener("change", (status) => {
+      //DataStore.start();
+      setAppState(status);
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  /* ---------------------------- Contact Listener ---------------------------- */
+
+  useEffect(() => {
+    if (appState !== "active") return;
     const contactSubscription = getContactSubscription(chats, setChats, user);
     return () => {
       contactSubscription.unsubscribe();
     };
-  }, [chats]);
+  }, [chats, appState]);
 
   /* -------------------------------------------------------------------------- */
   /*                               Sub-Components                               */

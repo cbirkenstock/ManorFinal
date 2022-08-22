@@ -8,6 +8,7 @@ import SectionInput from "../../../SectionInput/SectionInput";
 import {
   appendMessage,
   createEventMessageComponent,
+  createTimeCardComponent,
   updateLastMessage,
   uploadMessage,
 } from "../../../../managers/MessageManager";
@@ -19,11 +20,14 @@ import { InnerCreateEventFormNavigationProps } from "../../../../navigation/NavT
 import { createGroupChat } from "../../../../managers/ChatManager";
 import useAuthContext from "../../../../hooks/useAuthContext";
 import FormCompletionButton from "../../../FormCompletionButton";
+import { dayHasPassed } from "../../../../managers/DateTimeManager";
+import { Message } from "../../../../src/models";
 
 export default function EventCreationForm() {
   const { user } = useAuthContext();
   const context = useAppContext();
   const {
+    messages,
     eventTitle,
     setEventTitle,
     eventDateTime,
@@ -60,7 +64,7 @@ export default function EventCreationForm() {
         )?.chat;
       }
 
-      const newEventMessage = createEventMessageComponent(
+      let newEventMessage = createEventMessageComponent(
         context,
         eventTitle,
         eventDateTime ?? new Date(),
@@ -69,9 +73,18 @@ export default function EventCreationForm() {
         eventCapacity ? parseInt(eventCapacity) : undefined,
         newEventChat ? newEventChat.id : undefined
       );
-      appendMessage(newEventMessage, context);
+
+      if (dayHasPassed(messages[0]?.createdAt ?? undefined)) {
+        const timeCard = createTimeCardComponent(new Date(), context);
+        newEventMessage = new Message({ ...newEventMessage, marginTop: 10 });
+        appendMessage(newEventMessage, context, timeCard);
+        uploadMessage(timeCard);
+      } else {
+        appendMessage(newEventMessage, context);
+      }
+
       uploadMessage(newEventMessage);
-      updateLastMessage(newEventMessage, context);
+      updateLastMessage("A new Event has been created", context);
       setIsForwardingEvent?.(false);
     }
   };

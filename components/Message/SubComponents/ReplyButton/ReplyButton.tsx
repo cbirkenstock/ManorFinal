@@ -18,7 +18,7 @@ export default function MessageReactMenu(props: MessageReactMenuProps) {
 
   useEffect(() => {
     if (visible) {
-      animate(replyButtonHeightAnim, 35, 150);
+      animate(replyButtonHeightAnim, 40, 150);
       animate(replyButtonWidthScaleAnim, 1, 150);
     } else {
       animate(replyButtonHeightAnim, 0, 200);

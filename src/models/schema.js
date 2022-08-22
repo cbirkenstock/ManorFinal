@@ -569,10 +569,10 @@ export const schema = {
           isRequired: false,
           attributes: [],
         },
-        rerender: {
-          name: "rerender",
+        timeCardDateTime: {
+          name: "timeCardDateTime",
           isArray: false,
-          type: "Boolean",
+          type: "String",
           isRequired: false,
           attributes: [],
         },

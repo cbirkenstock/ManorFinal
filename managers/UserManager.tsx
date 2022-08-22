@@ -8,8 +8,8 @@ import {
 } from "./MediaManager";
 
 export const updateUserVenmoHandle = async (
-  user: User | null,
-  venmoHandle: string
+  venmoHandle: string,
+  user?: User | null
 ) => {
   const upToDateUser = await DataStore.query(User, user?.id ?? "");
 

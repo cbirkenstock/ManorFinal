@@ -5,7 +5,7 @@ export const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.manorBlueGray,
     borderRadius: 25,
-    width: 95,
+    width: 170,
     paddingHorizontal: 15,
     justifyContent: "center",
   },

@@ -7,7 +7,7 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 10,
     paddingVertical: 9,
-    borderRadius: 15,
+    borderRadius: 20,
   },
 
   bubbleOutgoing: {

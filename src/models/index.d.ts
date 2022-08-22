@@ -118,7 +118,7 @@ export declare class ChatUser {
 export declare class Message {
   readonly id: string;
   readonly marginTop?: number | null;
-  readonly rerender?: boolean | null;
+  readonly timeCardDateTime?: string | null;
   readonly isEventMessage?: boolean | null;
   readonly eventChatID?: string | null;
   readonly eventTitle?: string | null;

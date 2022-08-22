@@ -1,13 +1,26 @@
 import { DataStore } from "aws-amplify";
 import { AppInitialStateProps } from "../navigation/InitialStates/AppInitialState";
 import { AuthInitialStateProps } from "../navigation/InitialStates/AuthInitialState";
-import { Chat, ChatUser, Message, User } from "../src/models";
+import {
+  Chat,
+  ChatUser,
+  Message,
+  PendingAnnouncement,
+  User,
+} from "../src/models";
 import { prependChat, removeChat } from "./ChatManager";
 import { sendNotification } from "./NotificationManager";
 
 /* -------------------------------------------------------------------------- */
 /*                               Function Types                               */
 /* -------------------------------------------------------------------------- */
+
+/* ---------------------- Pending Announcement Handler ---------------------- */
+
+type PendingAnnouncementHandler = (
+  newPendingAnnouncement: PendingAnnouncement,
+  context: AppInitialStateProps
+) => void;
 
 /* ----------------------------- Message Handler ---------------------------- */
 
@@ -36,38 +49,47 @@ type SetChatsHandler = (
 
 /* --------------------------------- Message -------------------------------- */
 
+const messageIncluded = (messages: Message[], specificMessage: Message) => {
+  return messages.map((message) => message.id).includes(specificMessage.id);
+};
+
 export const messageSubscription = (
   context: AppInitialStateProps,
   insertHandler: MessageSubscriptionHandler,
   updateHandler: MessageSubscriptionHandler
 ) => {
-  const { chat, chatUser } = context;
-
+  const { chat, chatUser, messages } = context;
   const subscription = DataStore.observe(Message, (message) =>
     message.chatID("eq", chat?.id ?? "")
   ).subscribe((object) => {
     const message = object.element;
-    const includesChatUserID = message.chatuserID;
     const isMe = message.chatuserID === chatUser?.id;
-
-    if (object.opType === "INSERT" && includesChatUserID && !isMe) {
-      // const user = DataStore.query(User, chatUser?.userID ?? "").then(
-      //   (user) => {
-      //     if (user && chatUser) {
-      //       sendNotification(
-      //         user,
-      //         chat ?? undefined,
-      //         [chatUser],
-      //         message,
-      //         true
-      //       );
-      //     }
-      //   }
-      // );
-
-      insertHandler(message, context);
+    if (object.opType === "INSERT" && !message.announcementBody) {
+      // if (!messageIncluded(messages, message)) {
+      //   insertHandler(message, context);
+      // }
     } else if (object.opType === "UPDATE") {
       updateHandler(message, context);
+    }
+  });
+  return subscription;
+};
+
+export const pendingAnnouncementSubscription = (
+  context: AppInitialStateProps,
+  insertHandler: PendingAnnouncementHandler
+) => {
+  const { chatUser } = context;
+
+  const subscription = DataStore.observe(
+    PendingAnnouncement,
+    (pendingAnnouncement) =>
+      pendingAnnouncement.chatUserID("eq", chatUser?.id ?? "")
+  ).subscribe((object) => {
+    const pendingAnnouncement = object.element;
+
+    if (object.opType === "INSERT") {
+      insertHandler(pendingAnnouncement, context);
     }
   });
 
@@ -93,11 +115,11 @@ export const getContactSubscription = (
     const chatUser = object.element;
     const chat = chatUser.chat;
 
-    if (object.opType === "INSERT") {
-      if (!chatIncluded(chats, chat)) {
-        setChats(prependChat(chat, chats));
-      }
-    }
+    // if (object.opType === "INSERT") {
+    //   if (!chatIncluded(chats, chat)) {
+    //     setChats(prependChat(chat, chats));
+    //   }
+    // }
 
     if (object.opType === "UPDATE") {
       const isOfActiveChat = chatUser.isOfActiveChat;

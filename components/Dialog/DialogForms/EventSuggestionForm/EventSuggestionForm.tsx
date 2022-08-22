@@ -8,11 +8,14 @@ import useAppContext from "../../../../hooks/useAppContext";
 import {
   appendMessage,
   createEventSuggestionComponent,
+  createTimeCardComponent,
   updateLastMessage,
   uploadMessage,
 } from "../../../../managers/MessageManager";
 import { updateChatUserOfActiveChatStatus } from "../../../../managers/ChatUserManager";
 import SectionInput from "../../../SectionInput/SectionInput";
+import { dayHasPassed } from "../../../../managers/DateTimeManager";
+import { Message } from "../../../../src/models";
 
 interface EventSuggestionFormProps {
   onSubmit?: () => any;
@@ -22,6 +25,7 @@ export default function EventSuggestionForm(props: EventSuggestionFormProps) {
   const { onSubmit } = props;
   const context = useAppContext();
   const {
+    messages,
     members,
     eventDateTime,
     setEventDateTime,
@@ -31,15 +35,23 @@ export default function EventSuggestionForm(props: EventSuggestionFormProps) {
 
   const suggestEvent = async () => {
     if (eventDateTime) {
-      const newMessage = createEventSuggestionComponent(
+      let newMessage = createEventSuggestionComponent(
         context,
         eventDateTime.toISOString(),
         eventDescription ?? undefined
       );
 
-      appendMessage(newMessage, context);
+      if (dayHasPassed(messages[0]?.createdAt ?? undefined)) {
+        const timeCard = createTimeCardComponent(new Date(), context);
+        newMessage = new Message({ ...newMessage, marginTop: 10 });
+        appendMessage(newMessage, context, timeCard);
+        uploadMessage(timeCard);
+      } else {
+        appendMessage(newMessage, context);
+      }
+
       uploadMessage(newMessage);
-      updateLastMessage(newMessage, context);
+      updateLastMessage("A new event has been suggested", context);
 
       updateChatUserOfActiveChatStatus(members, true);
     }

@@ -14,19 +14,19 @@ export const chatFlatlistButtons: (Omit<IconButtonProps, "onPress"> & {
   {
     title: "announcement",
     icon: <Ionicons name="megaphone" size={28} color="white" />,
-    dimension: 45,
+    padding: 5,
     color: Colors.manorPurple,
   },
   {
     title: "poll",
     icon: <FontAwesome5 name="poll-h" size={28} color={"white"} />,
-    dimension: 45,
+    padding: 5,
     color: Colors.manorRed,
   },
   {
     title: "voiceMemo",
     icon: <MaterialCommunityIcons name="waveform" size={32} color={"white"} />,
-    dimension: 45,
+    padding: 5,
     color: Colors.manorGreen,
   },
 ];

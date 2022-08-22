@@ -1,4 +1,11 @@
-import { Alert } from "react-native";
+import { Alert, Linking } from "react-native";
+import { ChatUser, User } from "../src/models";
+
+export const getVenmoHandle = (chatUser?: ChatUser) => {
+  if (chatUser) {
+    return chatUser.user.venmoHandle;
+  }
+};
 
 export const containsVenmo = (message: string) => {
   if (message.includes("Venmo") || message.includes("venmo")) {
@@ -8,8 +15,14 @@ export const containsVenmo = (message: string) => {
   }
 };
 
-export const containsAmount = (message: string) => {
-  return /\d/.test(message);
+export const extractVenmoAmount = (messageBody: string) => {
+  return messageBody.match(/\d/g)?.join("");
+};
+
+export const goToVenmo = (venmoHandle: string, amount: string) => {
+  Linking.openURL(
+    `venmo://paycharge?txn=pay&recipients=${venmoHandle}&amount=${amount}&note=Thanks!`
+  );
 };
 
 export const noVenmoAlert = () => {

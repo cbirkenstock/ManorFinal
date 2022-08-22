@@ -37,7 +37,6 @@ export default function Contact(props: ContactProps) {
   /* -------------------------------------------------------------------------- */
   /*                                Subscription                                */
   /* -------------------------------------------------------------------------- */
-
   /*
   Checks whenever a chatUser belonging to specific chat is inserted or updated. If inserted then it is added to members
   if updated, check if it is current user, and then update has Unread Messages
@@ -50,6 +49,10 @@ export default function Contact(props: ContactProps) {
 
       if (msg.opType === "INSERT") {
         setMembers([...members, chatUser]);
+      } else if (msg.opType === "UPDATE") {
+        if (chat?.id == chatUser?.chat.id && user?.id == chatUser?.user.id) {
+          setContactChatUser(chatUser);
+        }
       }
     });
 
@@ -128,15 +131,15 @@ export default function Contact(props: ContactProps) {
   /*                                  On Press                                  */
   /* -------------------------------------------------------------------------- */
 
-  const changeToUnread = () => {
-    const updatedChatUser = {
-      ...contactChatUser,
-      hasUnreadMessage: false,
-      hasUnreadAnnouncement: false,
-    } as ChatUser;
+  // const changeToUnread = () => {
+  //   const updatedChatUser = {
+  //     ...contactChatUser,
+  //     hasUnreadMessage: false,
+  //     hasUnreadAnnouncement: false,
+  //   } as ChatUser;
 
-    setContactChatUser(updatedChatUser);
-  };
+  //   setContactChatUser(updatedChatUser);
+  // };
 
   const openChat = () => {
     if (chat && contactChatUser) {
@@ -164,21 +167,15 @@ export default function Contact(props: ContactProps) {
 
   const ContactIcon = () => {
     return (
-      <TouchableOpacity
-        style={styles.container}
-        onPress={() => {
-          openChat();
-          changeToUnread();
-        }}
-      >
+      <TouchableOpacity style={styles.container} onPress={openChat}>
         <View
           style={[
             styles.newMessageView,
             {
-              shadowColor: contactChatUser?.hasUnreadMessage
-                ? Colors.manorLightBlue
-                : contactChatUser?.hasUnreadAnnouncement
+              shadowColor: contactChatUser?.hasUnreadAnnouncement
                 ? Colors.manorRed
+                : contactChatUser?.hasUnreadMessage
+                ? Colors.manorLightBlue
                 : "black",
             },
           ]}

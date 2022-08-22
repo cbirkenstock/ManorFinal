@@ -1,22 +1,22 @@
 import React from "react";
-import { Animated } from "react-native";
+import { Animated, StyleProp, View, ViewStyle } from "react-native";
 import { styles } from "./styles";
 import { FontAwesome } from "@expo/vector-icons";
 import CacheImage from "../../../CustomPrimitives/CacheImage";
 
 interface ContactImageProps {
   profileImageUrl?: string | null;
+  style?: StyleProp<ViewStyle>;
 }
 export default function contactImage(props: ContactImageProps) {
-  const { profileImageUrl } = props;
+  const { profileImageUrl, style } = props;
 
   /* -------------------------------------------------------------------------- */
   /*                                   Render                                   */
   /* -------------------------------------------------------------------------- */
 
-  //if decided later, can permanently remove wrapper view for opacity anim
   return (
-    <Animated.View style={{ opacity: 1 }}>
+    <Animated.View style={[style]}>
       {profileImageUrl ? (
         <CacheImage
           style={[styles.container, styles.contactImage]}

@@ -26,7 +26,7 @@ export const createChatUsers = async (
         profileImageUrl:
           `${user?.profileImageUrl?.split(".")[0]}-reducedSizeVersion.jpg` ??
           undefined,
-        isOfActiveChat: true,
+        isOfActiveChat: chat.isEventChat ? true : false,
         isAdmin: user.id === currentUser?.id ? true : false,
         notificationsEnabled: true,
         hasUnreadMessage: false,

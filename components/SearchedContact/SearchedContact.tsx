@@ -1,6 +1,7 @@
-import React, { useRef } from "react";
+import { DataStore } from "aws-amplify";
+import React, { useEffect, useState } from "react";
 import { Text, Pressable, View, GestureResponderEvent } from "react-native";
-import { User, Chat } from "../../src/models";
+import { User, Chat, ChatUser } from "../../src/models";
 import SignedImage from "../CustomPrimitives/SignedImage";
 import DefaultContactImage from "../DefaultContactImage";
 import { styles } from "./styles";
@@ -12,6 +13,8 @@ interface SearchContactProps {
 
 export default function SearchedContact(props: SearchContactProps) {
   const { contact, onPress } = props;
+
+  const [members, setMembers] = useState<ChatUser[]>();
   const isUser = (contact as User).name;
 
   /* -------------------------------------------------------------------------- */
@@ -26,6 +29,14 @@ export default function SearchedContact(props: SearchContactProps) {
     ? (contact as User).name ?? ""
     : (contact as Chat).title ?? "";
 
+  useEffect(() => {
+    if ((contact as Chat).title && !image) {
+      DataStore.query(ChatUser, (chatUser) =>
+        chatUser.chatID("eq", contact.id)
+      ).then((members) => setMembers(members));
+    }
+  }, []);
+
   /* -------------------------------------------------------------------------- */
   /*                                   Render                                   */
   /* -------------------------------------------------------------------------- */
@@ -36,7 +47,7 @@ export default function SearchedContact(props: SearchContactProps) {
         {image ? (
           <SignedImage source={image} style={styles.contactImage} />
         ) : (
-          <DefaultContactImage chat={contact as Chat} />
+          <DefaultContactImage members={members} />
         )}
       </View>
       <Text style={[styles.contactNameText, { marginTop: 5 }]}>

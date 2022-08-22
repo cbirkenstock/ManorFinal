@@ -6,7 +6,14 @@ import config from "./src/aws-exports.js";
 import { AuthProvider } from "./navigation/Providers/AuthProvider";
 import { Router } from "./navigation/Router";
 
+import { DataStore } from "aws-amplify";
+import { ExpoSQLiteAdapter } from "@aws-amplify/datastore-storage-adapter/ExpoSQLiteAdapter";
+
 Amplify.configure(config);
+
+DataStore.configure({
+  storageAdapter: ExpoSQLiteAdapter,
+});
 
 // try {
 //   const BACKGROUND_NOTIFICATION_TASK = "BACKGROUND-NOTIFICATION-TASK";
@@ -35,6 +42,9 @@ function App() {
   // useEffect(() => {
   //   Notifications.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK);
   // }, []);
+  useEffect(() => {
+    DataStore.start();
+  }, []);
 
   return (
     <AuthProvider>

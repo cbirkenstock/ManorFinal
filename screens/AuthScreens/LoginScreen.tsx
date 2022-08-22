@@ -24,7 +24,7 @@ export default function LoginScreen({ navigation }: Props) {
   const [isSigningIn, setIsSigningIn] = useState<boolean>(false);
   const [phoneNumber, setPhoneNumber] = useState<string>();
 
-  let password = useRef<string>().current;
+  let password = useRef<string>();
 
   /* -------------------------------------------------------------------------- */
   /*                               Sign In Handler                              */
@@ -38,7 +38,7 @@ export default function LoginScreen({ navigation }: Props) {
 
     if (phoneNumber && password) {
       setIsSigningIn(true);
-      const result = await signIn(phoneNumber!, password!);
+      const result = await signIn(phoneNumber ?? "", password.current ?? "");
       if (result !== "SUCCESS") {
         setIsSigningIn(false);
         Alert.alert(result);
@@ -74,7 +74,7 @@ export default function LoginScreen({ navigation }: Props) {
           secureTextEntry
           placeholderTextColor="#E1D9D1"
           onChangeText={(value) => {
-            password = value;
+            password.current = value;
           }}
         />
         <TriButton

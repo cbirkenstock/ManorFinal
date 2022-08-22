@@ -21,20 +21,20 @@ export default function SignUpScreen({ navigation }: Props) {
 
   const [phoneNumber, setPhoneNumber] = useState<string>();
 
-  let name = useRef<string>().current;
-  let password = useRef<string>().current;
+  let name = useRef<string>();
+  let password = useRef<string>();
 
   /* -------------------------------------------------------------------------- */
   /*                          Go To Confirmation Screen                         */
   /* -------------------------------------------------------------------------- */
 
   const goToConfirmationScreen = async () => {
-    if (name && phoneNumber && password) {
-      signUp(name, phoneNumber, password);
+    if (name.current && phoneNumber && password.current) {
+      signUp(name.current, phoneNumber, password.current);
       navigation.navigate("ConfirmCodeScreen", {
-        name: name,
+        name: name.current,
         phone: phoneNumber,
-        password: password,
+        password: password.current,
       });
     }
   };
@@ -59,9 +59,9 @@ export default function SignUpScreen({ navigation }: Props) {
           placeholder="First + Last Name..."
           placeholderTextColor="#E1D9D1"
           onChangeText={(value) => {
-            name = value;
+            name.current = value;
           }}
-          value={name?.toString()}
+          value={name?.current?.toString()}
         />
 
         <TextInput
@@ -80,9 +80,9 @@ export default function SignUpScreen({ navigation }: Props) {
           secureTextEntry
           placeholderTextColor="#E1D9D1"
           onChangeText={(value) => {
-            password = value;
+            password.current = value;
           }}
-          value={password?.toString()}
+          value={password?.current?.toString()}
         />
         <TriButton
           containerStyle={styles.triButtonContainer}

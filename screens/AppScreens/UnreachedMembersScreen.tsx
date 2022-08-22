@@ -5,10 +5,10 @@ import SectionButton from "../../components/SectionButton";
 import { DataStore } from "aws-amplify";
 import { PendingAnnouncement, User } from "../../src/models";
 import { UnreachedMembersScreenProps } from "../../navigation/NavTypes";
-import SignedImage from "../../components/CustomPrimitives/SignedImage";
 import Dialog from "../../components/Dialog";
 import MessageAllForm from "../../components/Dialog/DialogForms/MessageAllForm/MessageAllForm";
 import Colors from "../../constants/Colors";
+import CacheImage from "../../components/CustomPrimitives/CacheImage";
 
 export default function UnreachedMembersScreen({
   route,
@@ -81,8 +81,9 @@ export default function UnreachedMembersScreen({
       <SectionButton
         caption={item?.name}
         startAdornment={
-          <SignedImage
+          <CacheImage
             source={item.profileImageUrl}
+            cacheKey={item.profileImageUrl}
             style={styles.signedImage}
           />
         }
