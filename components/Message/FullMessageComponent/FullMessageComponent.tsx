@@ -37,11 +37,10 @@ import TimeCard from "../../TimeCard/TimeCard";
 
 interface FullMessageComponentProps {
   message: Message;
-  setZoomImage: React.Dispatch<React.SetStateAction<ImageSource[]>>;
-  setMessageToReplyTo: React.Dispatch<
-    React.SetStateAction<Message | undefined>
-  >;
-  setReactionMessageAndYCoordinate: React.Dispatch<
+  isPartOfThread?: boolean;
+  setZoomImage?: React.Dispatch<React.SetStateAction<ImageSource[]>>;
+
+  setReactionMessageAndYCoordinate?: React.Dispatch<
     React.SetStateAction<
       | {
           yCoordinate: number;
@@ -50,6 +49,7 @@ interface FullMessageComponentProps {
       | undefined
     >
   >;
+  onBackgroundPress?: () => void;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -61,9 +61,11 @@ export enum ReactionType {
 export default function FullMessageComponent(props: FullMessageComponentProps) {
   const {
     message,
+    isPartOfThread = false,
     setZoomImage,
-    setMessageToReplyTo,
     setReactionMessageAndYCoordinate,
+    onBackgroundPress,
+
     style,
   } = props;
   const { chatUser, members } = useAppContext();
@@ -106,13 +108,13 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
     if (isImage) {
       try {
         if (isLocal) {
-          setZoomImage([{ uri: message.imageUrl! }]);
+          setZoomImage?.([{ uri: message.imageUrl! }]);
         } else {
           const cachePath = `${FileSystem.cacheDirectory}.${message.imageUrl!}`;
           const imageInfo = await FileSystem.getInfoAsync(cachePath);
 
           if (imageInfo.exists) {
-            setZoomImage([{ uri: cachePath }]);
+            setZoomImage?.([{ uri: cachePath }]);
           }
         }
       } catch (error) {
@@ -172,7 +174,10 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
     );
   } else {
     return (
-      <View style={[{ marginTop: getMarginTop() }, style]}>
+      <Pressable
+        style={[{ marginTop: getMarginTop() }, style]}
+        onPress={() => onBackgroundPress?.()}
+      >
         <TimeCard
           date={message.createdAt ?? undefined}
           isVisible={isTimeStampVisible}
@@ -188,10 +193,7 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
           {!isMe && (
             <View style={styles.contactImageContainer}>
               {isFirstOfGroup && (
-                <ContactImage
-                  profileImageUrl={sender?.profileImageUrl}
-                  style={{ marginTop: 7.5 }}
-                />
+                <ContactImage sender={sender} style={{ marginTop: 7.5 }} />
               )}
             </View>
           )}
@@ -207,61 +209,63 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
                 },
               ]}
             >
-              <MultiGestureButton
-                onPress={multiGestureButtonPressed}
-                onLongPress={() => setIsTimeStampVisible(!isTimeStampVisible)}
-                style={(message.likes ?? 0) >= 10 && styles.popularMessage}
-                onDoublePress={() => {
-                  if (buttonPositionRef.current) {
-                    //@ts-ignore
-                    buttonPositionRef.current.measure(
-                      (
-                        x: number,
-                        y: number,
-                        width: number,
-                        height: number,
-                        pageX: number,
-                        pageY: number
-                      ) => {
-                        const messageBottomYCoordinate = pageY + height;
-                        const flatListBottomYCoordinate =
-                          Dimensions.get("screen").height - 85;
+              <Pressable>
+                <MultiGestureButton
+                  onPress={multiGestureButtonPressed}
+                  onLongPress={() => setIsTimeStampVisible(!isTimeStampVisible)}
+                  style={(message.likes ?? 0) >= 10 && styles.popularMessage}
+                  onDoublePress={() => {
+                    if (buttonPositionRef.current) {
+                      //@ts-ignore
+                      buttonPositionRef.current.measure(
+                        (
+                          x: number,
+                          y: number,
+                          width: number,
+                          height: number,
+                          pageX: number,
+                          pageY: number
+                        ) => {
+                          const messageBottomYCoordinate = pageY + height;
+                          const flatListBottomYCoordinate =
+                            Dimensions.get("screen").height;
 
-                        const messageInfo = {
-                          yCoordinate:
-                            flatListBottomYCoordinate -
-                            messageBottomYCoordinate,
-                          message: message,
-                        };
+                          const messageInfo = {
+                            yCoordinate:
+                              flatListBottomYCoordinate -
+                              messageBottomYCoordinate,
+                            message: message,
+                          };
 
-                        setReactionMessageAndYCoordinate(messageInfo);
-                      }
-                    );
-                  }
-                }}
-              >
-                <View ref={buttonPositionRef}>
-                  {message.replyToMessageID && (
-                    <ResponseMessage message={message} isMe={isMe} />
-                  )}
-                  {message.urlPreviewTitle && (
-                    <UrlPreviewMessage
-                      message={message}
-                      isMe={isMe}
-                      containsMoreThanUrl={containsMoreThanUrl}
-                    />
-                  )}
-                  {message.messageBody &&
-                    (!message.urlPreviewTitle || containsMoreThanUrl) &&
-                    !message.replyToMessageID && (
-                      <MessageBubble
+                          setReactionMessageAndYCoordinate?.(messageInfo);
+                        }
+                      );
+                    }
+                  }}
+                >
+                  <View ref={buttonPositionRef}>
+                    {message.replyToMessageID && !isPartOfThread && (
+                      <ResponseMessage message={message} isMe={isMe} />
+                    )}
+                    {message.urlPreviewTitle && (
+                      <UrlPreviewMessage
                         message={message}
-                        isValidVenmoRequest={isValidVenmoRequest}
+                        isMe={isMe}
+                        containsMoreThanUrl={containsMoreThanUrl}
                       />
                     )}
-                  {message.imageUrl && <MediaMessage message={message} />}
-                </View>
-              </MultiGestureButton>
+                    {message.messageBody &&
+                      (!message.urlPreviewTitle || containsMoreThanUrl) &&
+                      (!message.replyToMessageID || isPartOfThread) && (
+                        <MessageBubble
+                          message={message}
+                          isValidVenmoRequest={isValidVenmoRequest}
+                        />
+                      )}
+                    {message.imageUrl && <MediaMessage message={message} />}
+                  </View>
+                </MultiGestureButton>
+              </Pressable>
               <View
                 style={{
                   flexDirection: "row",
@@ -333,7 +337,7 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
             </View>
           </View>
         </View>
-      </View>
+      </Pressable>
     );
   }
 }

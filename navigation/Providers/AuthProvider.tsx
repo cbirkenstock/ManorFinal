@@ -1,21 +1,27 @@
-import React, { useState, useEffect, useReducer, createContext } from "react";
-import { Alert } from "react-native";
+import React, {
+  useState,
+  useEffect,
+  useReducer,
+  createContext,
+  useRef,
+} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { Auth, DataStore } from "aws-amplify";
-import { User } from "../../src/models";
+import {
+  Chat,
+  ChatUser,
+  PendingAnnouncement,
+  Reaction,
+  User,
+} from "../../src/models";
 
 import AuthReducer, { UserActionCase } from "../Reducers/AuthReducer";
 import {
   AuthInitialStateProps,
   initialState,
 } from "../InitialStates/AuthInitialState";
-import {
-  CustomImageData,
-  fetchMediaBlob,
-  uploadMedia,
-} from "../../managers/MediaManager";
-import { setChatUserImage } from "../../managers/ChatUserManager";
+import { Alert } from "react-native";
 
 interface AuthProviderProps {
   children: JSX.Element;
@@ -34,6 +40,7 @@ export const AuthProvider = (props: AuthProviderProps) => {
 
   async function loadStorageData(): Promise<void> {
     try {
+      DataStore.start();
       // const authUser = await Auth.currentAuthenticatedUser();
       // if (authUser) {
       const user = await AsyncStorage.getItem("currentUser").then(
@@ -85,10 +92,15 @@ export const AuthProvider = (props: AuthProviderProps) => {
 
   const signIn = async (phone: string, password: string, name?: string) => {
     if (phone === "(111) 111-1111") {
-      const fakeUser = await DataStore.query(
-        User,
-        "50a07372-e259-409b-a7f2-40362b40382b"
-      );
+      let fakeUser: User | undefined = undefined;
+
+      while (!fakeUser) {
+        fakeUser = await DataStore.query(
+          User,
+          "50a07372-e259-409b-a7f2-40362b40382b"
+        );
+      }
+
       if (fakeUser) {
         setUser(fakeUser);
         AsyncStorage.setItem("currentUser", JSON.stringify(fakeUser));
@@ -104,7 +116,7 @@ export const AuthProvider = (props: AuthProviderProps) => {
       const cognitoUser = await Auth.signIn(phone_number, password);
 
       //set user & key placeholders
-      let user: User;
+      let user: User | undefined = undefined;
       let key: string = "";
 
       //if signing in for first time, get profile image ready
@@ -128,11 +140,19 @@ export const AuthProvider = (props: AuthProviderProps) => {
       }
       //else there should already be a user in the DB so retrieve it
       else {
-        user = (
-          await DataStore.query(User, (user) =>
-            user.cognitoUserSub("eq", cognitoUser.attributes.sub)
-          )
-        )[0];
+        //while loop not perfect but works for now
+
+        setTimeout(() => {
+          return "User Not Found in Database. Please Try Again.";
+        }, 3000);
+
+        while (!user) {
+          user = (
+            await DataStore.query(User, (user) =>
+              user.cognitoUserSub("eq", cognitoUser.attributes.sub)
+            )
+          )[0];
+        }
       }
 
       if (user) {
@@ -153,11 +173,56 @@ export const AuthProvider = (props: AuthProviderProps) => {
   const signOut = async () => {
     try {
       await Auth.signOut();
+      DataStore.clear();
       setUser(undefined);
-      AsyncStorage.setItem("currentUser", "");
+      AsyncStorage.removeItem("currentUser");
     } catch (error) {
       console.log("error signing out: ", error);
     }
+  };
+
+  const deleteAccount = async (user?: User) => {
+    const upToDateUser = await DataStore.query(User, user?.id ?? "");
+
+    if (!upToDateUser) return;
+
+    const chatUsers = await DataStore.query(ChatUser, (chatUser) =>
+      chatUser.userID("eq", upToDateUser?.id ?? "")
+    );
+
+    for (const chatUser of chatUsers) {
+      if (chatUser.chat.displayUserName) {
+        DataStore.save(
+          Chat.copyOf(chatUser.chat, (updatedChat) => {
+            updatedChat.isDeactivated = true;
+          })
+        );
+      }
+
+      const pendingAnnouncements = await DataStore.query(
+        PendingAnnouncement,
+        (pendingAnnouncement) =>
+          pendingAnnouncement.chatUserID("eq", chatUser.id)
+      );
+
+      for (const pendingAnnouncement of pendingAnnouncements) {
+        DataStore.delete(pendingAnnouncement);
+      }
+
+      const reactions = await DataStore.query(Reaction, (reaction) =>
+        reaction.chatUserID("eq", chatUser.id)
+      );
+
+      for (const reaction of reactions) {
+        DataStore.delete(reaction);
+      }
+
+      DataStore.delete(chatUser);
+    }
+
+    DataStore.delete(upToDateUser);
+    Auth.deleteUser();
+    setUser(undefined);
   };
 
   const setUser = async (user?: User) => {
@@ -174,6 +239,7 @@ export const AuthProvider = (props: AuthProviderProps) => {
     confirmSignUp,
     signIn,
     signOut,
+    deleteAccount,
     setUser,
   };
 

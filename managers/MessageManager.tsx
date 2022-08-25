@@ -71,7 +71,9 @@ export const createTextMessageComponent = (
     chatuserID: chatUser?.id,
     chatID: chat?.id,
     marginTop: getMarginTop(context),
-    replyToMessageID: messageToReplyTo?.id,
+    replyToMessageID: messageToReplyTo?.replyToMessageID
+      ? messageToReplyTo?.replyToMessageID
+      : messageToReplyTo?.id,
     replyToMessageSenderName: messageToReplyToSenderName,
     replyToMessageBody: messageToReplyTo?.messageBody,
     replyToMessageImageUrl: messageToReplyTo?.imageUrl,

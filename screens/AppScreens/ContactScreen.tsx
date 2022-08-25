@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { DataStore, Hub } from "aws-amplify";
+import * as AWS from "aws-sdk";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Notifications from "expo-notifications";
 import { Ionicons, Octicons } from "@expo/vector-icons";
@@ -25,7 +26,7 @@ import {
 
 import Header from "../../components/Header";
 import DropdownItem, { DropdownItemProps } from "../../components/DropdownItem";
-import { MemoizedContact } from "../../components/Contact/Contact";
+import Contact, { MemoizedContact } from "../../components/Contact/Contact";
 
 import Colors from "../../constants/Colors";
 import { ContactScreenProps as Props } from "../../navigation/NavTypes";
@@ -34,14 +35,17 @@ import { dropDown } from "../../constants/Dropdown";
 import { hasBezels } from "../../constants/hasBezels";
 
 export default function ContactScreen({ route, navigation }: Props) {
+  const ddb = new AWS.DynamoDB();
   const context = useAuthContext();
   const { user } = context;
 
   const [chats, setChats] = useState<Chat[]>([]);
+
+  const initialDownloadRef = useRef<boolean>(true);
+  const [dataDownloaded, setDataDownloaded] = useState<boolean>(false);
   const [appState, setAppState] = useState<AppStateStatus>(
     AppState.currentState
   );
-  const [downloadData, setDownloadData] = useState<boolean>(true);
 
   const height = Dimensions.get("screen").height;
   const exitViewHeightAnim = useRef(new Animated.Value(0)).current;
@@ -50,6 +54,20 @@ export default function ContactScreen({ route, navigation }: Props) {
   /* -------------------------------------------------------------------------- */
   /*                                 Fetch Chats                                */
   /* -------------------------------------------------------------------------- */
+
+  const fetchData = (tableName: string) => {
+    var params = {
+      TableName: tableName,
+    };
+
+    ddb.scan(params, function (err, data) {
+      if (!err) {
+        console.log(data);
+      } else {
+        console.log(err);
+      }
+    });
+  };
 
   /* ------------------------------- Sort Chats ------------------------------- */
 
@@ -72,7 +90,7 @@ export default function ContactScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     const fetchChats = async () => {
-      if (!downloadData) return;
+      if (!dataDownloaded && !initialDownloadRef.current) return;
 
       const _chats = (
         await DataStore.query(ChatUser, (chatUser) =>
@@ -85,25 +103,11 @@ export default function ContactScreen({ route, navigation }: Props) {
         .sort(sortChats);
 
       setChats(_chats);
-      setDownloadData(false);
+      initialDownloadRef.current = false;
     };
 
     fetchChats();
-  }, [appState, downloadData]);
-
-  useEffect(() => {
-    // Create listener
-    if (appState !== "active") return;
-    const listener = Hub.listen("datastore", async (hubData) => {
-      const { event, data } = hubData.payload;
-      if (event === "ready") {
-        setDownloadData(true);
-      }
-    });
-
-    // Remove listener
-    return () => listener();
-  }, [appState]);
+  }, [dataDownloaded]);
 
   /* -------------------------------------------------------------------------- */
   /*                             Notification Set Up                            */
@@ -124,7 +128,7 @@ export default function ContactScreen({ route, navigation }: Props) {
           chat: results.chat,
           chatUser: results.chatUser,
           members: results.members,
-          displayUser: results.members,
+          displayUser: results.displayUser,
           chats: chats,
           setChats: setChats,
         },
@@ -146,7 +150,9 @@ export default function ContactScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (status) => {
-      //DataStore.start();
+      if (status === "background") {
+        setDataDownloaded(false);
+      }
       setAppState(status);
     });
     return () => {
@@ -154,15 +160,41 @@ export default function ContactScreen({ route, navigation }: Props) {
     };
   }, []);
 
-  /* ---------------------------- Contact Listener ---------------------------- */
+  /* ------------------------ Data Downloaded Listener ------------------------ */
 
   useEffect(() => {
     if (appState !== "active") return;
-    const contactSubscription = getContactSubscription(chats, setChats, user);
+
+    let alreadySet = false;
+    setTimeout(() => {
+      if (!alreadySet) setDataDownloaded(true);
+    }, 2100);
+
+    const listener = Hub.listen("datastore", async (hubData) => {
+      const { data } = hubData.payload;
+
+      if (data?.model?.name === "Chat") {
+        alreadySet = true;
+        setDataDownloaded(true);
+      }
+    });
+
+    return () => listener();
+  }, [appState]);
+
+  /* ---------------------------- Contact Listener ---------------------------- */
+
+  useEffect(() => {
+    const contactSubscription = getContactSubscription(
+      chats,
+      setChats,
+      user,
+      dataDownloaded
+    );
     return () => {
       contactSubscription.unsubscribe();
     };
-  }, [chats, appState]);
+  }, [chats, dataDownloaded]);
 
   /* -------------------------------------------------------------------------- */
   /*                               Sub-Components                               */

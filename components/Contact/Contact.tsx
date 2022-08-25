@@ -1,9 +1,8 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import React, { useRef } from "react";
+import { View, Text, TouchableOpacity, Animated } from "react-native";
 import { useNavigation } from "@react-navigation/core";
 import { useState, useEffect } from "react";
 import { ChatUser, User } from "../../src/models";
-import { DataStore } from "@aws-amplify/datastore";
 import { Chat } from "../../src/models";
 import Colors from "../../constants/Colors";
 import useAuthContext from "../../hooks/useAuthContext";
@@ -17,6 +16,9 @@ import {
 } from "../../managers/ChatManager";
 import { chatIncluded } from "../../managers/SubscriptionManager";
 import { MemoizedDefaultContactImage } from "../DefaultContactImage/DefaultContactImage";
+import Avatar from "../Avatar";
+import { animate } from "../../managers/AnimationManager";
+import { DataStore, Hub } from "aws-amplify";
 
 interface ContactProps {
   chat: Chat;
@@ -34,9 +36,34 @@ export default function Contact(props: ContactProps) {
   const [displayUser, setDisplayUser] = useState<User | undefined>();
   const [contactChatUser, setContactChatUser] = useState<ChatUser>();
 
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const dataDownloadedRef = useRef<boolean>(false);
   /* -------------------------------------------------------------------------- */
   /*                                Subscription                                */
   /* -------------------------------------------------------------------------- */
+
+  // if you choose to have it so it does slow load every time even if only five minutes
+  //you just have to add app state here and set dataDownloadRef.current to false
+  //on every app close
+  /* ----------------------------- Data Downloaded ---------------------------- */
+
+  useEffect(() => {
+    setTimeout(() => {
+      if (!dataDownloadedRef.current) dataDownloadedRef.current = true;
+    }, 2100);
+
+    const listener = Hub.listen("datastore", async (hubData) => {
+      const { event } = hubData.payload;
+      if (event === "ready") {
+        dataDownloadedRef.current = true;
+      }
+    });
+
+    return () => listener();
+  }, []);
+
+  /* --------------------------- ChatUser & Members --------------------------- */
+
   /*
   Checks whenever a chatUser belonging to specific chat is inserted or updated. If inserted then it is added to members
   if updated, check if it is current user, and then update has Unread Messages
@@ -45,6 +72,8 @@ export default function Contact(props: ContactProps) {
     const subscription = DataStore.observe(ChatUser, (chatUser) =>
       chatUser.chatID("eq", chat?.id)
     ).subscribe((msg) => {
+      if (!dataDownloadedRef.current) return;
+
       const chatUser = msg.element;
 
       if (msg.opType === "INSERT") {
@@ -61,15 +90,17 @@ export default function Contact(props: ContactProps) {
     };
   }, [members]);
 
+  /* ---------------------------------- Chat ---------------------------------- */
+
   useEffect(() => {
     const subscription = DataStore.observe(Chat, (_chat) =>
       _chat.id("eq", chat.id)
     ).subscribe((msg) => {
+      if (!dataDownloadedRef.current) return;
+
       const _chat = msg.element;
       if (msg.opType === "UPDATE") {
         if (chatIncluded(chats, _chat)) {
-          if (chats[0].lastMessage === _chat.lastMessage) return;
-
           let chatsList = removeChat(_chat, chats);
           chatsList = prependChat(_chat, chatsList);
           setChats(chatsList);
@@ -127,19 +158,14 @@ export default function Contact(props: ContactProps) {
     };
   }, []);
 
+  /* ------------------------------- Set Opacity ------------------------------ */
+
+  useEffect(() => {
+    animate(opacityAnim, 1, 500);
+  }, []);
   /* -------------------------------------------------------------------------- */
   /*                                  On Press                                  */
   /* -------------------------------------------------------------------------- */
-
-  // const changeToUnread = () => {
-  //   const updatedChatUser = {
-  //     ...contactChatUser,
-  //     hasUnreadMessage: false,
-  //     hasUnreadAnnouncement: false,
-  //   } as ChatUser;
-
-  //   setContactChatUser(updatedChatUser);
-  // };
 
   const openChat = () => {
     if (chat && contactChatUser) {
@@ -161,14 +187,16 @@ export default function Contact(props: ContactProps) {
   /*                                   Render                                   */
   /* -------------------------------------------------------------------------- */
 
-  const requiresDefaultContactImage = !(
-    chat?.chatImageUrl || displayUser?.profileImageUrl
-  );
+  const requiresDefaultContactImage =
+    !chat?.chatImageUrl &&
+    (!displayUser?.profileImageUrl ||
+      displayUser?.profileImageUrl === "undefined" ||
+      displayUser?.profileImageUrl === "null");
 
   const ContactIcon = () => {
     return (
       <TouchableOpacity style={styles.container} onPress={openChat}>
-        <View
+        <Animated.View
           style={[
             styles.newMessageView,
             {
@@ -177,21 +205,31 @@ export default function Contact(props: ContactProps) {
                 : contactChatUser?.hasUnreadMessage
                 ? Colors.manorLightBlue
                 : "black",
+              opacity: opacityAnim,
             },
           ]}
         >
           {requiresDefaultContactImage ? (
             <View style={styles.contactImage}>
-              <MemoizedDefaultContactImage members={members} />
+              {displayUser ? (
+                <Avatar
+                  user={displayUser}
+                  dimensions={0}
+                  fontSize={70}
+                  style={{ height: "100%", width: "100%" }}
+                />
+              ) : (
+                <MemoizedDefaultContactImage members={members} fontSize={20} />
+              )}
             </View>
           ) : (
             <CacheImage
-              source={chat?.chatImageUrl ?? displayUser?.profileImageUrl!}
-              cacheKey={chat?.chatImageUrl ?? displayUser?.profileImageUrl!}
+              source={chat?.chatImageUrl ?? displayUser?.profileImageUrl}
+              cacheKey={chat?.chatImageUrl ?? displayUser?.profileImageUrl}
               style={styles.contactImage}
             />
           )}
-        </View>
+        </Animated.View>
         <Text
           style={[
             styles.contactNameText,
@@ -216,7 +254,13 @@ export default function Contact(props: ContactProps) {
 }
 
 const areEqual = (prevContact: ContactProps, newContact: ContactProps) => {
-  return prevContact.chat.lastMessage === newContact.chat.lastMessage;
+  return (
+    prevContact.chat.lastMessage === newContact.chat.lastMessage &&
+    prevContact.chat.displayUserProfileImageUrl ===
+      newContact.chat.displayUserProfileImageUrl &&
+    prevContact.chat.isDeactivated === newContact.chat.isDeactivated &&
+    prevContact.chat.createdAt === newContact.chat.createdAt
+  );
 };
 
 export const MemoizedContact = React.memo(Contact, areEqual);

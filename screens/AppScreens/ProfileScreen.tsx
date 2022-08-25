@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import useAuthContext from "../../hooks/useAuthContext";
 import Colors from "../../constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
@@ -9,6 +9,7 @@ import {
   View,
   Text,
   StyleSheet,
+  Alert,
 } from "react-native";
 import SectionInput, {
   SectionInputProps,
@@ -21,13 +22,13 @@ import {
   updateUserVenmoHandle,
 } from "../../managers/UserManager";
 import { setChatUserImage } from "../../managers/ChatUserManager";
+import { Auth } from "aws-amplify";
 
 export default function ProfileScreen() {
-  const { user, setUser, signOut } = useAuthContext();
-  const [profileImageUrl, setProfileImageUrl] = useState<string>(
-    user?.profileImageUrl ?? ""
-  );
-  const isLocal = profileImageUrl.includes("file:///");
+  const { user, setUser, signOut, deleteAccount } = useAuthContext();
+  const profileImageUrl = user?.profileImageUrl ?? undefined;
+
+  const isLocal = profileImageUrl?.includes("file:///");
 
   /* -------------------------------------------------------------------------- */
   /*                              Section Functions                             */
@@ -72,6 +73,19 @@ export default function ProfileScreen() {
     { caption: "Sign Out", onPress: signOut },
     {
       caption: "Delete Account",
+      onPress: () =>
+        Alert.alert(
+          "Delete Account?",
+          "You will not be able to undo this action.",
+          [
+            {
+              text: "Delete",
+              onPress: () => deleteAccount(user),
+              style: "destructive",
+            },
+            { text: "Cancel", style: "cancel" },
+          ]
+        ),
       textStyle: { color: Colors.manorRed },
     },
   ];
@@ -106,6 +120,8 @@ export default function ProfileScreen() {
       <View style={styles.rowContainer}>
         <TouchableOpacity
           onPress={async () => {
+            const a = await Auth.currentAuthenticatedUser();
+            console.log(a);
             const results = await setProfileImage(user ?? undefined);
             results?.updatedUser && setUser(results.updatedUser);
             results &&
@@ -116,11 +132,17 @@ export default function ProfileScreen() {
               );
           }}
         >
-          <CacheImage
-            style={styles.image}
-            source={profileImageUrl}
-            cacheKey={profileImageUrl}
-          />
+          {profileImageUrl ? (
+            <CacheImage
+              style={styles.imageContainer}
+              source={profileImageUrl}
+              cacheKey={profileImageUrl}
+            />
+          ) : (
+            <View style={[styles.imageContainer, styles.addImageContainer]}>
+              <Text style={styles.addImageText}>Add Image</Text>
+            </View>
+          )}
         </TouchableOpacity>
         <View>
           <Text style={styles.nameText}>{user?.name?.split(" ")[0]}</Text>
@@ -159,11 +181,22 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(45, 50, 56, 0.0)",
   },
 
-  image: {
+  imageContainer: {
     height: 130,
     width: 130,
     borderRadius: 65,
     backgroundColor: Colors.manorBlueGray,
+  },
+
+  addImageContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  addImageText: {
+    color: Colors.manorDarkWhite,
+    fontSize: 18,
+    fontWeight: "600",
   },
 
   nameText: {

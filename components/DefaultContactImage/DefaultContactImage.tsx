@@ -1,40 +1,44 @@
 import React, { useEffect, useState } from "react";
 import { Chat, ChatUser } from "../../src/models";
-import { View } from "react-native";
+import { ImageStyle, StyleProp, View } from "react-native";
 import CacheImage from "../CustomPrimitives/CacheImage/CacheImage";
 import { DataStore } from "aws-amplify";
+import Avatar from "../Avatar";
+import Colors from "../../constants/Colors";
 
 interface DefaultContactImageProps {
   members?: ChatUser[];
+  fontSize: number;
 }
 
 export default function DefaultContactImage(props: DefaultContactImageProps) {
-  const { members } = props;
+  const { members, fontSize } = props;
 
   const membersCount = members?.length;
 
-  /* -------------------------------------------------------------------------- */
-  /*                                Fetch Members                               */
-  /* -------------------------------------------------------------------------- */
-
-  // useEffect(() => {
-  //   const fetchChatMembers = () => {
-  //     if (chat) {
-  //       DataStore.query(Chat, chat.id)
-  //         .then((coreChat) =>
-  //           DataStore.query(ChatUser, (chatUser) =>
-  //             chatUser.chatID("eq", coreChat?.id ?? "")
-  //           )
-  //         )
-  //         .then((members) => {
-  //           setFormattedMembers(members);
-  //           setMembersCount(members.length);
-  //         });
-  //     }
-  //   };
-
-  //   fetchChatMembers();
-  // }, [chat]);
+  const CacheImageOrAvatar = (
+    member: ChatUser,
+    style: StyleProp<ImageStyle>
+  ) => {
+    if (member.profileImageUrl) {
+      return (
+        <CacheImage
+          source={member.profileImageUrl}
+          cacheKey={member.profileImageUrl}
+          style={style}
+        />
+      );
+    } else {
+      return (
+        <Avatar
+          chatUser={member}
+          dimensions={0}
+          fontSize={fontSize}
+          style={[{ backgroundColor: Colors.manorBackgroundGray }, style]}
+        />
+      );
+    }
+  };
 
   /* -------------------------------------------------------------------------- */
   /*                                   Render                                   */
@@ -67,15 +71,11 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
             marginTop: 3,
           }}
         >
-          <CacheImage
-            source={members[0].profileImageUrl ?? ""}
-            cacheKey={members[0].id}
-            style={{
-              height: "60%",
-              width: "60%",
-              borderRadius: 100,
-            }}
-          />
+          {CacheImageOrAvatar(members[0], {
+            height: "80%",
+            width: "80%",
+            borderRadius: 100,
+          })}
         </View>
       );
     case 2:
@@ -95,17 +95,13 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               alignItems: "center",
             }}
           >
-            <CacheImage
-              source={members[0]?.profileImageUrl ?? ""}
-              cacheKey={members[0]?.id}
-              style={{
-                height: "90%",
-                width: "45%",
-                borderRadius: 100,
-                marginLeft: "30%",
-                marginTop: "5%",
-              }}
-            />
+            {CacheImageOrAvatar(members[0], {
+              height: "90%",
+              width: "45%",
+              borderRadius: 100,
+              marginLeft: "30%",
+              marginTop: "5%",
+            })}
           </View>
           <View
             style={{
@@ -114,17 +110,13 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               justifyContent: "flex-end",
             }}
           >
-            <CacheImage
-              source={members[1]?.profileImageUrl ?? ""}
-              cacheKey={members[1]?.id}
-              style={{
-                height: "90%",
-                width: "45%",
-                borderRadius: 100,
-                marginRight: "30%",
-                marginBottom: "5%",
-              }}
-            />
+            {CacheImageOrAvatar(members[1], {
+              height: "90%",
+              width: "45%",
+              borderRadius: 100,
+              marginRight: "30%",
+              marginBottom: "5%",
+            })}
           </View>
         </View>
       );
@@ -146,16 +138,12 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               justifyContent: "flex-start",
             }}
           >
-            <CacheImage
-              source={members[0].profileImageUrl ?? ""}
-              cacheKey={members[0].id}
-              style={{
-                height: "95%",
-                width: "40%",
-                borderRadius: 100,
-                marginTop: "3%",
-              }}
-            />
+            {CacheImageOrAvatar(members[0], {
+              height: "95%",
+              width: "40%",
+              borderRadius: 100,
+              marginTop: "3%",
+            })}
           </View>
           <View
             style={{
@@ -163,28 +151,20 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               flexDirection: "row",
             }}
           >
-            <CacheImage
-              source={members[1].profileImageUrl ?? ""}
-              cacheKey={members[1].id}
-              style={{
-                height: "65%",
-                width: "40%",
-                borderRadius: 100,
-                marginLeft: "5%",
-                marginRight: "10%",
-                marginTop: "5%",
-              }}
-            />
-            <CacheImage
-              source={members[2].profileImageUrl ?? ""}
-              cacheKey={members[2].id}
-              style={{
-                height: "65%",
-                width: "40%",
-                borderRadius: 100,
-                marginTop: "5%",
-              }}
-            />
+            {CacheImageOrAvatar(members[1], {
+              height: "65%",
+              width: "40%",
+              borderRadius: 100,
+              marginLeft: "5%",
+              marginRight: "10%",
+              marginTop: "5%",
+            })}
+            {CacheImageOrAvatar(members[2], {
+              height: "65%",
+              width: "40%",
+              borderRadius: 100,
+              marginTop: "5%",
+            })}
           </View>
         </View>
       );
@@ -208,24 +188,16 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               justifyContent: "space-around",
             }}
           >
-            <CacheImage
-              source={members[0].profileImageUrl ?? ""}
-              cacheKey={members[0].id}
-              style={{
-                height: "90%",
-                width: "45%",
-                borderRadius: 100,
-              }}
-            />
-            <CacheImage
-              source={members[1].profileImageUrl ?? ""}
-              cacheKey={members[1].id}
-              style={{
-                height: "90%",
-                width: "45%",
-                borderRadius: 100,
-              }}
-            />
+            {CacheImageOrAvatar(members[0], {
+              height: "90%",
+              width: "45%",
+              borderRadius: 100,
+            })}
+            {CacheImageOrAvatar(members[1], {
+              height: "90%",
+              width: "45%",
+              borderRadius: 100,
+            })}
           </View>
           <View
             style={{
@@ -235,24 +207,16 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               justifyContent: "space-around",
             }}
           >
-            <CacheImage
-              source={members[2].profileImageUrl ?? ""}
-              cacheKey={members[2].id}
-              style={{
-                height: "90%",
-                width: "45%",
-                borderRadius: 100,
-              }}
-            />
-            <CacheImage
-              source={members[3].profileImageUrl ?? ""}
-              cacheKey={members[3].id}
-              style={{
-                height: "90%",
-                width: "45%",
-                borderRadius: 100,
-              }}
-            />
+            {CacheImageOrAvatar(members[2], {
+              height: "90%",
+              width: "45%",
+              borderRadius: 100,
+            })}
+            {CacheImageOrAvatar(members[3], {
+              height: "90%",
+              width: "45%",
+              borderRadius: 100,
+            })}
           </View>
         </View>
       );
@@ -274,16 +238,12 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               alignItems: "center",
             }}
           >
-            <CacheImage
-              source={members[0].profileImageUrl ?? ""}
-              cacheKey={members[0].id}
-              style={{
-                height: "110%",
-                width: "37.5%",
-                borderRadius: 100,
-                marginTop: "2%",
-              }}
-            />
+            {CacheImageOrAvatar(members[0], {
+              height: "110%",
+              width: "37.5%",
+              borderRadius: 100,
+              marginTop: "2%",
+            })}
           </View>
           <View
             style={{
@@ -295,26 +255,18 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               marginBottom: "5%",
             }}
           >
-            <CacheImage
-              source={members[1].profileImageUrl ?? ""}
-              cacheKey={members[1].id}
-              style={{
-                height: "110%",
-                width: "36%",
-                borderRadius: 100,
-                marginBottom: "1%",
-              }}
-            />
-            <CacheImage
-              source={members[2].profileImageUrl ?? ""}
-              cacheKey={members[2].id}
-              style={{
-                height: "110%",
-                width: "36%",
-                borderRadius: 100,
-                marginBottom: "1%",
-              }}
-            />
+            {CacheImageOrAvatar(members[1], {
+              height: "110%",
+              width: "36%",
+              borderRadius: 100,
+              marginBottom: "1%",
+            })}
+            {CacheImageOrAvatar(members[2], {
+              height: "110%",
+              width: "36%",
+              borderRadius: 100,
+              marginBottom: "1%",
+            })}
           </View>
           <View
             style={{
@@ -325,26 +277,18 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               marginHorizontal: "15%",
             }}
           >
-            <CacheImage
-              source={members[3].profileImageUrl ?? ""}
-              cacheKey={members[3].id}
-              style={{
-                height: "110%",
-                width: "43%",
-                borderRadius: 100,
-                marginBottom: "3.5%",
-              }}
-            />
-            <CacheImage
-              source={members[4].profileImageUrl ?? ""}
-              cacheKey={members[4].id}
-              style={{
-                height: "110%",
-                width: "43%",
-                borderRadius: 100,
-                marginBottom: "3.5%",
-              }}
-            />
+            {CacheImageOrAvatar(members[3], {
+              height: "110%",
+              width: "43%",
+              borderRadius: 100,
+              marginBottom: "3.5%",
+            })}
+            {CacheImageOrAvatar(members[4], {
+              height: "110%",
+              width: "43%",
+              borderRadius: 100,
+              marginBottom: "3.5%",
+            })}
           </View>
         </View>
       );
@@ -366,16 +310,12 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               alignItems: "center",
             }}
           >
-            <CacheImage
-              source={members[0].profileImageUrl ?? ""}
-              cacheKey={members[0].id}
-              style={{
-                height: "110%",
-                width: "37.5%",
-                borderRadius: 100,
-                marginTop: "2%",
-              }}
-            />
+            {CacheImageOrAvatar(members[0], {
+              height: "110%",
+              width: "37.5%",
+              borderRadius: 100,
+              marginTop: "2%",
+            })}
           </View>
           <View
             style={{
@@ -387,26 +327,18 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               marginBottom: "5%",
             }}
           >
-            <CacheImage
-              source={members[1].profileImageUrl ?? ""}
-              cacheKey={members[1].id}
-              style={{
-                height: "110%",
-                width: "36%",
-                borderRadius: 100,
-                marginBottom: "1%",
-              }}
-            />
-            <CacheImage
-              source={members[2].profileImageUrl ?? ""}
-              cacheKey={members[2].id}
-              style={{
-                height: "110%",
-                width: "36%",
-                borderRadius: 100,
-                marginBottom: "1%",
-              }}
-            />
+            {CacheImageOrAvatar(members[1], {
+              height: "110%",
+              width: "36%",
+              borderRadius: 100,
+              marginBottom: "1%",
+            })}
+            {CacheImageOrAvatar(members[2], {
+              height: "110%",
+              width: "36%",
+              borderRadius: 100,
+              marginBottom: "1%",
+            })}
           </View>
           <View
             style={{
@@ -417,26 +349,19 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
               marginHorizontal: "15%",
             }}
           >
-            <CacheImage
-              source={members[3].profileImageUrl ?? ""}
-              cacheKey={members[3].id}
-              style={{
-                height: "110%",
-                width: "43%",
-                borderRadius: 100,
-                marginBottom: "3.5%",
-              }}
-            />
-            <CacheImage
-              source={members[4].profileImageUrl ?? ""}
-              cacheKey={members[4].id}
-              style={{
-                height: "110%",
-                width: "43%",
-                borderRadius: 100,
-                marginBottom: "3.5%",
-              }}
-            />
+            {CacheImageOrAvatar(members[3], {
+              height: "110%",
+              width: "43%",
+              borderRadius: 100,
+              marginBottom: "3.5%",
+            })}
+
+            {CacheImageOrAvatar(members[4], {
+              height: "110%",
+              width: "43%",
+              borderRadius: 100,
+              marginBottom: "3.5%",
+            })}
           </View>
         </View>
       );

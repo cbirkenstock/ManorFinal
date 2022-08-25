@@ -20,6 +20,7 @@ export interface AuthInitialStateProps {
     profileImageData?: CustomImageData
   ) => Promise<any> | PromiseConstructor;
   signOut: () => Promise<void> | PromiseConstructor;
+  deleteAccount: (user?: User) => Promise<void> | PromiseConstructor;
   setUser: (user: User) => Promise<void> | PromiseConstructor;
 }
 
@@ -30,5 +31,6 @@ export const initialState = {
   confirmSignUp: () => Promise,
   signIn: () => Promise,
   signOut: () => Promise,
+  deleteAccount: () => Promise,
   setUser: () => Promise,
 };

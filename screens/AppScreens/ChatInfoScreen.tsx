@@ -8,11 +8,19 @@ import {
   SectionListData,
   Text,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import useAppContext from "../../hooks/useAppContext";
 import useAuthContext from "../../hooks/useAuthContext";
 import { ChatInfoScreenProps as Props } from "../../navigation/NavTypes";
-import { ChatUser, Message, Reaction, User } from "../../src/models";
+import {
+  Chat,
+  ChatUser,
+  Message,
+  Reaction,
+  Report,
+  User,
+} from "../../src/models";
 import Colors from "../../constants/Colors";
 import { DataStore, SortDirection } from "aws-amplify";
 import SectionButton, {
@@ -31,6 +39,7 @@ import { FlatList } from "react-native-gesture-handler";
 import CacheImage from "../../components/CustomPrimitives/CacheImage";
 import { AllItemType } from "./AllItemsScreen";
 import { PendingAnnouncement } from "../../src/models";
+import Avatar from "../../components/Avatar";
 
 export type ChatInfoDataType = {
   title: string | undefined;
@@ -55,6 +64,12 @@ export default function ProfileScreen({ navigation, route }: Props) {
   const notificationsEnabledRef = useRef(
     chatUser?.notificationsEnabled ?? true
   );
+
+  const requiresDefaultContactImage =
+    !chat?.chatImageUrl &&
+    (!displayUser?.profileImageUrl ||
+      displayUser?.profileImageUrl === "undefined" ||
+      displayUser?.profileImageUrl === "null");
 
   /* -------------------------------------------------------------------------- */
   /*                          Settings Button functions                         */
@@ -112,39 +127,39 @@ export default function ProfileScreen({ navigation, route }: Props) {
   /* -------------------------------- Go To DM -------------------------------- */
 
   const goToDM = async (member: ChatUser) => {
-    if (user) {
-      const existingChat = await checkForPreExistingDMChat(user, member.user);
+    if (!user) return;
 
-      if (existingChat) {
-        const _chatUser = (
-          await DataStore.query(ChatUser, (chatUser) =>
-            chatUser.chatID("eq", existingChat.id).userID("eq", user.id)
-          )
-        )[0];
+    const existingChat = await checkForPreExistingDMChat(user, member.user);
+
+    if (existingChat) {
+      const _chatUser = (
+        await DataStore.query(ChatUser, (chatUser) =>
+          chatUser.chatID("eq", existingChat.id).userID("eq", user.id)
+        )
+      )[0];
+
+      navigation.navigate("ChatScreen", {
+        chat: existingChat,
+        chatUser: _chatUser,
+        displayUser: member.user,
+        members: undefined,
+        chats: route.params?.chats,
+        setChats: route.params.setChats,
+      });
+    } else {
+      const results = await createDMChat(user, member.user);
+
+      if (results) {
+        const { chat, chatUser, members } = results!;
 
         navigation.navigate("ChatScreen", {
-          chat: existingChat,
-          chatUser: _chatUser,
+          chat: chat,
+          chatUser: chatUser,
           displayUser: member.user,
-          members: undefined,
+          members: members,
           chats: route.params?.chats,
           setChats: route.params.setChats,
         });
-      } else {
-        const results = await createDMChat(user, member.user);
-
-        if (results) {
-          const { chat, chatUser, members } = results!;
-
-          navigation.navigate("ChatScreen", {
-            chat: chat,
-            chatUser: chatUser,
-            displayUser: member.user,
-            members: members,
-            chats: route.params?.chats,
-            setChats: route.params.setChats,
-          });
-        }
       }
     }
   };
@@ -265,18 +280,31 @@ export default function ProfileScreen({ navigation, route }: Props) {
       data: members.map((member) => {
         return {
           caption: member.nickname ?? "",
-          startAdornment: (
-            <CacheImage
-              source={member.profileImageUrl}
-              cacheKey={member.profileImageUrl}
-              style={{
-                height: 40,
-                width: 40,
-                borderRadius: 20,
-                marginRight: "3%",
-              }}
-            />
-          ),
+          startAdornment:
+            member.profileImageUrl &&
+            member.profileImageUrl !== "undefined" &&
+            member.profileImageUrl !== "null" ? (
+              <CacheImage
+                source={member.profileImageUrl}
+                cacheKey={member.profileImageUrl}
+                style={{
+                  height: 40,
+                  width: 40,
+                  borderRadius: 20,
+                  marginRight: "3%",
+                }}
+              />
+            ) : (
+              <Avatar
+                chatUser={member}
+                dimensions={40}
+                fontSize={14}
+                style={{
+                  marginRight: "3%",
+                  backgroundColor: Colors.manorChatScreenBlack,
+                }}
+              />
+            ),
           onPress: () => goToDM(member),
         };
       }),
@@ -307,11 +335,85 @@ export default function ProfileScreen({ navigation, route }: Props) {
       }),
     },
     {
-      title: "Settings",
+      title: undefined,
       data: [
         {
+          caption: "Block User",
+          textStyle: { color: Colors.manorRed },
+          onPress: async () => {
+            const upToDateChat = await DataStore.query(Chat, chat?.id ?? "");
+
+            if (!upToDateChat) return;
+
+            DataStore.save(
+              Chat.copyOf(upToDateChat, (updatedChat) => {
+                updatedChat.isDeactivated = true;
+              })
+            );
+
+            navigation.navigate("ContactScreen");
+          },
+        },
+        {
+          caption: "Report User",
+          textStyle: { color: Colors.manorRed },
+          onPress: async () => {
+            Alert.alert(
+              "Report User?",
+              "Doing so will send the last five messages of the chat to Manor",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Report",
+                  style: "destructive",
+                  onPress: async () => {
+                    const lastFiveMessages = await DataStore.query(
+                      Message,
+                      (message) => message.chatID("eq", chat?.id ?? ""),
+                      {
+                        sort: (message) =>
+                          message.createdAt(SortDirection.ASCENDING),
+                        limit: 5,
+                      }
+                    );
+
+                    if (!lastFiveMessages || !displayUser) return;
+
+                    let messageBodies = "";
+
+                    for (const message of lastFiveMessages) {
+                      const messagePiece =
+                        message.messageBody ??
+                        message.imageUrl ??
+                        message.eventTitle ??
+                        "";
+
+                      if (!messageBodies) {
+                        messageBodies = messagePiece;
+                        continue;
+                      }
+                      messageBodies = messageBodies + ", " + messagePiece;
+                    }
+
+                    try {
+                      const report = new Report({
+                        reportedUserID: displayUser.id,
+                        lastFiveMessages: messageBodies,
+                      });
+
+                      DataStore.save(report);
+                    } catch (error) {
+                      console.log(error);
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
+        {
           caption: "Leave Chat",
-          textStyle: { color: "red" },
+
           onPress: async () => {
             const upToDateChatUser = await DataStore.query(
               ChatUser,
@@ -349,20 +451,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
 
   /* -------------------------------------------------------------------------- */
   /*                              Render Functions                              */
-  /* --------------------------------------------------------------------- ----- */
-
-  /* ----------------------------- Section Header ----------------------------- */
-
-  // const renderSectionHeader = (
-  //   section: SectionListData<SectionButtonProps | Message, ChatInfoDataType>
-  // ) => {
-  //   return null;
-  //   if (section.data.length === 0 || !section.title) {
-  //     return null;
-  //   } else {
-  //     return <Text style={styles.header}>{section.title}</Text>;
-  //   }
-  // };
+  /* -------------------------------------------------------------------------- */
 
   /* ----------------------------- Section Button ----------------------------- */
 
@@ -511,7 +600,20 @@ export default function ProfileScreen({ navigation, route }: Props) {
     <SafeAreaView style={styles.container}>
       <View style={styles.paddingContainer}>
         <View style={styles.rowContainer}>
-          {displayUser?.profileImageUrl || chat?.chatImageUrl ? (
+          {requiresDefaultContactImage ? (
+            <View style={[styles.image]}>
+              {displayUser ? (
+                <Avatar
+                  user={displayUser}
+                  dimensions={0}
+                  fontSize={50}
+                  style={{ height: "100%", width: "100%" }}
+                />
+              ) : (
+                <DefaultContactImage members={members} fontSize={16} />
+              )}
+            </View>
+          ) : (
             <CacheImage
               style={styles.image}
               cacheKey={
@@ -521,10 +623,6 @@ export default function ProfileScreen({ navigation, route }: Props) {
                 displayUser ? displayUser.profileImageUrl : chat?.chatImageUrl
               }
             />
-          ) : (
-            <View style={[styles.image]}>
-              <DefaultContactImage members={members} />
-            </View>
           )}
 
           <View style={{ flexShrink: 1 }}>
@@ -564,7 +662,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "black",
+    backgroundColor: Colors.manorChatScreenBlack,
   },
 
   paddingContainer: {

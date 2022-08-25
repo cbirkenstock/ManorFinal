@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
+  AppState,
+  AppStateStatus,
   FlatList,
   KeyboardAvoidingView,
   StatusBar,
@@ -7,7 +9,7 @@ import {
   View,
 } from "react-native";
 
-import { DataStore, SortDirection } from "aws-amplify";
+import { DataStore, Hub, SortDirection } from "aws-amplify";
 
 import useAppContext from "../../hooks/useAppContext";
 import {
@@ -27,9 +29,7 @@ import { formatDateTime } from "../../managers/DateTimeManager";
 
 import MessageBar from "../../components/MessageBar/MessageBar";
 import Announcement from "../../components/Announcement/Announcement";
-import FullMessageComponent, {
-  MemoizedFullMessageComponent,
-} from "../../components/Message/FullMessageComponent/FullMessageComponent";
+import { MemoizedFullMessageComponent } from "../../components/Message/FullMessageComponent/FullMessageComponent";
 import ChatScreenButtonMenu from "../../components/ChatScreenButtonMenu";
 import AnnouncementDialog from "../../components/Dialog/DialogInstances/AnnouncementDialog/AnnouncementDialog";
 import ReplyToMessageSection from "../../components/ReplyToMessageSection/ReplyToMessageSection";
@@ -41,9 +41,8 @@ import { ChatUser, Message, PendingAnnouncement } from "../../src/models";
 import { hasBezels } from "../../constants/hasBezels";
 import ZoomImageView from "../../components/ZoomImageView";
 import { ImageSource } from "react-native-image-viewing/dist/@types";
-import MessageBubble from "../../components/Message/SubComponents/MessageBubble";
-import MessageReactMenu from "../../components/MessageReactMenu/MessageReactMenu";
 import AbsoluteBlurReactionView from "../../components/AbsoluteBlurReactionView";
+import AbsoluteBlurThreadFlatlist from "../../components/AbsoluteBlurThreadFlatlist";
 
 export default function ChatScreen({ navigation, route }: Props) {
   const context = useAppContext();
@@ -64,6 +63,7 @@ export default function ChatScreen({ navigation, route }: Props) {
     useState<boolean>(false);
   const [isAnnouncementDialogVisible, setIsAnnouncementDialogVisible] =
     useState<boolean>(false);
+  const [threadMessages, setThreadMessages] = useState<Message[]>();
   const [messageToReplyTo, setMessageToReplyTo] = useState<Message>();
   const [reactionMessageAndYCoordinate, setReactionMessageAndYCoordinate] =
     useState<{
@@ -71,14 +71,16 @@ export default function ChatScreen({ navigation, route }: Props) {
       message: Message;
     }>();
   const [page, setPage] = useState<number>(0);
+  const [appState, setAppState] = useState<AppStateStatus>(
+    AppState.currentState
+  );
+  const [dataDownloaded, setDataDownloaded] = useState<boolean>(false);
 
   const hasMoreMessages = useRef<boolean>(true);
 
   const chatcontextUpdated = chat?.id === route.params?.chat.id;
   const chats = route.params.chats;
   const chatScreenSetChats = route.params.setChats;
-
-  const buttonPositionRef = useRef(null);
 
   /* -------------------------------------------------------------------------- */
   /*                             Set Proper Context                             */
@@ -131,11 +133,11 @@ export default function ChatScreen({ navigation, route }: Props) {
   useEffect(() => {
     const fetchMessages = async () => {
       if (
+        dataDownloaded &&
         hasMoreMessages.current &&
         chatcontextUpdated &&
         (messages.length === 0 || page !== 0)
       ) {
-        console.log("trigered");
         const _messages = (
           await DataStore.query(
             Message,
@@ -161,7 +163,7 @@ export default function ChatScreen({ navigation, route }: Props) {
     };
 
     fetchMessages();
-  }, [chat, page, messages]);
+  }, [chat, page, messages, dataDownloaded]);
 
   /* -------------------------------------------------------------------------- */
   /*                             Fetch Announcements                            */
@@ -198,30 +200,59 @@ export default function ChatScreen({ navigation, route }: Props) {
   /*                                Subscriptions                               */
   /* -------------------------------------------------------------------------- */
 
+  /* ------------------------------ App Listener ------------------------------ */
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (status) => {
+      setAppState(status);
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  /* --------------------------- Datastore Listener --------------------------- */
+  useEffect(() => {
+    if (appState !== "active") return;
+
+    let alreadySet = false;
+
+    setTimeout(() => {
+      if (!alreadySet) setDataDownloaded(true);
+    }, 2100);
+
+    const listener = Hub.listen("datastore", async (hubData) => {
+      const { data } = hubData.payload;
+
+      if (data?.model?.name === "Message") {
+        alreadySet = true;
+        setDataDownloaded(true);
+      }
+    });
+
+    return () => listener();
+  }, [appState]);
   /* -------------------------- Message Subscription -------------------------- */
 
   useEffect(() => {
-    if (messages) {
-      const subscription = messageSubscription(
-        context,
-        appendMessage,
-        updateMessageLocally
-      );
-      return () => subscription.unsubscribe();
-    }
-  }, [messages]);
+    const subscription = messageSubscription(
+      context,
+      appendMessage,
+      updateMessageLocally,
+      dataDownloaded
+    );
+    return () => subscription.unsubscribe();
+  }, [messages, dataDownloaded]);
 
   /* -------------------- Pending Announcement Subscription ------------------- */
 
   useEffect(() => {
-    if (messages) {
-      const subscription = pendingAnnouncementSubscription(
-        context,
-        appendPendingAnnouncement
-      );
-      return () => subscription.unsubscribe();
-    }
-  }, [pendingAnnouncements]);
+    const subscription = pendingAnnouncementSubscription(
+      context,
+      appendPendingAnnouncement
+    );
+    return () => subscription.unsubscribe();
+  }, [pendingAnnouncements, chatUser]);
 
   /* -------------------------------------------------------------------------- */
   /*                               Sub-Components                               */
@@ -242,11 +273,10 @@ export default function ChatScreen({ navigation, route }: Props) {
 
   const renderMessage = ({ item }: { item: Message }) => {
     return (
-      <FullMessageComponent
+      <MemoizedFullMessageComponent
         message={item}
         setReactionMessageAndYCoordinate={setReactionMessageAndYCoordinate}
         setZoomImage={setZoomImage}
-        setMessageToReplyTo={setMessageToReplyTo}
       />
     );
   };
@@ -265,45 +295,41 @@ export default function ChatScreen({ navigation, route }: Props) {
         <StatusBar hidden={true} />
         <View style={{ flex: 1 }}>
           <FlatList
-            ref={buttonPositionRef}
             onEndReached={() => setPage(page + 1)}
             style={[styles.messageFlatlist]}
             inverted
-            initialNumToRender={30}
+            initialNumToRender={20}
             keyboardDismissMode={"on-drag"}
             showsVerticalScrollIndicator={false}
             data={messages}
             keyExtractor={(message) => message?.id}
             renderItem={renderMessage}
           />
-          {reactionMessageAndYCoordinate ? (
-            <AbsoluteBlurReactionView
-              reactionMessageAndYCoordinate={reactionMessageAndYCoordinate}
-              setReactionMessageAndYCoordinate={
-                setReactionMessageAndYCoordinate
-              }
+          {messageToReplyTo ? (
+            <AbsoluteBlurThreadFlatlist
+              messageToReplyTo={messageToReplyTo}
+              setMessageToReplyTo={setMessageToReplyTo}
+              threadMessages={threadMessages}
+              setThreadMessages={setThreadMessages}
             />
           ) : null}
         </View>
-
-        {messageToReplyTo ? (
-          <ReplyToMessageSection
-            messageToReplyTo={messageToReplyTo}
-            setMessageToReplyTo={setMessageToReplyTo}
-          />
-        ) : null}
         <MessageBar
           chat={chat ?? undefined}
           chats={chats ?? []}
           setChats={chatScreenSetChats}
           messageToReplyTo={messageToReplyTo}
-          setMessageToReplyTo={setMessageToReplyTo}
+          threadMessages={threadMessages}
+          setThreadMessages={setThreadMessages}
         />
       </KeyboardAvoidingView>
-      {!reactionMessageAndYCoordinate ? (
+      {!reactionMessageAndYCoordinate && !messageToReplyTo ? (
         <ChatScreenButtonMenu
+          displayUser={route.params.displayUser}
           contactImageUrl={
-            route.params.displayUser?.profileImageUrl ?? undefined
+            route.params.displayUser?.profileImageUrl ??
+            route.params.chat.chatImageUrl ??
+            undefined
           }
           menuFunctions={[
             GoToChatInfoScreen,
@@ -315,6 +341,13 @@ export default function ChatScreen({ navigation, route }: Props) {
       {hasSentAnnouncement ? (
         <AnnouncementSentNotification
           setHasSentAnnouncement={setHasSentAnnouncement}
+        />
+      ) : null}
+      {reactionMessageAndYCoordinate ? (
+        <AbsoluteBlurReactionView
+          reactionMessageAndYCoordinate={reactionMessageAndYCoordinate}
+          setReactionMessageAndYCoordinate={setReactionMessageAndYCoordinate}
+          setMessageToReplyTo={setMessageToReplyTo}
         />
       ) : null}
       {zoomImage.length > 0 ? (

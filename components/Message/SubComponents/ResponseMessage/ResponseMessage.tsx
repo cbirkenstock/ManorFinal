@@ -1,8 +1,7 @@
-import { View, Image, Text } from "react-native";
+import { View, Text } from "react-native";
 import Colors from "../../../../constants/Colors";
 import { Message } from "../../../../src/models";
 import CacheImage from "../../../CustomPrimitives/CacheImage";
-import MessageBubble from "../MessageBubble";
 
 interface ResponseMessageProps {
   message: Message;
@@ -24,6 +23,7 @@ export default function ResponseMessage(props: ResponseMessageProps) {
     >
       <View
         style={{
+          width: message.replyToMessageImageUrl ? 250 : undefined,
           padding: message.replyToMessageImageUrl ? 0 : 5,
           borderRadius: 10,
           borderWidth: message.replyToMessageImageUrl ? 0 : 2,
@@ -35,8 +35,6 @@ export default function ResponseMessage(props: ResponseMessageProps) {
             color: Colors.manorDarkWhite,
             fontSize: 15,
             fontWeight: "800",
-            marginLeft: message.replyToMessageImageUrl && isMe ? 15 : 0,
-            marginRight: message.replyToMessageImageUrl && isMe ? 0 : 15,
           }}
         >
           {message.replyToMessageSenderName ?? "Missing Name"}
@@ -45,10 +43,24 @@ export default function ResponseMessage(props: ResponseMessageProps) {
           <CacheImage
             source={message.replyToMessageImageUrl}
             cacheKey={message.replyToMessageImageUrl}
-            style={{ minWidth: 300, height: 250, borderRadius: 20 }}
+            style={{
+              marginTop: 5,
+              minWidth: "100%",
+              height: 350,
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 5,
+              borderBottomRightRadius: 20,
+              borderBottomLeftRadius: 5,
+            }}
           />
         ) : (
-          <Text style={{ color: "white", fontSize: 18, marginTop: 5 }}>
+          <Text
+            style={{
+              color: "white",
+              fontSize: 18,
+              marginTop: 5,
+            }}
+          >
             {message.replyToMessageBody}
           </Text>
         )}

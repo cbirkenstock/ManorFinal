@@ -13,18 +13,20 @@ import { updateMessageLikes } from "../../managers/MessageManager";
 import { Message, Reaction } from "../../src/models";
 import IconButton from "../IconButton/IconButton";
 import { ReactionType } from "../Message/FullMessageComponent/FullMessageComponent";
+import ReplyToMessageSection from "../ReplyToMessageSection/ReplyToMessageSection";
 import { styles } from "./styles";
 
 interface MessageReactMenuProps {
   isMe: boolean;
   visible: boolean;
   message: Message;
+  onReplyToMessage?: () => void;
   onReaction?: () => void;
   style?: StyleProp<ViewStyle>;
 }
 
 export default function MessageReactMenu(props: MessageReactMenuProps) {
-  const { isMe, visible, message, onReaction, style } = props;
+  const { isMe, visible, message, onReplyToMessage, onReaction, style } = props;
   const { messages, setMessages, chatUser } = useAppContext();
 
   const messageReactHeightAnim = useRef(new Animated.Value(0)).current;
@@ -47,41 +49,7 @@ export default function MessageReactMenu(props: MessageReactMenuProps) {
 
   const [upToDateMessage, setUpToDateMessage] = useState<Message>();
 
-  const hasLikedMessage =
-    (upToDateMessage?.likes ?? 0) !== (message.likes ?? 0);
-  const hasDislikedMessage =
-    (upToDateMessage?.dislikes ?? 0) !== (message.dislikes ?? 0);
-
   const [originalReaction, setOriginalReaction] = useState<Reaction>();
-  //const originalReactionRef = useRef<Reaction | undefined>();
-  // const reactionRef = useRef<Reaction | undefined>();
-  // const hasSetReactionRef = useRef<boolean>(false);
-
-  /* ----------------------------- Likes Constants ---------------------------- */
-
-  // const [messageLikes, setMessageLikes] = useState<number | undefined>(
-  //   message.likes ?? undefined
-  // );
-  // const messageLikesRef = useRef<number | undefined>(
-  //   message.likes ?? undefined
-  // );
-
-  // useEffect(() => {
-  //   setMessageLikes(message.likes ?? undefined);
-  // }, [message]);
-
-  /* --------------------------- Dislikes Constants --------------------------- */
-
-  // const [messageDislikes, setMessageDislikes] = useState<number | undefined>(
-  //   message.dislikes ?? undefined
-  // );
-  // const messageDislikesRef = useRef<number | undefined>(
-  //   message.dislikes ?? undefined
-  // );
-
-  // useEffect(() => {
-  //   setMessageDislikes(message.dislikes ?? undefined);
-  // }, [message]);
 
   /* -------------------------------------------------------------------------- */
   /*                               Fetch Reaction                               */
@@ -331,7 +299,7 @@ export default function MessageReactMenu(props: MessageReactMenuProps) {
           padding={7}
           onPress={() => {
             reactToMessage(ReactionType.liked);
-            //onReaction?.();
+            onReaction?.();
           }}
         />
 
@@ -365,6 +333,7 @@ export default function MessageReactMenu(props: MessageReactMenuProps) {
           color="transparent"
           padding={0}
           onPress={() => {
+            onReplyToMessage?.();
             onReaction?.();
           }}
         />

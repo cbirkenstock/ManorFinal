@@ -76,8 +76,12 @@ export const manipulatePhoto = async (
   return manipulatedPhoto;
 };
 
-export const resizeImage = (message: Message, isImage: boolean) => {
-  const necessaryWidth = 0.75 * Dimensions.get("window").width;
+export const resizeImage = (
+  message: Message,
+  isImage: boolean,
+  width?: number
+) => {
+  const necessaryWidth = width ? width : 0.75 * Dimensions.get("window").width;
 
   if (message.imageHeight && message.imageWidth) {
     //video width is sometimes wrong for some reason so this hardcodes it

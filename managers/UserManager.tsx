@@ -1,5 +1,5 @@
-import { DataStore } from "aws-amplify";
-import { User } from "../src/models";
+import { Auth, DataStore } from "aws-amplify";
+import { Chat, ChatUser, User } from "../src/models";
 import {
   fetchMediaBlob,
   PickImageRequestEnum,
@@ -36,6 +36,31 @@ export const updateUserProfileImageUrl = async (
         updatedUser.profileImageUrl = profileImageUrl;
       })
     );
+
+    const userChats = (
+      await DataStore.query(ChatUser, (chatUser) =>
+        chatUser.userID("eq", upToDateUser.id)
+      )
+    ).map((chatUser) => chatUser.chat);
+
+    for (const chat of userChats) {
+      if (chat.displayUserProfileImageUrl) {
+        const profileImageUrls = chat.displayUserProfileImageUrl.split("+");
+        let newProfileImageUrls = "";
+
+        if (profileImageUrls[0] === upToDateUser.profileImageUrl) {
+          newProfileImageUrls = profileImageUrl + "+" + profileImageUrls[1];
+        } else {
+          newProfileImageUrls = profileImageUrls[0] + "+" + profileImageUrl;
+        }
+
+        DataStore.save(
+          Chat.copyOf(chat, (updatedChat) => {
+            updatedChat.displayUserProfileImageUrl = newProfileImageUrls;
+          })
+        );
+      }
+    }
 
     return updatedUser;
   }

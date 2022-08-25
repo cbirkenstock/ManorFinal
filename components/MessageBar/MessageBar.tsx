@@ -1,4 +1,11 @@
-import { View, TextInput, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
 import React, { useState } from "react";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { Send } from "react-native-feather";
@@ -40,14 +47,24 @@ interface MessageBarProps {
   chats: Chat[];
   setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
   messageToReplyTo?: Message;
-  setMessageToReplyTo: React.Dispatch<
-    React.SetStateAction<Message | undefined>
+
+  threadMessages?: Message[];
+  setThreadMessages: React.Dispatch<
+    React.SetStateAction<Message[] | undefined>
   >;
+  style?: StyleProp<ViewStyle>;
 }
 
 export default function MessageBar(props: MessageBarProps) {
-  const { chat, chats, setChats, messageToReplyTo, setMessageToReplyTo } =
-    props;
+  const {
+    chat,
+    chats,
+    setChats,
+    messageToReplyTo,
+    threadMessages,
+    setThreadMessages,
+    style,
+  } = props;
   const context = useAppContext();
   const {
     chatUser,
@@ -65,59 +82,67 @@ export default function MessageBar(props: MessageBarProps) {
   /* -------------------------------------------------------------------------- */
 
   const sendTextMessage = async () => {
-    if (messageBody) {
-      setMessageBody("");
-
-      let urlPreviewTitle = undefined;
-      let urlPreviewWebsiteUrl = undefined;
-      let urlPreviewImageUrl = undefined;
-
-      if (ContainsUrl(messageBody)) {
-        let webData = await extractWebInfo(messageBody);
-
-        urlPreviewTitle = (webData as any).title;
-        urlPreviewWebsiteUrl = (webData as any).url;
-        urlPreviewImageUrl = (webData as any).images[0];
-      }
-
-      const messageToReplyToSenderName = members.find(
-        (member) => member.id === messageToReplyTo?.chatuserID
-      )?.user.name;
-
-      let newMessage = createTextMessageComponent(
-        messageBody,
-        context,
-        messageToReplyTo,
-        messageToReplyToSenderName,
-        urlPreviewTitle,
-        urlPreviewWebsiteUrl,
-        urlPreviewImageUrl
+    if (chat?.isDeactivated) {
+      Alert.alert(
+        "This chat has been disabled. This can be the case for several reasons, including the other user deleting their account."
       );
-
-      if (dayHasPassed(messages[0]?.createdAt ?? undefined)) {
-        const timeCard = createTimeCardComponent(new Date(), context);
-        newMessage = new Message({ ...newMessage, marginTop: 10 });
-        appendMessage(newMessage, context, timeCard);
-        uploadMessage(timeCard);
-      } else {
-        appendMessage(newMessage, context);
-      }
-
-      messageToReplyTo && setMessageToReplyTo(undefined);
-      setChats(
-        reOrderChats(chat, chats, newMessage.messageBody ?? undefined) ?? []
-      );
-
-      uploadMessage(newMessage);
-      sendNotification(user ?? undefined, chat, members, newMessage, false);
-      updateChatUserHasUnreadMessages(
-        members.filter((member) => member.id !== chatUser?.id),
-        true
-      );
-      updateLastMessage(newMessage.messageBody ?? "", context);
-
-      updateChatUserOfActiveChatStatus(members, true);
+      return;
     }
+    if (!messageBody) return;
+
+    setMessageBody("");
+
+    let urlPreviewTitle = undefined;
+    let urlPreviewWebsiteUrl = undefined;
+    let urlPreviewImageUrl = undefined;
+
+    if (ContainsUrl(messageBody)) {
+      let webData = await extractWebInfo(messageBody);
+
+      urlPreviewTitle = (webData as any).title;
+      urlPreviewWebsiteUrl = (webData as any).url;
+      urlPreviewImageUrl = (webData as any).images[0];
+    }
+
+    const messageToReplyToSenderName = members.find(
+      (member) => member.id === messageToReplyTo?.chatuserID
+    )?.user.name;
+
+    let newMessage = createTextMessageComponent(
+      messageBody,
+      context,
+      messageToReplyTo,
+      messageToReplyToSenderName,
+      urlPreviewTitle,
+      urlPreviewWebsiteUrl,
+      urlPreviewImageUrl
+    );
+
+    threadMessages && setThreadMessages([newMessage, ...threadMessages]);
+
+    if (dayHasPassed(messages[0]?.createdAt ?? undefined)) {
+      const timeCard = createTimeCardComponent(new Date(), context);
+      newMessage = new Message({ ...newMessage, marginTop: 10 });
+      appendMessage(newMessage, context, timeCard);
+      uploadMessage(timeCard);
+    } else {
+      appendMessage(newMessage, context);
+    }
+
+    setChats(
+      reOrderChats(chat, chats, newMessage.messageBody ?? undefined) ?? []
+    );
+
+    uploadMessage(newMessage);
+    sendNotification(user ?? undefined, chat, members, newMessage, false);
+    updateChatUserHasUnreadMessages(
+      members.filter((member) => member.id !== chatUser?.id),
+      true,
+      chatUser ?? undefined
+    );
+    updateLastMessage(newMessage.messageBody ?? "", context);
+
+    updateChatUserOfActiveChatStatus(members, true);
   };
 
   /*
@@ -126,6 +151,13 @@ export default function MessageBar(props: MessageBarProps) {
   the media is uploaded to s3, and the message is uploaded to the db
   */
   const sendMediaMessage = async () => {
+    if (chat?.isDeactivated) {
+      Alert.alert(
+        "The other user has deleted their account. Messages can no longer be sent in this chat."
+      );
+
+      return;
+    }
     requestCameraPermissionsAsync();
 
     const mediaData = await pickMedia(PickImageRequestEnum.sendChatImage);
@@ -137,6 +169,8 @@ export default function MessageBar(props: MessageBarProps) {
         mediaData.width,
         context
       );
+
+      threadMessages && setThreadMessages([newLocalMessage, ...threadMessages]);
 
       if (dayHasPassed(messages[0]?.createdAt ?? undefined)) {
         const timeCard = createTimeCardComponent(new Date(), context);
@@ -150,17 +184,12 @@ export default function MessageBar(props: MessageBarProps) {
       const blob = await fetchMediaBlob(mediaData.uri);
       const key = await uploadMedia(mediaData.type, blob);
 
-      const newDataMessage = createMediaMessageComponent(
-        key,
-        mediaData.height,
-        mediaData.width,
-        context
-      );
+      const newDataMessage = new Message({ ...newLocalMessage, imageUrl: key });
 
       uploadMedia(mediaData.type, blob);
       uploadMessage(newDataMessage);
       sendNotification(user ?? undefined, chat, members, newDataMessage, false);
-      updateChatUserHasUnreadMessages(members, true);
+      updateChatUserHasUnreadMessages(members, true, chatUser ?? undefined);
 
       updateChatUserOfActiveChatStatus(members, true);
     }
@@ -172,7 +201,7 @@ export default function MessageBar(props: MessageBarProps) {
 
   return (
     <>
-      <View style={styles.container}>
+      <View style={[styles.container, style]}>
         <TouchableOpacity
           style={[styles.TouchableOpacity, { marginBottom: 4 }]}
           onPress={sendMediaMessage}
@@ -193,7 +222,6 @@ export default function MessageBar(props: MessageBarProps) {
             style={{ marginBottom: 2 }}
           />
         </TouchableOpacity>
-
         <Dialog
           visible={isForwardingEvent}
           onClose={() => setIsForwardingEvent(false)}

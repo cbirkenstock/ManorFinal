@@ -69,10 +69,16 @@ export default function UsersScreen({ route, navigation }: Props) {
 
   /* ------------------------- Create Button Component ------------------------ */
 
-  const CreateButton = ({ onPress }: { onPress: (() => void) | undefined }) => {
+  const CreateButton = ({
+    onPress,
+    text,
+  }: {
+    onPress: (() => void) | undefined;
+    text: string;
+  }) => {
     return (
       <TouchableOpacity style={styles.createButtonContainer} onPress={onPress}>
-        <Text style={styles.createButtonText}>Create</Text>
+        <Text style={styles.createButtonText}>{text}</Text>
       </TouchableOpacity>
     );
   };
@@ -104,6 +110,7 @@ export default function UsersScreen({ route, navigation }: Props) {
       case ChatEnum.group:
         return (
           <CreateButton
+            text={"Create"}
             onPress={async () => {
               const results = await createGroupChat(
                 isCoreChat,
@@ -133,6 +140,7 @@ export default function UsersScreen({ route, navigation }: Props) {
       case ChatEnum.addMembers:
         return (
           <CreateButton
+            text={"Add"}
             onPress={async () => {
               const newChatUsers = await addMembers(
                 chat ?? undefined,
@@ -163,6 +171,7 @@ export default function UsersScreen({ route, navigation }: Props) {
         navigation.setOptions({
           headerRight: () => (
             <CreateButton
+              text={"Create"}
               onPress={async () => {
                 const results = await createGroupChat(
                   isCoreChat,
@@ -194,29 +203,32 @@ export default function UsersScreen({ route, navigation }: Props) {
         break;
       case ChatEnum.addMembers:
         navigation.setOptions({
-          headerRight: () => (
-            <CreateButton
-              onPress={async () => {
-                const newChatUsers = await addMembers(
-                  chat ?? undefined,
-                  undefined,
-                  chosenUsers
-                );
-                // @ts-ignore
-                navigation.navigate("ChatNav", {
-                  screen: "ChatScreen",
-                  params: {
-                    chat: chat,
-                    chatUser: chatUser,
-                    members: [...(newChatUsers ?? []), ...members],
-                    chats: route.params?.chats,
-                    setChats: route.params?.setChats,
-                  },
-                });
-              }}
-            />
-          ),
+          headerShown: false,
         });
+        // navigation.setOptions({
+        //   headerRight: () => (
+        //     <CreateButton
+        //       onPress={async () => {
+        //         const newChatUsers = await addMembers(
+        //           chat ?? undefined,
+        //           undefined,
+        //           chosenUsers
+        //         );
+        //         // @ts-ignore
+        //         navigation.navigate("ChatNav", {
+        //           screen: "ChatScreen",
+        //           params: {
+        //             chat: chat,
+        //             chatUser: chatUser,
+        //             members: [...(newChatUsers ?? []), ...members],
+        //             chats: route.params?.chats,
+        //             setChats: route.params?.setChats,
+        //           },
+        //         });
+        //       }}
+        //     />
+        //   ),
+        // });
         break;
 
       case ChatEnum.coordination:
@@ -505,6 +517,8 @@ export default function UsersScreen({ route, navigation }: Props) {
             ? "Create Group"
             : route.params?.chatType === ChatEnum.coordination
             ? "New Group Event"
+            : route.params.chatType === ChatEnum.addMembers
+            ? "Add Users"
             : "New DM"}
         </Text>
         {HeaderRightButton()}

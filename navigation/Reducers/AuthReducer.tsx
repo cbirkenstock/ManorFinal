@@ -35,7 +35,12 @@ function authReducer(state: AppState, action: UserAction) {
 
   switch (type) {
     case UserActionCase.setUser:
-      AsyncStorage.setItem("currentUser", JSON.stringify(payload));
+      if (payload) {
+        AsyncStorage.setItem("currentUser", JSON.stringify(payload));
+      } else {
+        AsyncStorage.removeItem("currentUser");
+      }
+
       return {
         ...state,
         user: payload,

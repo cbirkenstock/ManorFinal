@@ -2,7 +2,7 @@
   "expo": {
     "name": "Manor",
     "slug": "ManorFinal",
-    "version": "1.0.10",
+    "version": "1.0.14",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -31,6 +31,11 @@
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7862bee1-9312-45f0-acdd-1fef54771238"
+      }
     }
   }
 }

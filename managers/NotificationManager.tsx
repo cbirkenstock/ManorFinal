@@ -136,10 +136,14 @@ export const sendNotification = async (
     let recipientTokens;
 
     if (announcement) {
-      recipientTokens = members.map((member) => member.user.expoPushToken);
+      recipientTokens = members
+        .filter((member) => member.user.id !== user.id)
+        .map((member) => member.user.expoPushToken);
     } else {
       recipientTokens = members
-        .filter((member) => member.notificationsEnabled)
+        .filter(
+          (member) => member.notificationsEnabled && member.user.id !== user.id
+        )
         .map((member) => member.user.expoPushToken);
     }
 

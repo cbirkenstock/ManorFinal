@@ -23,9 +23,9 @@ export const createChatUsers = async (
         chatID: chat.id,
         chat: chat,
         nickname: user?.name ?? "choose Nickname",
-        profileImageUrl:
-          `${user?.profileImageUrl?.split(".")[0]}-reducedSizeVersion.jpg` ??
-          undefined,
+        profileImageUrl: user?.profileImageUrl
+          ? `${user?.profileImageUrl?.split(".")[0]}-reducedSizeVersion.jpg`
+          : undefined,
         isOfActiveChat: chat.isEventChat ? true : false,
         isAdmin: user.id === currentUser?.id ? true : false,
         notificationsEnabled: true,
@@ -64,10 +64,13 @@ export const updateChatUserOfActiveChatStatus = async (
 
 export const updateChatUserHasUnreadMessages = async (
   chatUsers: ChatUser[] | undefined,
-  hasUnreadMessages: boolean
+  hasUnreadMessages: boolean,
+  currentChatUser?: ChatUser
 ) => {
   if (chatUsers) {
-    for (const member of chatUsers) {
+    for (const member of chatUsers.filter(
+      (chatUser) => chatUser.id !== currentChatUser?.id
+    )) {
       const upToDateChatUser = await DataStore.query(
         ChatUser,
         member?.id ?? ""

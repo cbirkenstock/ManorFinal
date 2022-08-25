@@ -1,4 +1,5 @@
 import { DataStore } from "aws-amplify";
+import { Alert } from "react-native";
 import { AppInitialStateProps } from "../navigation/InitialStates/AppInitialState";
 import { AuthInitialStateProps } from "../navigation/InitialStates/AuthInitialState";
 import {
@@ -49,25 +50,38 @@ type SetChatsHandler = (
 
 /* --------------------------------- Message -------------------------------- */
 
-const messageIncluded = (messages: Message[], specificMessage: Message) => {
-  return messages.map((message) => message.id).includes(specificMessage.id);
+const messageIncluded = (
+  messages: Message[],
+  specificMessage: Message,
+  chatUser?: ChatUser
+) => {
+  //this needs to be fixed for images later
+  if (specificMessage.imageUrl) {
+    return specificMessage.chatuserID === chatUser?.id;
+  } else {
+    return messages.map((message) => message.id).includes(specificMessage.id);
+  }
 };
 
 export const messageSubscription = (
   context: AppInitialStateProps,
   insertHandler: MessageSubscriptionHandler,
-  updateHandler: MessageSubscriptionHandler
+  updateHandler: MessageSubscriptionHandler,
+  dataDownloaded: boolean
 ) => {
   const { chat, chatUser, messages } = context;
   const subscription = DataStore.observe(Message, (message) =>
     message.chatID("eq", chat?.id ?? "")
   ).subscribe((object) => {
+    if (!dataDownloaded) return;
+
     const message = object.element;
+    Alert.alert(message.messageBody ?? "");
     const isMe = message.chatuserID === chatUser?.id;
     if (object.opType === "INSERT" && !message.announcementBody) {
-      // if (!messageIncluded(messages, message)) {
-      //   insertHandler(message, context);
-      // }
+      if (!messageIncluded(messages, message, chatUser ?? undefined)) {
+        insertHandler(message, context);
+      }
     } else if (object.opType === "UPDATE") {
       updateHandler(message, context);
     }
@@ -107,19 +121,16 @@ export const chatIncluded = (chats: Chat[], specificChat: Chat) => {
 export const getContactSubscription = (
   chats: Chat[],
   setChats: React.Dispatch<React.SetStateAction<Chat[]>>,
-  user?: User
+  user?: User,
+  dataDownloaded?: boolean
 ) => {
   const subscription = DataStore.observe(ChatUser, (chatUser) =>
     chatUser.userID("eq", user?.id ?? "")
   ).subscribe((object) => {
+    if (!dataDownloaded) return;
+
     const chatUser = object.element;
     const chat = chatUser.chat;
-
-    // if (object.opType === "INSERT") {
-    //   if (!chatIncluded(chats, chat)) {
-    //     setChats(prependChat(chat, chats));
-    //   }
-    // }
 
     if (object.opType === "UPDATE") {
       const isOfActiveChat = chatUser.isOfActiveChat;

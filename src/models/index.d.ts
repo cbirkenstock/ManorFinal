@@ -28,6 +28,10 @@ type ReactionMetaData = {
   readOnlyFields: "createdAt" | "updatedAt";
 };
 
+type ReportMetaData = {
+  readOnlyFields: "createdAt" | "updatedAt";
+};
+
 export declare class Chat {
   readonly id: string;
   readonly title?: string | null;
@@ -57,6 +61,7 @@ export declare class Chat {
   readonly updatedAt?: string | null;
   readonly chatChatCreatorId?: string | null;
   readonly chatEventChatsId?: string | null;
+  readonly isDeactivated?: boolean | null;
   constructor(init: ModelInit<Chat, ChatMetaData>);
   static copyOf(
     source: Chat,
@@ -85,6 +90,21 @@ export declare class User {
       draft: MutableModel<User, UserMetaData>
     ) => MutableModel<User, UserMetaData> | void
   ): User;
+}
+
+export declare class Report {
+  readonly id: string;
+  readonly reportedUserID?: string | null;
+  readonly lastFiveMessages?: string | null;
+  readonly createdAt?: string | null;
+  readonly updatedAt?: string | null;
+  constructor(init: ModelInit<Report, ReportMetaData>);
+  static copyOf(
+    source: Report,
+    mutator: (
+      draft: MutableModel<Report, ReportMetaData>
+    ) => MutableModel<Report, ReportMetaData> | void
+  ): Report;
 }
 
 export declare class ChatUser {

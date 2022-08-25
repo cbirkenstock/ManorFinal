@@ -47,7 +47,7 @@ export default function SearchedContact(props: SearchContactProps) {
         {image ? (
           <SignedImage source={image} style={styles.contactImage} />
         ) : (
-          <DefaultContactImage members={members} />
+          <DefaultContactImage members={members} fontSize={14} />
         )}
       </View>
       <Text style={[styles.contactNameText, { marginTop: 5 }]}>

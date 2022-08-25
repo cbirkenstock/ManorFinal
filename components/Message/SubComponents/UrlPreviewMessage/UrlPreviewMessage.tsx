@@ -27,7 +27,6 @@ export default function UrlPreview(props: UrlPreviewProps) {
         cacheKey={message.urlPreviewImageUrl?.replaceAll("/", ".")}
         style={{
           height: 150,
-
           backgroundColor: "black",
           borderTopLeftRadius: 20,
           borderTopRightRadius: 20,

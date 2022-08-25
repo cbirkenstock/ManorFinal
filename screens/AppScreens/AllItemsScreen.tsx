@@ -179,7 +179,7 @@ export default function AllItemsScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "black",
+    backgroundColor: Colors.manorChatScreenBlack,
   },
   paddingContainer: {
     flex: 1,

@@ -6,13 +6,22 @@ import config from "./src/aws-exports.js";
 import { AuthProvider } from "./navigation/Providers/AuthProvider";
 import { Router } from "./navigation/Router";
 
-import { DataStore } from "aws-amplify";
+import { DataStore, syncExpression } from "aws-amplify";
 import { ExpoSQLiteAdapter } from "@aws-amplify/datastore-storage-adapter/ExpoSQLiteAdapter";
+import { ChatUser } from "./src/models/index.js";
 
 Amplify.configure(config);
 
+// DataStore.configure({
+//   storageAdapter: ExpoSQLiteAdapter,
+// });
+
 DataStore.configure({
-  storageAdapter: ExpoSQLiteAdapter,
+  syncExpressions: [
+    syncExpression(ChatUser, () => {
+      return (chatUser) => chatUser.userID("eq", "h");
+    }),
+  ],
 });
 
 // try {
@@ -39,13 +48,6 @@ DataStore.configure({
 // } catch (error) {}
 
 function App() {
-  // useEffect(() => {
-  //   Notifications.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK);
-  // }, []);
-  useEffect(() => {
-    DataStore.start();
-  }, []);
-
   return (
     <AuthProvider>
       <SafeAreaProvider>

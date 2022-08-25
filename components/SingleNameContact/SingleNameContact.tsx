@@ -24,7 +24,7 @@ export default function ChosenName(props: SingleNameContactProps) {
     firstPageNumber: amountImmediatelyVisible,
     spacing,
   } = props;
-  const firstName = user.name.split(" ")[0];
+  const firstName = user?.name?.split(" ")?.[0];
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
   /* -------------------------------------------------------------------------- */

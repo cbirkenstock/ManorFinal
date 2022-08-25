@@ -1,15 +1,16 @@
 import React from "react";
-import { Animated, StyleProp, View, ViewStyle } from "react-native";
+import { Animated, StyleProp, ViewStyle } from "react-native";
 import { styles } from "./styles";
-import { FontAwesome } from "@expo/vector-icons";
 import CacheImage from "../../../CustomPrimitives/CacheImage";
+import Avatar from "../../../Avatar";
+import { ChatUser } from "../../../../src/models";
 
 interface ContactImageProps {
-  profileImageUrl?: string | null;
+  sender?: ChatUser;
   style?: StyleProp<ViewStyle>;
 }
 export default function contactImage(props: ContactImageProps) {
-  const { profileImageUrl, style } = props;
+  const { sender, style } = props;
 
   /* -------------------------------------------------------------------------- */
   /*                                   Render                                   */
@@ -17,19 +18,14 @@ export default function contactImage(props: ContactImageProps) {
 
   return (
     <Animated.View style={[style]}>
-      {profileImageUrl ? (
+      {sender?.profileImageUrl ? (
         <CacheImage
           style={[styles.container, styles.contactImage]}
-          source={profileImageUrl}
-          cacheKey={profileImageUrl}
+          source={sender?.profileImageUrl}
+          cacheKey={sender?.profileImageUrl}
         />
       ) : (
-        <FontAwesome
-          name="user-circle"
-          size={30}
-          color={"grey"}
-          style={styles.container}
-        />
+        <Avatar chatUser={sender} dimensions={30} fontSize={14} />
       )}
     </Animated.View>
   );

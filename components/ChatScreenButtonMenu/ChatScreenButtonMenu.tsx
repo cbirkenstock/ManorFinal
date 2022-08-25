@@ -3,19 +3,21 @@ import { Animated, Keyboard, Pressable, View } from "react-native";
 import CacheImage from "../CustomPrimitives/CacheImage";
 import { chatFlatlistButtons } from "../../constants/chatFlatlistButtonData";
 import { styles } from "./styles";
-import { ChatUser } from "../../src/models";
+import { ChatUser, User } from "../../src/models";
 import { MemoizedDefaultContactImage } from "../DefaultContactImage/DefaultContactImage";
 import IconButton, { IconButtonProps } from "../IconButton/IconButton";
 import { animate } from "../../managers/AnimationManager";
 import useAppContext from "../../hooks/useAppContext";
+import Avatar from "../Avatar";
 
 interface ChatScreenButtonMenuProps {
+  displayUser?: User;
   contactImageUrl?: string;
   menuFunctions?: (() => any)[];
 }
 export default function ChatScreenButtonMenu(props: ChatScreenButtonMenuProps) {
   const { members } = useAppContext();
-  const { contactImageUrl, menuFunctions } = props;
+  const { displayUser, contactImageUrl, menuFunctions } = props;
   const chatFlatlistButtonsHeightAnim = useRef(new Animated.Value(0)).current;
 
   /* -------------------------------------------------------------------------- */
@@ -69,14 +71,23 @@ export default function ChatScreenButtonMenu(props: ChatScreenButtonMenuProps) {
         style={styles.ChatInfoButton}
         onPress={() => menuFunctions?.[0]()}
       >
-        {contactImageUrl ? (
+        {contactImageUrl &&
+        contactImageUrl !== "undefined" &&
+        contactImageUrl !== "null" ? (
           <CacheImage
             cacheKey={contactImageUrl}
             source={contactImageUrl}
             style={{ flex: 1 }}
           />
+        ) : displayUser ? (
+          <Avatar
+            user={displayUser}
+            dimensions={0}
+            fontSize={20}
+            style={{ height: "100%", width: "100%" }}
+          />
         ) : (
-          <MemoizedDefaultContactImage members={members} />
+          <MemoizedDefaultContactImage members={members} fontSize={10} />
         )}
       </Pressable>
       <Animated.FlatList
