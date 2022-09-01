@@ -377,6 +377,13 @@ export const schema = {
           isRequired: true,
           attributes: [],
         },
+        userID: {
+          name: "userID",
+          isArray: false,
+          type: "ID",
+          isRequired: false,
+          attributes: [],
+        },
         user: {
           name: "user",
           isArray: false,
@@ -390,10 +397,10 @@ export const schema = {
             targetName: "userID",
           },
         },
-        userID: {
-          name: "userID",
+        chatID: {
+          name: "chatID",
           isArray: false,
-          type: "String",
+          type: "ID",
           isRequired: false,
           attributes: [],
         },
@@ -409,13 +416,6 @@ export const schema = {
             connectionType: "BELONGS_TO",
             targetName: "chatID",
           },
-        },
-        chatID: {
-          name: "chatID",
-          isArray: false,
-          type: "String",
-          isRequired: false,
-          attributes: [],
         },
         isOfActiveChat: {
           name: "isOfActiveChat",
@@ -538,6 +538,14 @@ export const schema = {
         {
           type: "model",
           properties: {},
+        },
+        {
+          type: "key",
+          properties: {
+            name: "byUserID",
+            queryField: "byUserID",
+            fields: ["userID"],
+          },
         },
         {
           type: "key",
@@ -782,7 +790,7 @@ export const schema = {
         replyToMessageID: {
           name: "replyToMessageID",
           isArray: false,
-          type: "String",
+          type: "ID",
           isRequired: false,
           attributes: [],
         },
@@ -831,10 +839,9 @@ export const schema = {
         createdAt: {
           name: "createdAt",
           isArray: false,
-          type: "AWSDateTime",
-          isRequired: false,
+          type: "String",
+          isRequired: true,
           attributes: [],
-          isReadOnly: true,
         },
         updatedAt: {
           name: "updatedAt",
@@ -856,7 +863,8 @@ export const schema = {
           type: "key",
           properties: {
             name: "byChat",
-            fields: ["chatID"],
+            queryField: "byChat",
+            fields: ["chatID", "createdAt"],
           },
         },
         {
@@ -889,6 +897,13 @@ export const schema = {
           isRequired: true,
           attributes: [],
         },
+        chatUserID: {
+          name: "chatUserID",
+          isArray: false,
+          type: "ID",
+          isRequired: false,
+          attributes: [],
+        },
         chatUser: {
           name: "chatUser",
           isArray: false,
@@ -902,10 +917,10 @@ export const schema = {
             targetName: "chatUserID",
           },
         },
-        chatUserID: {
-          name: "chatUserID",
+        messageID: {
+          name: "messageID",
           isArray: false,
-          type: "String",
+          type: "ID",
           isRequired: false,
           attributes: [],
         },
@@ -921,13 +936,6 @@ export const schema = {
             connectionType: "BELONGS_TO",
             targetName: "messageID",
           },
-        },
-        messageID: {
-          name: "messageID",
-          isArray: false,
-          type: "String",
-          isRequired: false,
-          attributes: [],
         },
         remindDate: {
           name: "remindDate",
@@ -990,6 +998,13 @@ export const schema = {
           isRequired: true,
           attributes: [],
         },
+        chatUserID: {
+          name: "chatUserID",
+          isArray: false,
+          type: "ID",
+          isRequired: false,
+          attributes: [],
+        },
         chatUser: {
           name: "chatUser",
           isArray: false,
@@ -1003,10 +1018,10 @@ export const schema = {
             targetName: "chatUserID",
           },
         },
-        chatUserID: {
-          name: "chatUserID",
+        messageID: {
+          name: "messageID",
           isArray: false,
-          type: "String",
+          type: "ID",
           isRequired: false,
           attributes: [],
         },
@@ -1022,13 +1037,6 @@ export const schema = {
             connectionType: "BELONGS_TO",
             targetName: "messageID",
           },
-        },
-        messageID: {
-          name: "messageID",
-          isArray: false,
-          type: "String",
-          isRequired: false,
-          attributes: [],
         },
         reactionType: {
           name: "reactionType",
@@ -1129,7 +1137,6 @@ export const schema = {
           type: "model",
           properties: {},
         },
-
         {
           type: "auth",
           properties: {
@@ -1146,5 +1153,5 @@ export const schema = {
   },
   enums: {},
   nonModels: {},
-  version: "be7a9161c697cedd5cddbac9cd440a7d",
+  version: "f6c683fd4f6625123bf6184668e42e7c",
 };

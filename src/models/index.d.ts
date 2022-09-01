@@ -17,7 +17,7 @@ type ChatUserMetaData = {
 };
 
 type MessageMetaData = {
-  readOnlyFields: "createdAt" | "updatedAt";
+  readOnlyFields: "updatedAt";
 };
 
 type PendingAnnouncementMetaData = {
@@ -57,11 +57,11 @@ export declare class Chat {
   readonly parentChat1ID?: string | null;
   readonly parentChat2ID?: string | null;
   readonly editedEventID?: string | null;
+  readonly isDeactivated?: boolean | null;
   readonly createdAt?: string | null;
   readonly updatedAt?: string | null;
   readonly chatChatCreatorId?: string | null;
   readonly chatEventChatsId?: string | null;
-  readonly isDeactivated?: boolean | null;
   constructor(init: ModelInit<Chat, ChatMetaData>);
   static copyOf(
     source: Chat,
@@ -92,27 +92,12 @@ export declare class User {
   ): User;
 }
 
-export declare class Report {
-  readonly id: string;
-  readonly reportedUserID?: string | null;
-  readonly lastFiveMessages?: string | null;
-  readonly createdAt?: string | null;
-  readonly updatedAt?: string | null;
-  constructor(init: ModelInit<Report, ReportMetaData>);
-  static copyOf(
-    source: Report,
-    mutator: (
-      draft: MutableModel<Report, ReportMetaData>
-    ) => MutableModel<Report, ReportMetaData> | void
-  ): Report;
-}
-
 export declare class ChatUser {
   readonly id: string;
-  readonly user: User;
   readonly userID: string;
-  readonly chat: Chat;
+  readonly user: User;
   readonly chatID: string;
+  readonly chat: Chat;
   readonly isOfActiveChat: boolean;
   readonly notificationsEnabled: boolean;
   readonly nickname?: string | null;
@@ -165,15 +150,15 @@ export declare class Message {
   readonly isAccepted?: boolean | null;
   readonly dateSuggestion?: string | null;
   readonly remindDate?: string | null;
-  readonly createdAt?: string | null;
-  readonly updatedAt?: string | null;
   readonly replyToMessageID?: string | null;
   readonly replyToMessageSenderName?: string | null;
   readonly replyToMessageBody?: string | null;
   readonly replyToMessageImageUrl?: string | null;
-  readonly urlPreviewImageUrl?: string;
-  readonly urlPreviewTitle?: string;
-  readonly urlPreviewWebsiteUrl?: string;
+  readonly urlPreviewImageUrl?: string | null;
+  readonly urlPreviewTitle?: string | null;
+  readonly urlPreviewWebsiteUrl?: string | null;
+  readonly createdAt: string;
+  readonly updatedAt?: string | null;
   constructor(init: ModelInit<Message, MessageMetaData>);
   static copyOf(
     source: Message,
@@ -185,10 +170,10 @@ export declare class Message {
 
 export declare class PendingAnnouncement {
   readonly id: string;
-  readonly chatUser: ChatUser;
   readonly chatUserID: string;
-  readonly message: Message;
+  readonly chatUser: ChatUser;
   readonly messageID: string;
+  readonly message: Message;
   readonly remindDate?: string | null;
   readonly createdAt?: string | null;
   readonly updatedAt?: string | null;
@@ -205,10 +190,10 @@ export declare class PendingAnnouncement {
 
 export declare class Reaction {
   readonly id: string;
-  readonly chatUser: ChatUser;
   readonly chatUserID: string;
-  readonly message: Message;
+  readonly chatUser: ChatUser;
   readonly messageID: string;
+  readonly message: Message;
   readonly reactionType: string;
   readonly createdAt?: string | null;
   readonly updatedAt?: string | null;
@@ -219,4 +204,19 @@ export declare class Reaction {
       draft: MutableModel<Reaction, ReactionMetaData>
     ) => MutableModel<Reaction, ReactionMetaData> | void
   ): Reaction;
+}
+
+export declare class Report {
+  readonly id: string;
+  readonly reportedUserID?: string | null;
+  readonly lastFiveMessages?: string | null;
+  readonly createdAt?: string | null;
+  readonly updatedAt?: string | null;
+  constructor(init: ModelInit<Report, ReportMetaData>);
+  static copyOf(
+    source: Report,
+    mutator: (
+      draft: MutableModel<Report, ReportMetaData>
+    ) => MutableModel<Report, ReportMetaData> | void
+  ): Report;
 }

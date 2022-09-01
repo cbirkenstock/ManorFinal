@@ -26,9 +26,13 @@ type Chat @model @auth(rules: [{ allow: public }]) {
   isDeactivated: Boolean
 }
 
+type Subscription {
+  onUpdateChatByID(id: String!): Chat @aws_subscribe(mutations: ["updateChat"])
+}
+
 type ChatUser @model @auth(rules: [{ allow: public }]) {
   id: ID!
-  userID: ID!
+  userID: ID! @index(name: "byUserID", queryField: "byUserID")
   chatID: ID! @index(name: "customByChat")
   user: User! @belongsTo(fields: ["userID"])
   chat: Chat! @belongsTo(fields: ["chatID"])
@@ -100,7 +104,8 @@ type Message @model @auth(rules: [{ allow: public }]) {
   isAnnouncementMessage: Boolean
   announcementBody: String
   imageUrl: String
-  chatID: ID @index(name: "byChat")
+  chatID: ID
+    @index(name: "byChat", queryField: "byChat", sortKeyFields: ["createdAt"])
   chatuserID: ID @index(name: "byChatUser")
   unreachedMembers: [PendingAnnouncement] @hasMany(fields: ["id"])
   reactions: [Reaction] @hasMany(fields: ["id"])
@@ -120,4 +125,5 @@ type Message @model @auth(rules: [{ allow: public }]) {
   urlPreviewImageUrl: String
   urlPreviewTitle: String
   urlPreviewWebsiteUrl: String
+  createdAt: String!
 }

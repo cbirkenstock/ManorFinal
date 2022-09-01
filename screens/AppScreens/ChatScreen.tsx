@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   AppState,
-  AppStateStatus,
   FlatList,
   KeyboardAvoidingView,
   StatusBar,
@@ -9,7 +8,7 @@ import {
   View,
 } from "react-native";
 
-import { DataStore, Hub, SortDirection } from "aws-amplify";
+import { API, DataStore, graphqlOperation, SortDirection } from "aws-amplify";
 
 import useAppContext from "../../hooks/useAppContext";
 import {
@@ -32,7 +31,6 @@ import Announcement from "../../components/Announcement/Announcement";
 import { MemoizedFullMessageComponent } from "../../components/Message/FullMessageComponent/FullMessageComponent";
 import ChatScreenButtonMenu from "../../components/ChatScreenButtonMenu";
 import AnnouncementDialog from "../../components/Dialog/DialogInstances/AnnouncementDialog/AnnouncementDialog";
-import ReplyToMessageSection from "../../components/ReplyToMessageSection/ReplyToMessageSection";
 import AnnouncementSentNotification from "../../components/AnnouncementSentNotification";
 
 import Colors from "../../constants/Colors";
@@ -43,6 +41,7 @@ import ZoomImageView from "../../components/ZoomImageView";
 import { ImageSource } from "react-native-image-viewing/dist/@types";
 import AbsoluteBlurReactionView from "../../components/AbsoluteBlurReactionView";
 import AbsoluteBlurThreadFlatlist from "../../components/AbsoluteBlurThreadFlatlist";
+import * as queries from "../../src/graphql/queries";
 
 export default function ChatScreen({ navigation, route }: Props) {
   const context = useAppContext();
@@ -71,16 +70,34 @@ export default function ChatScreen({ navigation, route }: Props) {
       message: Message;
     }>();
   const [page, setPage] = useState<number>(0);
-  const [appState, setAppState] = useState<AppStateStatus>(
-    AppState.currentState
-  );
-  const [dataDownloaded, setDataDownloaded] = useState<boolean>(false);
+
+  const [mustResfreshMessages, setMustRefreshMessages] =
+    useState<boolean>(true);
 
   const hasMoreMessages = useRef<boolean>(true);
 
   const chatcontextUpdated = chat?.id === route.params?.chat.id;
   const chats = route.params.chats;
   const chatScreenSetChats = route.params.setChats;
+
+  useEffect(() => {
+    const refreshMessages = async () => {
+      if (!chatcontextUpdated || !mustResfreshMessages) return;
+
+      const refreshMessages = (
+        (await API.graphql(
+          graphqlOperation(queries.byChat, {
+            chatID: chat?.id,
+            limit: 30,
+          })
+        )) as any
+      ).data.byChat.items;
+
+      setMessages(refreshMessages);
+    };
+
+    refreshMessages();
+  }, [chat, mustResfreshMessages]);
 
   /* -------------------------------------------------------------------------- */
   /*                             Set Proper Context                             */
@@ -133,7 +150,6 @@ export default function ChatScreen({ navigation, route }: Props) {
   useEffect(() => {
     const fetchMessages = async () => {
       if (
-        dataDownloaded &&
         hasMoreMessages.current &&
         chatcontextUpdated &&
         (messages.length === 0 || page !== 0)
@@ -163,7 +179,7 @@ export default function ChatScreen({ navigation, route }: Props) {
     };
 
     fetchMessages();
-  }, [chat, page, messages, dataDownloaded]);
+  }, [chat, page, messages]);
 
   /* -------------------------------------------------------------------------- */
   /*                             Fetch Announcements                            */
@@ -204,34 +220,18 @@ export default function ChatScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (status) => {
-      setAppState(status);
+      if (status === "active") {
+        setMustRefreshMessages(true);
+      } else {
+        setMustRefreshMessages(false);
+      }
     });
+
     return () => {
       subscription.remove();
     };
   }, []);
 
-  /* --------------------------- Datastore Listener --------------------------- */
-  useEffect(() => {
-    if (appState !== "active") return;
-
-    let alreadySet = false;
-
-    setTimeout(() => {
-      if (!alreadySet) setDataDownloaded(true);
-    }, 2100);
-
-    const listener = Hub.listen("datastore", async (hubData) => {
-      const { data } = hubData.payload;
-
-      if (data?.model?.name === "Message") {
-        alreadySet = true;
-        setDataDownloaded(true);
-      }
-    });
-
-    return () => listener();
-  }, [appState]);
   /* -------------------------- Message Subscription -------------------------- */
 
   useEffect(() => {
@@ -239,10 +239,10 @@ export default function ChatScreen({ navigation, route }: Props) {
       context,
       appendMessage,
       updateMessageLocally,
-      dataDownloaded
+      mustResfreshMessages
     );
     return () => subscription.unsubscribe();
-  }, [messages, dataDownloaded]);
+  }, [messages, mustResfreshMessages]);
 
   /* -------------------- Pending Announcement Subscription ------------------- */
 
@@ -295,7 +295,10 @@ export default function ChatScreen({ navigation, route }: Props) {
         <StatusBar hidden={true} />
         <View style={{ flex: 1 }}>
           <FlatList
-            onEndReached={() => setPage(page + 1)}
+            onEndReached={() => {
+              console.log("hey");
+              // setPage(page + 1);
+            }}
             style={[styles.messageFlatlist]}
             inverted
             initialNumToRender={20}

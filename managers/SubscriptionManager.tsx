@@ -76,7 +76,6 @@ export const messageSubscription = (
     if (!dataDownloaded) return;
 
     const message = object.element;
-    Alert.alert(message.messageBody ?? "");
     const isMe = message.chatuserID === chatUser?.id;
     if (object.opType === "INSERT" && !message.announcementBody) {
       if (!messageIncluded(messages, message, chatUser ?? undefined)) {
@@ -115,20 +114,18 @@ export const pendingAnnouncementSubscription = (
 /*kinda a hack rn -- not sure why update getting called several times
 and also called after INSERT */
 export const chatIncluded = (chats: Chat[], specificChat: Chat) => {
-  return chats.map((chat) => chat.id).includes(specificChat.id);
+  return chats.filter((chat) => chat.id === specificChat.id)?.[0];
+  //return chats.map((chat) => chat.id).includes(specificChat.id);
 };
 
 export const getContactSubscription = (
   chats: Chat[],
   setChats: React.Dispatch<React.SetStateAction<Chat[]>>,
-  user?: User,
-  dataDownloaded?: boolean
+  user?: User
 ) => {
   const subscription = DataStore.observe(ChatUser, (chatUser) =>
     chatUser.userID("eq", user?.id ?? "")
   ).subscribe((object) => {
-    if (!dataDownloaded) return;
-
     const chatUser = object.element;
     const chat = chatUser.chat;
 

@@ -7,11 +7,9 @@ import {
   Pressable,
   Dimensions,
   AppState,
-  AppStateStatus,
 } from "react-native";
 
-import { DataStore, Hub } from "aws-amplify";
-import * as AWS from "aws-sdk";
+import { API, DataStore, graphqlOperation } from "aws-amplify";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Notifications from "expo-notifications";
 import { Ionicons, Octicons } from "@expo/vector-icons";
@@ -33,41 +31,40 @@ import { ContactScreenProps as Props } from "../../navigation/NavTypes";
 import { Chat, ChatUser } from "../../src/models";
 import { dropDown } from "../../constants/Dropdown";
 import { hasBezels } from "../../constants/hasBezels";
+import * as queries from "../../src/graphql/queries";
+import {
+  ZenObservable,
+  Observable,
+} from "../../node_modules/zen-observable-ts";
+import { prependChat, removeChat } from "../../managers/ChatManager";
+import useFetchCachedChats from "../../hooks/useFetchCachedChats";
+import { onCreateChat, onUpdateChat } from "../../src/graphql/subscriptions";
 
 export default function ContactScreen({ route, navigation }: Props) {
-  const ddb = new AWS.DynamoDB();
   const context = useAuthContext();
   const { user } = context;
 
   const [chats, setChats] = useState<Chat[]>([]);
 
-  const initialDownloadRef = useRef<boolean>(true);
-  const [dataDownloaded, setDataDownloaded] = useState<boolean>(false);
-  const [appState, setAppState] = useState<AppStateStatus>(
-    AppState.currentState
-  );
+  const hasRefreshedChatsRef = useRef<boolean>(false);
 
   const height = Dimensions.get("screen").height;
   const exitViewHeightAnim = useRef(new Animated.Value(0)).current;
   const exitViewOpacityAnim = useRef(new Animated.Value(0)).current;
 
+  let contactSubscription: ZenObservable.Subscription;
+
+  // const test = (specificChat: Chat) => {
+  //   // console.log("CHATS", chats);
+  //   let chatsList = removeChat(specificChat, chats);
+  //   chatsList = prependChat(specificChat, chatsList);
+  //   // console.log(chatsList.map((chat) => [chat.title, chat.lastMessage]));
+  //   setChats("CHATSLIST", chatsList);
+  // };
+
   /* -------------------------------------------------------------------------- */
   /*                                 Fetch Chats                                */
   /* -------------------------------------------------------------------------- */
-
-  const fetchData = (tableName: string) => {
-    var params = {
-      TableName: tableName,
-    };
-
-    ddb.scan(params, function (err, data) {
-      if (!err) {
-        console.log(data);
-      } else {
-        console.log(err);
-      }
-    });
-  };
 
   /* ------------------------------- Sort Chats ------------------------------- */
 
@@ -86,12 +83,46 @@ export default function ContactScreen({ route, navigation }: Props) {
     return 0;
   };
 
+  /* ------------------------------ Refresh Chats ----------------------------- */
+
+  let filter = {
+    isOfActiveChat: {
+      eq: true,
+    },
+  };
+
+  const refreshContacts = async () => {
+    const _chats = (
+      (await API.graphql(
+        graphqlOperation(queries.byUserID, {
+          userID: user?.id,
+          filter: filter,
+          limit: 1000,
+        })
+      )) as any
+    )?.data?.byUserID?.items
+      ?.filter(
+        (chatUser: ChatUser) =>
+          // @ts-ignore
+          !chatUser._deleted
+      )
+      ?.map((chatUser: ChatUser) => chatUser.chat)
+      ?.sort(sortChats);
+
+    hasRefreshedChatsRef.current = true;
+    if (_chats) {
+      setChats(_chats);
+    }
+  };
+
+  useEffect(() => {
+    refreshContacts();
+  }, []);
+
   /* ------------------------------- fetch Chats ------------------------------ */
 
   useEffect(() => {
     const fetchChats = async () => {
-      if (!dataDownloaded && !initialDownloadRef.current) return;
-
       const _chats = (
         await DataStore.query(ChatUser, (chatUser) =>
           chatUser.userID("eq", user?.id ?? "").isOfActiveChat("eq", true)
@@ -102,12 +133,11 @@ export default function ContactScreen({ route, navigation }: Props) {
         })
         .sort(sortChats);
 
-      setChats(_chats);
-      initialDownloadRef.current = false;
+      !hasRefreshedChatsRef.current && setChats(_chats);
     };
 
     fetchChats();
-  }, [dataDownloaded]);
+  }, []);
 
   /* -------------------------------------------------------------------------- */
   /*                             Notification Set Up                            */
@@ -150,51 +180,28 @@ export default function ContactScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (status) => {
-      if (status === "background") {
-        setDataDownloaded(false);
+      if (status === "active") {
+        refreshContacts();
+      } else {
+        contactSubscription?.unsubscribe();
+        hasRefreshedChatsRef.current = false;
       }
-      setAppState(status);
     });
+
     return () => {
       subscription.remove();
     };
   }, []);
 
-  /* ------------------------ Data Downloaded Listener ------------------------ */
-
-  useEffect(() => {
-    if (appState !== "active") return;
-
-    let alreadySet = false;
-    setTimeout(() => {
-      if (!alreadySet) setDataDownloaded(true);
-    }, 2100);
-
-    const listener = Hub.listen("datastore", async (hubData) => {
-      const { data } = hubData.payload;
-
-      if (data?.model?.name === "Chat") {
-        alreadySet = true;
-        setDataDownloaded(true);
-      }
-    });
-
-    return () => listener();
-  }, [appState]);
-
   /* ---------------------------- Contact Listener ---------------------------- */
 
   useEffect(() => {
-    const contactSubscription = getContactSubscription(
-      chats,
-      setChats,
-      user,
-      dataDownloaded
-    );
-    return () => {
-      contactSubscription.unsubscribe();
-    };
-  }, [chats, dataDownloaded]);
+    if (hasRefreshedChatsRef.current) {
+      contactSubscription = getContactSubscription(chats, setChats, user);
+    }
+
+    return () => contactSubscription?.unsubscribe();
+  }, [chats]);
 
   /* -------------------------------------------------------------------------- */
   /*                               Sub-Components                               */

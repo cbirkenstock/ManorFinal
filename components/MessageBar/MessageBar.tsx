@@ -40,14 +40,12 @@ import useAuthContext from "../../hooks/useAuthContext";
 import { reOrderChats } from "../../managers/ChatManager";
 import { ContainsUrl, extractWebInfo } from "../../managers/UrlPreviewManager";
 import { dayHasPassed } from "../../managers/DateTimeManager";
-import { DataStore } from "aws-amplify";
 
 interface MessageBarProps {
   chat?: Chat;
   chats: Chat[];
   setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
   messageToReplyTo?: Message;
-
   threadMessages?: Message[];
   setThreadMessages: React.Dispatch<
     React.SetStateAction<Message[] | undefined>
@@ -88,6 +86,7 @@ export default function MessageBar(props: MessageBarProps) {
       );
       return;
     }
+
     if (!messageBody) return;
 
     setMessageBody("");
@@ -129,9 +128,11 @@ export default function MessageBar(props: MessageBarProps) {
       appendMessage(newMessage, context);
     }
 
-    setChats(
-      reOrderChats(chat, chats, newMessage.messageBody ?? undefined) ?? []
-    );
+    const a = { ...chat!, lastMessage: newMessage.messageBody } as Chat;
+
+    // setChats(
+    //   reOrderChats(chat, chats, newMessage.messageBody ?? undefined) ?? []
+    // );
 
     uploadMessage(newMessage);
     sendNotification(user ?? undefined, chat, members, newMessage, false);
@@ -158,6 +159,7 @@ export default function MessageBar(props: MessageBarProps) {
 
       return;
     }
+
     requestCameraPermissionsAsync();
 
     const mediaData = await pickMedia(PickImageRequestEnum.sendChatImage);
@@ -200,66 +202,61 @@ export default function MessageBar(props: MessageBarProps) {
   /* -------------------------------------------------------------------------- */
 
   return (
-    <>
-      <View style={[styles.container, style]}>
-        <TouchableOpacity
-          style={[styles.TouchableOpacity, { marginBottom: 4 }]}
-          onPress={sendMediaMessage}
-        >
-          <FontAwesome5 name="camera-retro" size={25} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.TouchableOpacity,
-            { marginRight: 5, marginBottom: 2.5 },
-          ]}
-          onPress={() => setIsForwardingEvent(true)}
-        >
-          <FontAwesome5
-            name={chat?.isCoordinationChat ? "calendar-plus" : "calendar-alt"}
-            size={28}
-            color={chat?.isCoordinationChat ? Colors.manorPurple : "white"}
-            style={{ marginBottom: 2 }}
-          />
-        </TouchableOpacity>
-        <Dialog
-          visible={isForwardingEvent}
-          onClose={() => setIsForwardingEvent(false)}
-          marginTop={"15%"}
-          width={350}
-          title={chat?.isCoordinationChat ? "Suggest Event" : "Add Event"}
-          helperText={
-            chat?.isCoordinationChat
-              ? "The other group will be able to approve it"
-              : undefined
-          }
-        >
-          {chat?.isCoordinationChat ? (
-            <EventSuggestionForm onSubmit={() => setIsForwardingEvent(false)} />
-          ) : (
-            <EventCreationForm />
-          )}
-        </Dialog>
-        <TextInput
-          style={styles.messageBar}
-          keyboardAppearance="dark"
-          placeholder={"Chat..."}
-          placeholderTextColor="#E1D9D1"
-          onChangeText={(value) => {
-            setMessageBody(value);
-          }}
-          value={messageBody}
-          multiline={true}
+    <View style={[styles.container, style]}>
+      <TouchableOpacity
+        style={[styles.TouchableOpacity, { marginBottom: 4 }]}
+        onPress={sendMediaMessage}
+      >
+        <FontAwesome5 name="camera-retro" size={25} color="white" />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.TouchableOpacity, { marginRight: 5, marginBottom: 2.5 }]}
+        onPress={() => setIsForwardingEvent(true)}
+      >
+        <FontAwesome5
+          name={chat?.isCoordinationChat ? "calendar-plus" : "calendar-alt"}
+          size={28}
+          color={chat?.isCoordinationChat ? Colors.manorPurple : "white"}
+          style={{ marginBottom: 2 }}
         />
-        <TouchableOpacity
-          style={[styles.TouchableOpacity, { marginBottom: 3 }]}
-          onPress={() => {
-            sendTextMessage();
-          }}
-        >
-          <Send width={28} height={28} color="white" />
-        </TouchableOpacity>
-      </View>
-    </>
+      </TouchableOpacity>
+      <Dialog
+        visible={isForwardingEvent}
+        onClose={() => setIsForwardingEvent(false)}
+        marginTop={"15%"}
+        width={350}
+        title={chat?.isCoordinationChat ? "Suggest Event" : "Add Event"}
+        helperText={
+          chat?.isCoordinationChat
+            ? "The other group will be able to approve it"
+            : undefined
+        }
+      >
+        {chat?.isCoordinationChat ? (
+          <EventSuggestionForm onSubmit={() => setIsForwardingEvent(false)} />
+        ) : (
+          <EventCreationForm />
+        )}
+      </Dialog>
+      <TextInput
+        style={styles.messageBar}
+        keyboardAppearance="dark"
+        placeholder={"Chat..."}
+        placeholderTextColor="#E1D9D1"
+        onChangeText={(value) => {
+          setMessageBody(value);
+        }}
+        value={messageBody}
+        multiline={true}
+      />
+      <TouchableOpacity
+        style={[styles.TouchableOpacity, { marginBottom: 3 }]}
+        onPress={() => {
+          sendTextMessage();
+        }}
+      >
+        <Send width={28} height={28} color="white" />
+      </TouchableOpacity>
+    </View>
   );
 }

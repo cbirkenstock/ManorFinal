@@ -1,5 +1,12 @@
 import React, { useRef } from "react";
-import { View, Text, TouchableOpacity, Animated } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Animated,
+  AppState,
+  Alert,
+} from "react-native";
 import { useNavigation } from "@react-navigation/core";
 import { useState, useEffect } from "react";
 import { ChatUser, User } from "../../src/models";
@@ -14,11 +21,16 @@ import {
   prependChat,
   removeChat,
 } from "../../managers/ChatManager";
-import { chatIncluded } from "../../managers/SubscriptionManager";
 import { MemoizedDefaultContactImage } from "../DefaultContactImage/DefaultContactImage";
 import Avatar from "../Avatar";
 import { animate } from "../../managers/AnimationManager";
-import { DataStore, Hub } from "aws-amplify";
+import { API, DataStore, graphqlOperation, Hub } from "aws-amplify";
+import {
+  onUpdateChat,
+  onUpdateChatByID,
+} from "../../src/graphql/subscriptions";
+import { Observable } from "../../node_modules/zen-observable-ts";
+import { chatIncluded } from "../../managers/SubscriptionManager";
 
 interface ContactProps {
   chat: Chat;
@@ -37,29 +49,29 @@ export default function Contact(props: ContactProps) {
   const [contactChatUser, setContactChatUser] = useState<ChatUser>();
 
   const opacityAnim = useRef(new Animated.Value(0)).current;
-  const dataDownloadedRef = useRef<boolean>(false);
+  const appOpenedRef = useRef<boolean>(false);
   /* -------------------------------------------------------------------------- */
   /*                                Subscription                                */
   /* -------------------------------------------------------------------------- */
 
-  // if you choose to have it so it does slow load every time even if only five minutes
-  //you just have to add app state here and set dataDownloadRef.current to false
-  //on every app close
-  /* ----------------------------- Data Downloaded ---------------------------- */
-
   useEffect(() => {
     setTimeout(() => {
-      if (!dataDownloadedRef.current) dataDownloadedRef.current = true;
-    }, 2100);
+      appOpenedRef.current = true;
+    }, 2000);
 
-    const listener = Hub.listen("datastore", async (hubData) => {
-      const { event } = hubData.payload;
-      if (event === "ready") {
-        dataDownloadedRef.current = true;
+    const subscription = AppState.addEventListener("change", (status) => {
+      if (status === "active") {
+        setTimeout(() => {
+          appOpenedRef.current = true;
+        }, 2000);
+      } else {
+        appOpenedRef.current = false;
       }
     });
 
-    return () => listener();
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   /* --------------------------- ChatUser & Members --------------------------- */
@@ -72,8 +84,6 @@ export default function Contact(props: ContactProps) {
     const subscription = DataStore.observe(ChatUser, (chatUser) =>
       chatUser.chatID("eq", chat?.id)
     ).subscribe((msg) => {
-      if (!dataDownloadedRef.current) return;
-
       const chatUser = msg.element;
 
       if (msg.opType === "INSERT") {
@@ -92,25 +102,59 @@ export default function Contact(props: ContactProps) {
 
   /* ---------------------------------- Chat ---------------------------------- */
 
-  useEffect(() => {
-    const subscription = DataStore.observe(Chat, (_chat) =>
-      _chat.id("eq", chat.id)
-    ).subscribe((msg) => {
-      if (!dataDownloadedRef.current) return;
+  // useEffect(() => {
+  //   const subscription = DataStore.observe(Chat, (_chat) =>
+  //     _chat.id("eq", chat.id)
+  //   ).subscribe((msg) => {
+  //     if (!appOpenedRef.current) return;
 
-      const _chat = msg.element;
-      if (msg.opType === "UPDATE") {
-        if (chatIncluded(chats, _chat)) {
-          let chatsList = removeChat(_chat, chats);
-          chatsList = prependChat(_chat, chatsList);
-          setChats(chatsList);
-        }
-      }
+  //     const _chat = msg.element;
+  //     if (msg.opType === "UPDATE" && _chat.updatedAt && chats[0].updatedAt) {
+  //       const includedChat = chatIncluded(chats, _chat);
+  //       if (
+  //         includedChat &&
+  //         !areEqual(
+  //           { chat: _chat, chats, setChats },
+  //           { chat: includedChat, chats, setChats }
+  //         )
+  //       ) {
+  //         //console.log(_chat);
+  //         // onChatUpdate?.(_chat);
+  //         // let chatsList = removeChat(_chat, chats);
+  //         // chatsList = prependChat(_chat, chatsList);
+  //         // setChats(chatsList);
+  //       }
+  //     }
+  //   });
+
+  //   return () => subscription.unsubscribe();
+  // }, []);
+
+  const filter = {
+    chatID: {
+      eq: "4d4e4c0c-2ae2-45f5-8884-9600e23d970e",
+    },
+  };
+
+  useEffect(() => {
+    const observable = API.graphql({
+      query: onUpdateChatByID,
+      variables: { id: chat?.id },
+    }) as Observable<object>;
+    // const observable = API.graphql({query: onUpdateChat, variables: {id: "4d4e4c0c-2ae2-45f5-8884-9600e23d970e"}})}) as Observable<Chat>;
+
+    const subscription = observable.subscribe({
+      next: (chatMetaInfo) => {
+        let updatedChat = (chatMetaInfo as any).value.data.onUpdateChatByID;
+
+        let chatsList = removeChat(updatedChat, chats);
+        chatsList = prependChat(updatedChat, chatsList);
+        setChats(chatsList);
+      },
     });
 
     return () => subscription.unsubscribe();
   }, []);
-
   /* -------------------------------------------------------------------------- */
   /*                                  useEffect                                 */
   /* -------------------------------------------------------------------------- */
@@ -161,7 +205,7 @@ export default function Contact(props: ContactProps) {
   /* ------------------------------- Set Opacity ------------------------------ */
 
   useEffect(() => {
-    animate(opacityAnim, 1, 500);
+    animate(opacityAnim, 1, 300);
   }, []);
   /* -------------------------------------------------------------------------- */
   /*                                  On Press                                  */
@@ -195,7 +239,21 @@ export default function Contact(props: ContactProps) {
 
   const ContactIcon = () => {
     return (
-      <TouchableOpacity style={styles.container} onPress={openChat}>
+      <TouchableOpacity
+        style={styles.container}
+        onPress={() => {
+          openChat();
+          setTimeout(() => {
+            if (!contactChatUser) return;
+
+            setContactChatUser({
+              ...contactChatUser,
+              hasUnreadAnnouncement: false,
+              hasUnreadMessage: false,
+            } as ChatUser);
+          }, 300);
+        }}
+      >
         <Animated.View
           style={[
             styles.newMessageView,

@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { Chat, ChatUser } from "../../src/models";
+import React from "react";
+import { ChatUser } from "../../src/models";
 import { ImageStyle, StyleProp, View } from "react-native";
 import CacheImage from "../CustomPrimitives/CacheImage/CacheImage";
-import { DataStore } from "aws-amplify";
 import Avatar from "../Avatar";
 import Colors from "../../constants/Colors";
 
@@ -61,19 +60,16 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
       return (
         <View
           style={{
-            height: "95%",
-            width: "95%",
+            flex: 1,
+            padding: "5%",
             borderRadius: 100,
-            overflow: "hidden",
             alignItems: "center",
             justifyContent: "center",
-            marginLeft: 3,
-            marginTop: 3,
           }}
         >
           {CacheImageOrAvatar(members[0], {
-            height: "80%",
-            width: "80%",
+            height: "90%",
+            width: "90%",
             borderRadius: 100,
           })}
         </View>
@@ -82,40 +78,37 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
       return (
         <View
           style={{
-            height: "95%",
-            width: "95%",
+            flex: 1,
+            padding: "5%",
             borderRadius: 100,
-            overflow: "hidden",
-            padding: 5,
           }}
         >
           <View
             style={{
-              flex: 0.5,
-              alignItems: "center",
+              height: "50%",
+              justifyContent: "flex-end",
+              alignItems: "flex-end",
+              paddingHorizontal: "10%",
             }}
           >
             {CacheImageOrAvatar(members[0], {
-              height: "90%",
-              width: "45%",
+              width: "60%",
+              height: "95%",
               borderRadius: 100,
-              marginLeft: "30%",
-              marginTop: "5%",
             })}
           </View>
           <View
             style={{
-              flex: 0.5,
-              alignItems: "center",
-              justifyContent: "flex-end",
+              height: "50%",
+              justifyContent: "flex-start",
+              alignItems: "flex-start",
+              paddingHorizontal: "10%",
             }}
           >
             {CacheImageOrAvatar(members[1], {
-              height: "90%",
-              width: "45%",
+              width: "60%",
+              height: "95%",
               borderRadius: 100,
-              marginRight: "30%",
-              marginBottom: "5%",
             })}
           </View>
         </View>
@@ -124,11 +117,9 @@ export default function DefaultContactImage(props: DefaultContactImageProps) {
       return (
         <View
           style={{
-            height: "95%",
-            width: "95%",
+            flex: 1,
+            padding: "5%",
             borderRadius: 100,
-            overflow: "hidden",
-            padding: 5,
           }}
         >
           <View

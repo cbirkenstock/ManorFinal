@@ -9,13 +9,12 @@ import {
   ViewStyle,
 } from "react-native";
 import useAppContext from "../../../hooks/useAppContext";
-import { Message, Reaction } from "../../../src/models";
+import { Message } from "../../../src/models";
 import { styles } from "./styles";
 import ContactImage from "../SubComponents/ContactImage";
 import ContactNameLabel from "../SubComponents/ContactNameLabel";
 import MediaMessage from "../SubComponents/MediaMessage";
 import MessageBubble from "../SubComponents/MessageBubble";
-import { DataStore } from "aws-amplify";
 import Colors from "../../../constants/Colors";
 import IconCounter from "../SubComponents/IconCounter/IconCounter";
 import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
@@ -87,8 +86,6 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
   const sender = members.find((member) => member.id === message.chatuserID);
   const isFirstOfGroup = message.marginTop === 10;
 
-  const heightAnim = useRef(new Animated.Value(0)).current;
-
   const isLocal = message.imageUrl?.includes("file:///");
   const isImage = message.imageUrl?.split(".")[1] === "jpg";
 
@@ -96,8 +93,10 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
 
   const buttonPositionRef = useRef(null);
 
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
-    animate(heightAnim, 1, 300);
+    animate(opacityAnim, 1, 300);
   }, []);
 
   /* -------------------------------------------------------------------------- */
@@ -152,17 +151,21 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
 
   if (message.isEventMessage) {
     return (
-      <EventMessage
-        message={message}
-        style={{ marginTop: message.marginTop ?? 1 }}
-      />
+      <Animated.View style={{ opacity: opacityAnim }}>
+        <EventMessage
+          message={message}
+          style={{ marginTop: message.marginTop ?? 1 }}
+        />
+      </Animated.View>
     );
   } else if (message.eventDateTime) {
     return (
-      <EventSuggestionMessage
-        message={message}
-        style={{ marginTop: message.marginTop ?? 1 }}
-      />
+      <Animated.View style={{ opacity: opacityAnim }}>
+        <EventSuggestionMessage
+          message={message}
+          style={{ marginTop: message.marginTop ?? 1 }}
+        />
+      </Animated.View>
     );
   } else if (message.timeCardDateTime) {
     return (
@@ -174,170 +177,173 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
     );
   } else {
     return (
-      <Pressable
-        style={[{ marginTop: getMarginTop() }, style]}
-        onPress={() => onBackgroundPress?.()}
+      <Animated.View
+        style={[{ opacity: opacityAnim, marginTop: getMarginTop() }, style]}
       >
-        <TimeCard
-          date={message.createdAt ?? undefined}
-          isVisible={isTimeStampVisible}
-        />
-        <View
-          style={[
-            styles.container,
-            {
-              justifyContent: isMe ? "flex-end" : "flex-start",
-            },
-          ]}
-        >
-          {!isMe && (
-            <View style={styles.contactImageContainer}>
-              {isFirstOfGroup && (
-                <ContactImage sender={sender} style={{ marginTop: 7.5 }} />
-              )}
-            </View>
-          )}
-          <View style={{ maxWidth: "75%" }}>
-            {!isMe && isFirstOfGroup && (
-              <ContactNameLabel contactName={sender?.nickname} />
+        <Pressable onPress={() => onBackgroundPress?.()}>
+          <TimeCard
+            date={message.createdAt ?? undefined}
+            isVisible={isTimeStampVisible}
+          />
+          <View
+            style={[
+              styles.container,
+              {
+                justifyContent: isMe ? "flex-end" : "flex-start",
+              },
+            ]}
+          >
+            {!isMe && (
+              <View style={styles.contactImageContainer}>
+                {isFirstOfGroup && (
+                  <ContactImage sender={sender} style={{ marginTop: 7.5 }} />
+                )}
+              </View>
             )}
+            <View style={{ maxWidth: "75%" }}>
+              {!isMe && isFirstOfGroup && (
+                <ContactNameLabel contactName={sender?.nickname} />
+              )}
 
-            <View
-              style={[
-                {
-                  alignSelf: isMe ? "flex-end" : "flex-start",
-                },
-              ]}
-            >
-              <Pressable>
-                <MultiGestureButton
-                  onPress={multiGestureButtonPressed}
-                  onLongPress={() => setIsTimeStampVisible(!isTimeStampVisible)}
-                  style={(message.likes ?? 0) >= 10 && styles.popularMessage}
-                  onDoublePress={() => {
-                    if (buttonPositionRef.current) {
-                      //@ts-ignore
-                      buttonPositionRef.current.measure(
-                        (
-                          x: number,
-                          y: number,
-                          width: number,
-                          height: number,
-                          pageX: number,
-                          pageY: number
-                        ) => {
-                          const messageBottomYCoordinate = pageY + height;
-                          const flatListBottomYCoordinate =
-                            Dimensions.get("screen").height;
-
-                          const messageInfo = {
-                            yCoordinate:
-                              flatListBottomYCoordinate -
-                              messageBottomYCoordinate,
-                            message: message,
-                          };
-
-                          setReactionMessageAndYCoordinate?.(messageInfo);
-                        }
-                      );
+              <View
+                style={[
+                  {
+                    alignSelf: isMe ? "flex-end" : "flex-start",
+                  },
+                ]}
+              >
+                <Pressable>
+                  <MultiGestureButton
+                    onPress={multiGestureButtonPressed}
+                    onLongPress={() =>
+                      setIsTimeStampVisible(!isTimeStampVisible)
                     }
-                  }}
-                >
-                  <View ref={buttonPositionRef}>
-                    {message.replyToMessageID && !isPartOfThread && (
-                      <ResponseMessage message={message} isMe={isMe} />
-                    )}
-                    {message.urlPreviewTitle && (
-                      <UrlPreviewMessage
-                        message={message}
-                        isMe={isMe}
-                        containsMoreThanUrl={containsMoreThanUrl}
-                      />
-                    )}
-                    {message.messageBody &&
-                      (!message.urlPreviewTitle || containsMoreThanUrl) &&
-                      (!message.replyToMessageID || isPartOfThread) && (
-                        <MessageBubble
+                    style={(message.likes ?? 0) >= 10 && styles.popularMessage}
+                    onDoublePress={() => {
+                      if (buttonPositionRef.current) {
+                        //@ts-ignore
+                        buttonPositionRef.current.measure(
+                          (
+                            x: number,
+                            y: number,
+                            width: number,
+                            height: number,
+                            pageX: number,
+                            pageY: number
+                          ) => {
+                            const messageBottomYCoordinate = pageY + height;
+                            const flatListBottomYCoordinate =
+                              Dimensions.get("screen").height;
+
+                            const messageInfo = {
+                              yCoordinate:
+                                flatListBottomYCoordinate -
+                                messageBottomYCoordinate,
+                              message: message,
+                            };
+
+                            setReactionMessageAndYCoordinate?.(messageInfo);
+                          }
+                        );
+                      }
+                    }}
+                  >
+                    <View ref={buttonPositionRef}>
+                      {message.replyToMessageID && !isPartOfThread && (
+                        <ResponseMessage message={message} isMe={isMe} />
+                      )}
+                      {message.urlPreviewTitle && (
+                        <UrlPreviewMessage
                           message={message}
-                          isValidVenmoRequest={isValidVenmoRequest}
+                          isMe={isMe}
+                          containsMoreThanUrl={containsMoreThanUrl}
                         />
                       )}
-                    {message.imageUrl && <MediaMessage message={message} />}
-                  </View>
-                </MultiGestureButton>
-              </Pressable>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: isMe ? "flex-start" : "flex-end",
-                  marginLeft: isMe ? -10 : 0,
-                  marginRight: isMe ? 0 : -10,
-                }}
-              >
-                {message.likes ? (
-                  <Pressable
-                    onPress={() => {}}
-                    style={[
-                      styles.iconCounterContainer,
-                      {
-                        backgroundColor:
-                          (message?.likes ?? 0) >= 10
-                            ? Colors.manorGold
-                            : isMe
-                            ? Colors.manorPurple
-                            : Colors.manorBlueGray,
-                        // marginRight: messageDislikes ? 5 : 0,
-                      },
-                    ]}
-                  >
-                    <IconCounter
-                      count={message.likes}
-                      side={"left"}
-                      icon={
-                        <FontAwesome
-                          name="heart"
-                          size={20}
-                          color="white"
-                          style={{ marginTop: 3 }}
-                        />
-                      }
-                    />
-                  </Pressable>
-                ) : null}
-                {message.dislikes ? (
-                  <Pressable
-                    onPress={() => {}}
-                    style={[
-                      styles.iconCounterContainer,
-                      {
-                        backgroundColor:
-                          (message?.likes ?? 0) > 1
-                            ? Colors.manorGold
-                            : isMe
-                            ? Colors.manorPurple
-                            : Colors.manorBlueGray,
-                      },
-                    ]}
-                  >
-                    <IconCounter
-                      count={message.dislikes}
-                      side={"left"}
-                      icon={
-                        <FontAwesome5
-                          name="poop"
-                          size={20}
-                          color="white"
-                          style={{ marginTop: 3 }}
-                        />
-                      }
-                    />
-                  </Pressable>
-                ) : null}
+                      {message.messageBody &&
+                        (!message.urlPreviewTitle || containsMoreThanUrl) &&
+                        (!message.replyToMessageID || isPartOfThread) && (
+                          <MessageBubble
+                            message={message}
+                            isValidVenmoRequest={isValidVenmoRequest}
+                          />
+                        )}
+                      {message.imageUrl && <MediaMessage message={message} />}
+                    </View>
+                  </MultiGestureButton>
+                </Pressable>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: isMe ? "flex-start" : "flex-end",
+                    marginLeft: isMe ? -10 : 0,
+                    marginRight: isMe ? 0 : -10,
+                  }}
+                >
+                  {message.likes ? (
+                    <Pressable
+                      onPress={() => {}}
+                      style={[
+                        styles.iconCounterContainer,
+                        {
+                          backgroundColor:
+                            (message?.likes ?? 0) >= 10
+                              ? Colors.manorGold
+                              : isMe
+                              ? Colors.manorPurple
+                              : Colors.manorBlueGray,
+                          // marginRight: messageDislikes ? 5 : 0,
+                        },
+                      ]}
+                    >
+                      <IconCounter
+                        count={message.likes}
+                        side={"left"}
+                        icon={
+                          <FontAwesome
+                            name="heart"
+                            size={20}
+                            color="white"
+                            style={{ marginTop: 3 }}
+                          />
+                        }
+                      />
+                    </Pressable>
+                  ) : null}
+                  {message.dislikes ? (
+                    <Pressable
+                      onPress={() => {}}
+                      style={[
+                        styles.iconCounterContainer,
+                        {
+                          backgroundColor:
+                            (message?.likes ?? 0) > 1
+                              ? Colors.manorGold
+                              : isMe
+                              ? Colors.manorPurple
+                              : Colors.manorBlueGray,
+                        },
+                      ]}
+                    >
+                      <IconCounter
+                        count={message.dislikes}
+                        side={"left"}
+                        icon={
+                          <FontAwesome5
+                            name="poop"
+                            size={20}
+                            color="white"
+                            style={{ marginTop: 3 }}
+                          />
+                        }
+                      />
+                    </Pressable>
+                  ) : null}
+                </View>
               </View>
             </View>
           </View>
-        </View>
-      </Pressable>
+        </Pressable>
+      </Animated.View>
     );
   }
 }

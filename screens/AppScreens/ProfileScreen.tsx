@@ -120,8 +120,6 @@ export default function ProfileScreen() {
       <View style={styles.rowContainer}>
         <TouchableOpacity
           onPress={async () => {
-            const a = await Auth.currentAuthenticatedUser();
-            console.log(a);
             const results = await setProfileImage(user ?? undefined);
             results?.updatedUser && setUser(results.updatedUser);
             results &&

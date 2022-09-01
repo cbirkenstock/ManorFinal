@@ -16,13 +16,13 @@ Amplify.configure(config);
 //   storageAdapter: ExpoSQLiteAdapter,
 // });
 
-DataStore.configure({
-  syncExpressions: [
-    syncExpression(ChatUser, () => {
-      return (chatUser) => chatUser.userID("eq", "h");
-    }),
-  ],
-});
+// DataStore.configure({
+//   syncExpressions: [
+//     syncExpression(ChatUser, () => {
+//       return (chatUser) => chatUser.userID("eq", "h");
+//     }),
+//   ],
+// });
 
 // try {
 //   const BACKGROUND_NOTIFICATION_TASK = "BACKGROUND-NOTIFICATION-TASK";
