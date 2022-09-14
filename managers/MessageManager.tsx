@@ -293,7 +293,7 @@ export const updateLastMessage = async (
   newMessage: string,
   context: AppInitialStateProps
 ) => {
-  const { chat, setChat } = context;
+  const { chat, setChat, chatUser } = context;
 
   const upToDateChat = await DataStore.query(Chat, chat?.id ?? "");
 
@@ -301,6 +301,7 @@ export const updateLastMessage = async (
     DataStore.save(
       Chat.copyOf(upToDateChat, (updatedChat) => {
         updatedChat.lastMessage = newMessage;
+        updatedChat.lastMessageSenderID = chatUser?.id;
       })
     ).then(async (chat) => {
       setChat(chat);
@@ -309,15 +310,19 @@ export const updateLastMessage = async (
   }
 };
 
-export const updateEventMessageMembersCount = (
+export const updateEventMessageMembersCount = async (
   message: Message,
   newEventMembersCount: number
 ) => {
-  DataStore.save(
-    Message.copyOf(message, (updatedMessage) => {
-      updatedMessage.eventMembersCount = newEventMembersCount;
-    })
-  );
+  DataStore.query(Message, message.id).then((upToDateMessage) => {
+    if (upToDateMessage) {
+      DataStore.save(
+        Message.copyOf(upToDateMessage, (updatedMessage) => {
+          updatedMessage.eventMembersCount = newEventMembersCount;
+        })
+      );
+    }
+  });
 };
 
 export const updatedMessageEventStatus = async (

@@ -8,10 +8,51 @@ import {
 } from "./MediaManager";
 import { CustomImageData } from "../managers/MediaManager";
 
+export const prependChatUser = (
+  newChatUser: ChatUser,
+  chatUsers: ChatUser[]
+) => {
+  return [newChatUser, ...chatUsers];
+};
+
+export const removeChatUser = (
+  removedChatUser: ChatUser,
+  chatUsers: ChatUser[]
+) => {
+  return chatUsers.filter((chatUser) => chatUser.id !== removedChatUser.id);
+};
+
+export const ChatUserIncluded = (
+  specificChatUser: ChatUser,
+  chatUsers: ChatUser[]
+) => {
+  return chatUsers.filter(
+    (chatUser) => chatUser.id === specificChatUser.id
+  )?.[0];
+};
+
+export const sortChatUsers = (chatUser1: ChatUser, chatUser2: ChatUser) => {
+  const chat1 = chatUser1.chat;
+  const chat2 = chatUser2.chat;
+  if (chat1.updatedAt && chat2.updatedAt) {
+    const chat1Date = new Date(chat1.updatedAt);
+    const chat2Date = new Date(chat2.updatedAt);
+
+    if (chat1Date.getTime() > chat2Date.getTime()) {
+      return -1;
+    } else {
+      return 1;
+    }
+  }
+
+  return 0;
+};
+
 export const createChatUsers = async (
   users?: User[],
   chat?: Chat,
-  currentUser?: User
+  currentUser?: User,
+  isOfActiveChat?: boolean
 ) => {
   if (users && chat) {
     let newChatUsers = [];
@@ -26,7 +67,7 @@ export const createChatUsers = async (
         profileImageUrl: user?.profileImageUrl
           ? `${user?.profileImageUrl?.split(".")[0]}-reducedSizeVersion.jpg`
           : undefined,
-        isOfActiveChat: chat.isEventChat ? true : false,
+        isOfActiveChat: isOfActiveChat ? true : chat.isEventChat ? true : false,
         isAdmin: user.id === currentUser?.id ? true : false,
         notificationsEnabled: true,
         hasUnreadMessage: false,
@@ -62,9 +103,24 @@ export const updateChatUserOfActiveChatStatus = async (
   }
 };
 
+export const updateChatUserUpToDate = async (chatUser?: ChatUser) => {
+  if (chatUser) {
+    DataStore.query(ChatUser, chatUser?.id ?? "").then((upToDateChatUser) => {
+      console.log(upToDateChatUser?.id);
+      upToDateChatUser &&
+        DataStore.save(
+          ChatUser.copyOf(upToDateChatUser, (updatedChatUser) => {
+            updatedChatUser.hasUnreadMessage = false;
+            updatedChatUser.hasUnreadAnnouncement = false;
+            updatedChatUser.unreadMessagesCount = 0;
+          })
+        );
+    });
+  }
+};
+
 export const updateChatUserHasUnreadMessages = async (
   chatUsers: ChatUser[] | undefined,
-  hasUnreadMessages: boolean,
   currentChatUser?: ChatUser
 ) => {
   if (chatUsers) {
@@ -79,7 +135,9 @@ export const updateChatUserHasUnreadMessages = async (
       if (upToDateChatUser) {
         DataStore.save(
           ChatUser.copyOf(upToDateChatUser, (updatedChatUser) => {
-            updatedChatUser.hasUnreadMessage = hasUnreadMessages;
+            updatedChatUser.hasUnreadMessage = true;
+            updatedChatUser.unreadMessagesCount =
+              upToDateChatUser.unreadMessagesCount ?? 0 + 1;
           })
         );
       }
@@ -89,10 +147,12 @@ export const updateChatUserHasUnreadMessages = async (
 
 export const updateChatUserHasUnreadAnnouncements = async (
   chatUsers: ChatUser[] | undefined,
-  hasUnreadAnnouncements: boolean
+  currentChatUser?: ChatUser
 ) => {
   if (chatUsers) {
-    for (const member of chatUsers) {
+    for (const member of chatUsers.filter(
+      (chatUser) => chatUser.id !== currentChatUser?.id
+    )) {
       const upToDateChatUser = await DataStore.query(
         ChatUser,
         member?.id ?? ""
@@ -101,7 +161,7 @@ export const updateChatUserHasUnreadAnnouncements = async (
       if (upToDateChatUser) {
         DataStore.save(
           ChatUser.copyOf(upToDateChatUser, (updatedChatUser) => {
-            updatedChatUser.hasUnreadAnnouncement = hasUnreadAnnouncements;
+            updatedChatUser.hasUnreadAnnouncement = true;
           })
         );
       }

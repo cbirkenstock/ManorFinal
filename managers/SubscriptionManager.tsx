@@ -1,7 +1,5 @@
-import { DataStore } from "aws-amplify";
-import { Alert } from "react-native";
+import { API, DataStore, graphqlOperation } from "aws-amplify";
 import { AppInitialStateProps } from "../navigation/InitialStates/AppInitialState";
-import { AuthInitialStateProps } from "../navigation/InitialStates/AuthInitialState";
 import {
   Chat,
   ChatUser,
@@ -9,8 +7,9 @@ import {
   PendingAnnouncement,
   User,
 } from "../src/models";
-import { prependChat, removeChat } from "./ChatManager";
-import { sendNotification } from "./NotificationManager";
+import { Observable } from "../node_modules/zen-observable-ts";
+import * as subscriptions from "../src/graphql/subscriptions";
+import { Alert } from "react-native";
 
 /* -------------------------------------------------------------------------- */
 /*                               Function Types                               */
@@ -65,24 +64,21 @@ const messageIncluded = (
 
 export const messageSubscription = (
   context: AppInitialStateProps,
-  insertHandler: MessageSubscriptionHandler,
-  updateHandler: MessageSubscriptionHandler,
-  dataDownloaded: boolean
+  OnInsert: MessageSubscriptionHandler,
+  onUpdate: MessageSubscriptionHandler
 ) => {
   const { chat, chatUser, messages } = context;
   const subscription = DataStore.observe(Message, (message) =>
     message.chatID("eq", chat?.id ?? "")
   ).subscribe((object) => {
-    if (!dataDownloaded) return;
-
     const message = object.element;
     const isMe = message.chatuserID === chatUser?.id;
     if (object.opType === "INSERT" && !message.announcementBody) {
       if (!messageIncluded(messages, message, chatUser ?? undefined)) {
-        insertHandler(message, context);
+        OnInsert(message, context);
       }
     } else if (object.opType === "UPDATE") {
-      updateHandler(message, context);
+      onUpdate(message, context);
     }
   });
   return subscription;
@@ -111,6 +107,56 @@ export const pendingAnnouncementSubscription = (
 
 /* --------------------------------- Contact -------------------------------- */
 
+const hasUnreadMessages = (
+  updatedChat: Chat,
+  chatUser: ChatUser,
+  currentActiveChat?: Chat
+) => {
+  if (
+    updatedChat.lastMessageSenderID === chatUser?.id ||
+    currentActiveChat?.id === updatedChat.id
+  ) {
+    return false;
+  }
+
+  return true;
+};
+
+export const initializeUpdatedChatSubscription = (
+  chat: Chat,
+  onUpdate: (updatedChatUser: ChatUser) => void,
+  user?: User
+) => {
+  const observable = API.graphql(
+    graphqlOperation(subscriptions.onUpdateChatByID, {
+      id: chat.id,
+    })
+  ) as Observable<object>;
+
+  const subscription = observable.subscribe({
+    next: (chatMetaInfo) => {
+      const updatedChat: Chat = (chatMetaInfo as any).value.data
+        .onUpdateChatByID;
+
+      DataStore.query(ChatUser, (chatUser) =>
+        chatUser.userID("eq", user?.id ?? "").chatID("eq", updatedChat.id)
+      ).then((_chatUsers) => {
+        const chatUser = _chatUsers[0];
+
+        const updatedChatUser: ChatUser = {
+          ...chatUser,
+          hasUnreadMessage: hasUnreadMessages(updatedChat, chatUser),
+          chat: updatedChat,
+        };
+
+        onUpdate(updatedChatUser);
+      });
+    },
+    error: () => {},
+  });
+  return subscription;
+};
+
 /*kinda a hack rn -- not sure why update getting called several times
 and also called after INSERT */
 export const chatIncluded = (chats: Chat[], specificChat: Chat) => {
@@ -119,26 +165,20 @@ export const chatIncluded = (chats: Chat[], specificChat: Chat) => {
 };
 
 export const getContactSubscription = (
-  chats: Chat[],
-  setChats: React.Dispatch<React.SetStateAction<Chat[]>>,
+  onEvent: (chatUser: ChatUser) => void,
   user?: User
 ) => {
   const subscription = DataStore.observe(ChatUser, (chatUser) =>
     chatUser.userID("eq", user?.id ?? "")
   ).subscribe((object) => {
     const chatUser = object.element;
-    const chat = chatUser.chat;
 
     if (object.opType === "UPDATE") {
-      const isOfActiveChat = chatUser.isOfActiveChat;
+      onEvent(chatUser);
+    }
 
-      if (chatIncluded(chats, chat) && !isOfActiveChat) {
-        setChats(removeChat(chat, chats));
-      }
-
-      if (!chatIncluded(chats, chat) && isOfActiveChat) {
-        setChats(prependChat(chat, chats));
-      }
+    if (object.opType === "INSERT" && chatUser.isOfActiveChat) {
+      onEvent(chatUser);
     }
   });
 

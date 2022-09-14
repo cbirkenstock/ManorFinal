@@ -80,8 +80,8 @@ export default function ProfileScreen({ navigation, route }: Props) {
   const goToAddMembers = () => {
     navigation.navigate("UsersScreen", {
       chatType: ChatEnum.addMembers,
-      chats: route.params?.chats,
-      setChats: route.params.setChats,
+      // chats: route.params?.chats,
+      // setChats: route.params.setChats,
     });
   };
 
@@ -119,8 +119,8 @@ export default function ProfileScreen({ navigation, route }: Props) {
   const goToAddGroupEvent = () => {
     navigation.navigate("UsersScreen", {
       chatType: ChatEnum.coordination,
-      chats: route.params?.chats,
-      setChats: route.params?.setChats,
+      // chats: route.params?.chats,
+      // setChats: route.params?.setChats,
     });
   };
 
@@ -143,8 +143,8 @@ export default function ProfileScreen({ navigation, route }: Props) {
         chatUser: _chatUser,
         displayUser: member.user,
         members: undefined,
-        chats: route.params?.chats,
-        setChats: route.params.setChats,
+        // chats: route.params?.chats,
+        // setChats: route.params.setChats,
       });
     } else {
       const results = await createDMChat(user, member.user);
@@ -157,8 +157,8 @@ export default function ProfileScreen({ navigation, route }: Props) {
           chatUser: chatUser,
           displayUser: member.user,
           members: members,
-          chats: route.params?.chats,
-          setChats: route.params.setChats,
+          // chats: route.params?.chats,
+          // setChats: route.params.setChats,
         });
       }
     }
@@ -440,7 +440,6 @@ export default function ProfileScreen({ navigation, route }: Props) {
 
               await DataStore.delete(upToDateChatUser);
 
-              route.params.setChats(removeChat(chat, route.params.chats));
               navigation.navigate("ContactScreen");
             }
           },
@@ -639,6 +638,7 @@ export default function ProfileScreen({ navigation, route }: Props) {
           </View>
         </View>
         <SectionList
+          initialNumToRender={100}
           showsVerticalScrollIndicator={false}
           style={styles.sectionList}
           sections={data}

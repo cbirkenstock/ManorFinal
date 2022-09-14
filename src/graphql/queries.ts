@@ -17,6 +17,7 @@ export const getChat = /* GraphQL */ `
       eventLocation
       limit
       lastMessage
+      lastMessageSenderID
       chatCreator {
         id
         cognitoUserSub
@@ -117,6 +118,7 @@ export const getChat = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -176,6 +178,7 @@ export const listChats = /* GraphQL */ `
         eventLocation
         limit
         lastMessage
+        lastMessageSenderID
         chatCreator {
           id
           cognitoUserSub
@@ -251,6 +254,7 @@ export const syncChats = /* GraphQL */ `
         eventLocation
         limit
         lastMessage
+        lastMessageSenderID
         chatCreator {
           id
           cognitoUserSub
@@ -338,6 +342,7 @@ export const getChatUser = /* GraphQL */ `
         eventLocation
         limit
         lastMessage
+        lastMessageSenderID
         chatCreator {
           id
           cognitoUserSub
@@ -512,6 +517,7 @@ export const listChatUsers = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -605,6 +611,7 @@ export const syncChatUsers = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -700,6 +707,7 @@ export const byUserID = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -786,6 +794,7 @@ export const getPendingAnnouncement = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -1099,6 +1108,7 @@ export const getReaction = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -1750,6 +1760,7 @@ export const byChat = /* GraphQL */ `
   query ByChat(
     $chatID: ID!
     $createdAt: ModelStringKeyConditionInput
+    # $sortDirection: ModelSortDirection
     $filter: ModelMessageFilterInput
     $limit: Int
     $nextToken: String

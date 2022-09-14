@@ -78,7 +78,11 @@ export const extractDisplayUser = (chat: Chat, user?: User) => {
 
 /* ----------------------------- Create DM Chat ----------------------------- */
 
-export const createDMChat = async (user?: User, otherUser?: User) => {
+export const createDMChat = async (
+  user?: User,
+  otherUser?: User,
+  isOfActiveChat?: boolean
+) => {
   if (user && otherUser) {
     try {
       const { breadCrumb, displayUserName, displayUserProfileImageUrl } =
@@ -93,7 +97,12 @@ export const createDMChat = async (user?: User, otherUser?: User) => {
         isGroupChat: false,
       });
 
-      const chatUserMembers = await createChatUsers(members, newChat);
+      const chatUserMembers = await createChatUsers(
+        members,
+        newChat,
+        undefined,
+        isOfActiveChat
+      );
 
       if (chatUserMembers) {
         DataStore.save(newChat);

@@ -11,6 +11,7 @@ type Chat @model @auth(rules: [{ allow: public }]) {
   eventLocation: String
   limit: Int
   lastMessage: String
+  lastMessageSenderID: String
   chatCreator: User @hasOne
   Members: [ChatUser] @hasMany(indexName: "customByChat", fields: ["id"])
   Messages: [Message] @hasMany(indexName: "byChat", fields: ["id"])
@@ -28,6 +29,12 @@ type Chat @model @auth(rules: [{ allow: public }]) {
 
 type Subscription {
   onUpdateChatByID(id: String!): Chat @aws_subscribe(mutations: ["updateChat"])
+  onUpdateChatUserByUserID(userID: String!): ChatUser
+    @aws_subscribe(mutations: ["updateChatUser"])
+  onCreateChatUserByUserID(userId: String!): ChatUser
+    @aws_subscribe(mutations: ["createChatUser"])
+  onDeleteChatUserByUserID(userId: String!): ChatUser
+    @aws_subscribe(mutations: ["deleteChatUser"])
 }
 
 type ChatUser @model @auth(rules: [{ allow: public }]) {

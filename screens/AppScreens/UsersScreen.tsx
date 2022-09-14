@@ -129,8 +129,9 @@ export default function UsersScreen({ route, navigation }: Props) {
                     chat: results.chat,
                     chatUser: results.chatUser,
                     members: results.members,
-                    chats: route.params?.chats,
-                    setChats: route.params?.setChats,
+                    triggeredByNotification: false,
+                    // chats: route.params?.chats,
+                    // setChats: route.params?.setChats,
                   },
                 });
               }
@@ -154,8 +155,9 @@ export default function UsersScreen({ route, navigation }: Props) {
                   chat: chat,
                   chatUser: chatUser,
                   members: [...(newChatUsers ?? []), ...members],
-                  chats: route.params?.chats,
-                  setChats: route.params?.setChats,
+                  triggeredByNotification: false,
+                  // chats: route.params?.chats,
+                  // setChats: route.params?.setChats,
                 },
               });
             }}
@@ -191,8 +193,9 @@ export default function UsersScreen({ route, navigation }: Props) {
                       chat: results.chat,
                       chatUser: results.chatUser,
                       members: results.members,
-                      chats: route.params?.chats,
-                      setChats: route.params?.setChats,
+                      triggeredByNotification: false,
+                      // chats: route.params?.chats,
+                      // setChats: route.params?.setChats,
                     },
                   });
                 }
@@ -257,8 +260,9 @@ export default function UsersScreen({ route, navigation }: Props) {
         chatUser: _chatUser,
         members: undefined,
         displayUser: undefined,
-        chats: route.params?.chats,
-        setChats: route.params?.setChats,
+        triggeredByNotification: false,
+        // chats: route.params?.chats,
+        // setChats: route.params?.setChats,
       });
     } else {
       const results = await createCoordinationChat(
@@ -279,8 +283,9 @@ export default function UsersScreen({ route, navigation }: Props) {
             chatUser: _chatUser,
             members: newMembers,
             displayUser: undefined,
-            chats: route.params?.chats,
-            setChats: route.params?.setChats,
+            triggeredByNotification: false,
+            // chats: route.params?.chats,
+            // setChats: route.params?.setChats,
           });
         }
       }
@@ -307,8 +312,9 @@ export default function UsersScreen({ route, navigation }: Props) {
             chatUser: _chatUser,
             displayUser: otherUser,
             members: undefined,
-            chats: route.params?.chats,
-            setChats: route.params?.setChats,
+            triggeredByNotification: false,
+            // chats: route.params?.chats,
+            // setChats: route.params?.setChats,
           },
         });
       } else {
@@ -326,8 +332,9 @@ export default function UsersScreen({ route, navigation }: Props) {
               chatUser: chatUser,
               displayUser: otherUser,
               members: members,
-              chats: route.params?.chats,
-              setChats: route.params?.setChats,
+              triggeredByNotification: false,
+              // chats: route.params?.chats,
+              // setChats: route.params?.setChats,
             },
           });
         }

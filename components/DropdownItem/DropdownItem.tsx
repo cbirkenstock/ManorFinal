@@ -13,15 +13,14 @@ export interface DropdownItemProps {
     caption: string;
     type: string;
   };
-  chats: Chat[];
-  setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
+  // chats: Chat[];
+  // setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
   exitViewHeightAnim: Animated.Value;
   exitViewOpacityAnim: Animated.Value;
 }
 
 export default function DropdownItem(props: DropdownItemProps) {
-  const { tab, chats, setChats, exitViewHeightAnim, exitViewOpacityAnim } =
-    props;
+  const { tab, exitViewHeightAnim, exitViewOpacityAnim } = props;
   const navigation = useNavigation<InnerContactScreenNavigationProps>();
 
   const closeContactMenu = () => {
@@ -33,8 +32,8 @@ export default function DropdownItem(props: DropdownItemProps) {
     closeContactMenu();
     navigation.navigate("UsersScreen", {
       chatType: ChatEnum.direct,
-      chats: chats,
-      setChats: setChats,
+      // chats: chats,
+      // setChats: setChats,
     });
   };
 
@@ -42,8 +41,8 @@ export default function DropdownItem(props: DropdownItemProps) {
     closeContactMenu();
     navigation.navigate("UsersScreen", {
       chatType: ChatEnum.group,
-      chats: chats,
-      setChats: setChats,
+      // chats: chats,
+      // setChats: setChats,
     });
   };
 

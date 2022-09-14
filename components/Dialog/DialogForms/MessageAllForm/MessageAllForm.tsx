@@ -35,7 +35,7 @@ export default function MessageAllForm(props: MessageAllFormProps) {
         let DMChat = await checkForPreExistingDMChat(user, unreachedUser);
 
         if (!DMChat) {
-          const results = await createDMChat(user, unreachedUser);
+          const results = await createDMChat(user, unreachedUser, true);
 
           if (!results) {
             return;

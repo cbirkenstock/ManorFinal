@@ -45,6 +45,7 @@ export declare class Chat {
   readonly eventLocation?: string | null;
   readonly limit?: number | null;
   readonly lastMessage?: string | null;
+  readonly lastMessageSenderID?: string | null;
   readonly chatCreator?: User | null;
   readonly Members?: (ChatUser | null)[] | null;
   readonly Messages?: (Message | null)[] | null;

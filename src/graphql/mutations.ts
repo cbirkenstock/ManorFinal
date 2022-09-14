@@ -20,6 +20,7 @@ export const createChat = /* GraphQL */ `
       eventLocation
       limit
       lastMessage
+      lastMessageSenderID
       chatCreator {
         id
         cognitoUserSub
@@ -120,6 +121,7 @@ export const createChat = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -177,6 +179,7 @@ export const updateChat = /* GraphQL */ `
       eventLocation
       limit
       lastMessage
+      lastMessageSenderID
       chatCreator {
         id
         cognitoUserSub
@@ -277,6 +280,7 @@ export const updateChat = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -334,6 +338,7 @@ export const deleteChat = /* GraphQL */ `
       eventLocation
       limit
       lastMessage
+      lastMessageSenderID
       chatCreator {
         id
         cognitoUserSub
@@ -434,6 +439,7 @@ export const deleteChat = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -514,6 +520,7 @@ export const createChatUser = /* GraphQL */ `
         eventLocation
         limit
         lastMessage
+        lastMessageSenderID
         chatCreator {
           id
           cognitoUserSub
@@ -690,6 +697,7 @@ export const updateChatUser = /* GraphQL */ `
         eventLocation
         limit
         lastMessage
+        lastMessageSenderID
         chatCreator {
           id
           cognitoUserSub
@@ -866,6 +874,7 @@ export const deleteChatUser = /* GraphQL */ `
         eventLocation
         limit
         lastMessage
+        lastMessageSenderID
         chatCreator {
           id
           cognitoUserSub
@@ -1042,6 +1051,7 @@ export const createPendingAnnouncement = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -1184,6 +1194,7 @@ export const updatePendingAnnouncement = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -1326,6 +1337,7 @@ export const deletePendingAnnouncement = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -1468,6 +1480,7 @@ export const createReaction = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -1610,6 +1623,7 @@ export const updateReaction = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -1752,6 +1766,7 @@ export const deleteReaction = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat

@@ -37,19 +37,20 @@ export type InnerAppStackParamList = {
     chatUser: ChatUser;
     members: ChatUser[] | undefined;
     displayUser: User | undefined;
-    chats: Chat[];
-    setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
+    triggeredByNotification: boolean;
+    // chats: Chat[];
+    // setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
   };
   ChatInfoScreen: {
     displayUser: User | undefined;
-    eventMessages: Message[] | undefined;
-    chats: Chat[];
-    setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
+    //eventMessages: Message[] | undefined;
+    // chats: Chat[];
+    // setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
   };
   UsersScreen: {
     chatType: ChatEnum;
-    chats: Chat[];
-    setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
+    // chats: Chat[];
+    // setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
   };
   GoogleMapsScreen: {
     link: string | undefined;
@@ -94,24 +95,6 @@ export const AppStack = () => {
             component={UsersScreen}
             options={{
               headerShown: false,
-              // headerLeft: () => null,
-              // headerTitle: () => (
-              //   <Text
-              //     style={{
-              //       color: "white",
-              //       fontSize: 35,
-              //       fontWeight: "700",
-              //     }}
-              //   >
-              //     Create Group
-              //   </Text>
-              // ),
-              // headerBackTitleVisible: false,
-              // headerTintColor: Colors.manorPurple,
-              // headerStyle: {
-              //   backgroundColor: Colors.manorBackgroundGray,
-              // },
-              // headerShadowVisible: false,
               ...TransitionPresets.ModalTransition,
             }}
           />

@@ -169,18 +169,29 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
     );
   } else if (message.timeCardDateTime) {
     return (
-      <TimeCard
-        formattedDate={message.timeCardDateTime}
-        isVisible={true}
-        style={{ marginTop: 10 }}
-      />
+      <Animated.View style={{ opacity: opacityAnim }}>
+        <TimeCard
+          formattedDate={message.timeCardDateTime}
+          isVisible={true}
+          style={{ marginTop: 10 }}
+        />
+      </Animated.View>
     );
   } else {
     return (
       <Animated.View
-        style={[{ opacity: opacityAnim, marginTop: getMarginTop() }, style]}
+        style={[
+          {
+            opacity: opacityAnim,
+            marginTop: getMarginTop(),
+          },
+          style,
+        ]}
       >
-        <Pressable onPress={() => onBackgroundPress?.()}>
+        <Pressable
+          style={{ flex: 1, justifyContent: "flex-end" }}
+          onPress={() => onBackgroundPress?.()}
+        >
           <TimeCard
             date={message.createdAt ?? undefined}
             isVisible={isTimeStampVisible}
@@ -196,7 +207,7 @@ export default function FullMessageComponent(props: FullMessageComponentProps) {
             {!isMe && (
               <View style={styles.contactImageContainer}>
                 {isFirstOfGroup && (
-                  <ContactImage sender={sender} style={{ marginTop: 7.5 }} />
+                  <ContactImage sender={sender} style={{ marginTop: 2 }} />
                 )}
               </View>
             )}

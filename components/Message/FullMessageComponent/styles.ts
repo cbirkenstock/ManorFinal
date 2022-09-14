@@ -11,7 +11,7 @@ export const styles = StyleSheet.create({
     height: 30,
     width: 30,
     marginRight: 5,
-    marginTop: 14,
+
     alignSelf: "flex-start",
   },
 

@@ -17,6 +17,7 @@ export const onUpdateChatByID = /* GraphQL */ `
       eventLocation
       limit
       lastMessage
+      lastMessageSenderID
       chatCreator {
         id
         cognitoUserSub
@@ -117,6 +118,7 @@ export const onUpdateChatByID = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -156,6 +158,528 @@ export const onUpdateChatByID = /* GraphQL */ `
     }
   }
 `;
+export const onUpdateChatUserByUserID = /* GraphQL */ `
+  subscription OnUpdateChatUserByUserID($userID: String!) {
+    onUpdateChatUserByUserID(userID: $userID) {
+      id
+      userID
+      chatID
+      user {
+        id
+        cognitoUserSub
+        name
+        phoneNumber
+        profileImageUrl
+        venmoHandle
+        badgeCount
+        chats {
+          nextToken
+          startedAt
+        }
+        expoPushToken
+        createdAt
+        updatedAt
+        _version
+        _deleted
+        _lastChangedAt
+      }
+      chat {
+        id
+        title
+        chatImageUrl
+        breadCrumb
+        displayUserName
+        displayUserProfileImageUrl
+        displayUserVenmoHandle
+        eventDateTime
+        eventDescription
+        eventLocation
+        limit
+        lastMessage
+        lastMessageSenderID
+        chatCreator {
+          id
+          cognitoUserSub
+          name
+          phoneNumber
+          profileImageUrl
+          venmoHandle
+          badgeCount
+          expoPushToken
+          createdAt
+          updatedAt
+          _version
+          _deleted
+          _lastChangedAt
+        }
+        Members {
+          nextToken
+          startedAt
+        }
+        Messages {
+          nextToken
+          startedAt
+        }
+        eventChats {
+          nextToken
+          startedAt
+        }
+        isGroupChat
+        isCoreChat
+        isCoordinationChat
+        isEventChat
+        membersCount
+        parentChat1ID
+        parentChat2ID
+        editedEventID
+        isDeactivated
+        createdAt
+        updatedAt
+        _version
+        _deleted
+        _lastChangedAt
+        chatEventChatsId
+        chatChatCreatorId
+      }
+      isOfActiveChat
+      notificationsEnabled
+      nickname
+      hasUnreadMessage
+      hasUnreadAnnouncement
+      unreadMessagesCount
+      isAdmin
+      writtenMessages {
+        items {
+          id
+          marginTop
+          timeCardDateTime
+          isEventMessage
+          eventChatID
+          eventTitle
+          eventDateTime
+          eventDescription
+          eventLocation
+          eventCapacity
+          eventMembersCount
+          suggestionStatus
+          messageBody
+          isAnnouncementMessage
+          announcementBody
+          imageUrl
+          chatID
+          chatuserID
+          likes
+          dislikes
+          link
+          isMandatory
+          imageHeight
+          imageWidth
+          isAccepted
+          dateSuggestion
+          remindDate
+          replyToMessageID
+          replyToMessageSenderName
+          replyToMessageBody
+          replyToMessageImageUrl
+          urlPreviewImageUrl
+          urlPreviewTitle
+          urlPreviewWebsiteUrl
+          createdAt
+          updatedAt
+          _version
+          _deleted
+          _lastChangedAt
+        }
+        nextToken
+        startedAt
+      }
+      unreadAnnouncements {
+        items {
+          id
+          chatUserID
+          messageID
+          remindDate
+          createdAt
+          updatedAt
+          _version
+          _deleted
+          _lastChangedAt
+        }
+        nextToken
+        startedAt
+      }
+      reactions {
+        items {
+          id
+          chatUserID
+          messageID
+          reactionType
+          createdAt
+          updatedAt
+          _version
+          _deleted
+          _lastChangedAt
+        }
+        nextToken
+        startedAt
+      }
+      profileImageUrl
+      createdAt
+      updatedAt
+      _version
+      _deleted
+      _lastChangedAt
+    }
+  }
+`;
+export const onCreateChatUserByUserID = /* GraphQL */ `
+  subscription OnCreateChatUserByUserID($userId: String!) {
+    onCreateChatUserByUserID(userId: $userId) {
+      id
+      userID
+      chatID
+      user {
+        id
+        cognitoUserSub
+        name
+        phoneNumber
+        profileImageUrl
+        venmoHandle
+        badgeCount
+        chats {
+          nextToken
+          startedAt
+        }
+        expoPushToken
+        createdAt
+        updatedAt
+        _version
+        _deleted
+        _lastChangedAt
+      }
+      chat {
+        id
+        title
+        chatImageUrl
+        breadCrumb
+        displayUserName
+        displayUserProfileImageUrl
+        displayUserVenmoHandle
+        eventDateTime
+        eventDescription
+        eventLocation
+        limit
+        lastMessage
+        lastMessageSenderID
+        chatCreator {
+          id
+          cognitoUserSub
+          name
+          phoneNumber
+          profileImageUrl
+          venmoHandle
+          badgeCount
+          expoPushToken
+          createdAt
+          updatedAt
+          _version
+          _deleted
+          _lastChangedAt
+        }
+        Members {
+          nextToken
+          startedAt
+        }
+        Messages {
+          nextToken
+          startedAt
+        }
+        eventChats {
+          nextToken
+          startedAt
+        }
+        isGroupChat
+        isCoreChat
+        isCoordinationChat
+        isEventChat
+        membersCount
+        parentChat1ID
+        parentChat2ID
+        editedEventID
+        isDeactivated
+        createdAt
+        updatedAt
+        _version
+        _deleted
+        _lastChangedAt
+        chatEventChatsId
+        chatChatCreatorId
+      }
+      isOfActiveChat
+      notificationsEnabled
+      nickname
+      hasUnreadMessage
+      hasUnreadAnnouncement
+      unreadMessagesCount
+      isAdmin
+      writtenMessages {
+        items {
+          id
+          marginTop
+          timeCardDateTime
+          isEventMessage
+          eventChatID
+          eventTitle
+          eventDateTime
+          eventDescription
+          eventLocation
+          eventCapacity
+          eventMembersCount
+          suggestionStatus
+          messageBody
+          isAnnouncementMessage
+          announcementBody
+          imageUrl
+          chatID
+          chatuserID
+          likes
+          dislikes
+          link
+          isMandatory
+          imageHeight
+          imageWidth
+          isAccepted
+          dateSuggestion
+          remindDate
+          replyToMessageID
+          replyToMessageSenderName
+          replyToMessageBody
+          replyToMessageImageUrl
+          urlPreviewImageUrl
+          urlPreviewTitle
+          urlPreviewWebsiteUrl
+          createdAt
+          updatedAt
+          _version
+          _deleted
+          _lastChangedAt
+        }
+        nextToken
+        startedAt
+      }
+      unreadAnnouncements {
+        items {
+          id
+          chatUserID
+          messageID
+          remindDate
+          createdAt
+          updatedAt
+          _version
+          _deleted
+          _lastChangedAt
+        }
+        nextToken
+        startedAt
+      }
+      reactions {
+        items {
+          id
+          chatUserID
+          messageID
+          reactionType
+          createdAt
+          updatedAt
+          _version
+          _deleted
+          _lastChangedAt
+        }
+        nextToken
+        startedAt
+      }
+      profileImageUrl
+      createdAt
+      updatedAt
+      _version
+      _deleted
+      _lastChangedAt
+    }
+  }
+`;
+export const onDeleteChatUserByUserID = /* GraphQL */ `
+  subscription OnDeleteChatUserByUserID($userId: String!) {
+    onDeleteChatUserByUserID(userId: $userId) {
+      id
+      userID
+      chatID
+      user {
+        id
+        cognitoUserSub
+        name
+        phoneNumber
+        profileImageUrl
+        venmoHandle
+        badgeCount
+        chats {
+          nextToken
+          startedAt
+        }
+        expoPushToken
+        createdAt
+        updatedAt
+        _version
+        _deleted
+        _lastChangedAt
+      }
+      chat {
+        id
+        title
+        chatImageUrl
+        breadCrumb
+        displayUserName
+        displayUserProfileImageUrl
+        displayUserVenmoHandle
+        eventDateTime
+        eventDescription
+        eventLocation
+        limit
+        lastMessage
+        lastMessageSenderID
+        chatCreator {
+          id
+          cognitoUserSub
+          name
+          phoneNumber
+          profileImageUrl
+          venmoHandle
+          badgeCount
+          expoPushToken
+          createdAt
+          updatedAt
+          _version
+          _deleted
+          _lastChangedAt
+        }
+        Members {
+          nextToken
+          startedAt
+        }
+        Messages {
+          nextToken
+          startedAt
+        }
+        eventChats {
+          nextToken
+          startedAt
+        }
+        isGroupChat
+        isCoreChat
+        isCoordinationChat
+        isEventChat
+        membersCount
+        parentChat1ID
+        parentChat2ID
+        editedEventID
+        isDeactivated
+        createdAt
+        updatedAt
+        _version
+        _deleted
+        _lastChangedAt
+        chatEventChatsId
+        chatChatCreatorId
+      }
+      isOfActiveChat
+      notificationsEnabled
+      nickname
+      hasUnreadMessage
+      hasUnreadAnnouncement
+      unreadMessagesCount
+      isAdmin
+      writtenMessages {
+        items {
+          id
+          marginTop
+          timeCardDateTime
+          isEventMessage
+          eventChatID
+          eventTitle
+          eventDateTime
+          eventDescription
+          eventLocation
+          eventCapacity
+          eventMembersCount
+          suggestionStatus
+          messageBody
+          isAnnouncementMessage
+          announcementBody
+          imageUrl
+          chatID
+          chatuserID
+          likes
+          dislikes
+          link
+          isMandatory
+          imageHeight
+          imageWidth
+          isAccepted
+          dateSuggestion
+          remindDate
+          replyToMessageID
+          replyToMessageSenderName
+          replyToMessageBody
+          replyToMessageImageUrl
+          urlPreviewImageUrl
+          urlPreviewTitle
+          urlPreviewWebsiteUrl
+          createdAt
+          updatedAt
+          _version
+          _deleted
+          _lastChangedAt
+        }
+        nextToken
+        startedAt
+      }
+      unreadAnnouncements {
+        items {
+          id
+          chatUserID
+          messageID
+          remindDate
+          createdAt
+          updatedAt
+          _version
+          _deleted
+          _lastChangedAt
+        }
+        nextToken
+        startedAt
+      }
+      reactions {
+        items {
+          id
+          chatUserID
+          messageID
+          reactionType
+          createdAt
+          updatedAt
+          _version
+          _deleted
+          _lastChangedAt
+        }
+        nextToken
+        startedAt
+      }
+      profileImageUrl
+      createdAt
+      updatedAt
+      _version
+      _deleted
+      _lastChangedAt
+    }
+  }
+`;
 export const onCreateChat = /* GraphQL */ `
   subscription OnCreateChat {
     onCreateChat {
@@ -171,6 +695,7 @@ export const onCreateChat = /* GraphQL */ `
       eventLocation
       limit
       lastMessage
+      lastMessageSenderID
       chatCreator {
         id
         cognitoUserSub
@@ -271,6 +796,7 @@ export const onCreateChat = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -325,6 +851,7 @@ export const onUpdateChat = /* GraphQL */ `
       eventLocation
       limit
       lastMessage
+      lastMessageSenderID
       chatCreator {
         id
         cognitoUserSub
@@ -425,6 +952,7 @@ export const onUpdateChat = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -479,6 +1007,7 @@ export const onDeleteChat = /* GraphQL */ `
       eventLocation
       limit
       lastMessage
+      lastMessageSenderID
       chatCreator {
         id
         cognitoUserSub
@@ -579,6 +1108,7 @@ export const onDeleteChat = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -656,6 +1186,7 @@ export const onCreateChatUser = /* GraphQL */ `
         eventLocation
         limit
         lastMessage
+        lastMessageSenderID
         chatCreator {
           id
           cognitoUserSub
@@ -829,6 +1360,7 @@ export const onUpdateChatUser = /* GraphQL */ `
         eventLocation
         limit
         lastMessage
+        lastMessageSenderID
         chatCreator {
           id
           cognitoUserSub
@@ -1002,6 +1534,7 @@ export const onDeleteChatUser = /* GraphQL */ `
         eventLocation
         limit
         lastMessage
+        lastMessageSenderID
         chatCreator {
           id
           cognitoUserSub
@@ -1175,6 +1708,7 @@ export const onCreatePendingAnnouncement = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -1314,6 +1848,7 @@ export const onUpdatePendingAnnouncement = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -1453,6 +1988,7 @@ export const onDeletePendingAnnouncement = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -1592,6 +2128,7 @@ export const onCreateReaction = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -1731,6 +2268,7 @@ export const onUpdateReaction = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat
@@ -1870,6 +2408,7 @@ export const onDeleteReaction = /* GraphQL */ `
           eventLocation
           limit
           lastMessage
+          lastMessageSenderID
           isGroupChat
           isCoreChat
           isCoordinationChat

@@ -43,8 +43,6 @@ import { dayHasPassed } from "../../managers/DateTimeManager";
 
 interface MessageBarProps {
   chat?: Chat;
-  chats: Chat[];
-  setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
   messageToReplyTo?: Message;
   threadMessages?: Message[];
   setThreadMessages: React.Dispatch<
@@ -54,15 +52,8 @@ interface MessageBarProps {
 }
 
 export default function MessageBar(props: MessageBarProps) {
-  const {
-    chat,
-    chats,
-    setChats,
-    messageToReplyTo,
-    threadMessages,
-    setThreadMessages,
-    style,
-  } = props;
+  const { chat, messageToReplyTo, threadMessages, setThreadMessages, style } =
+    props;
   const context = useAppContext();
   const {
     chatUser,
@@ -128,18 +119,11 @@ export default function MessageBar(props: MessageBarProps) {
       appendMessage(newMessage, context);
     }
 
-    const a = { ...chat!, lastMessage: newMessage.messageBody } as Chat;
-
-    // setChats(
-    //   reOrderChats(chat, chats, newMessage.messageBody ?? undefined) ?? []
-    // );
-
-    uploadMessage(newMessage);
+    await uploadMessage(newMessage);
     sendNotification(user ?? undefined, chat, members, newMessage, false);
+    // messages.slice(-15),
     updateChatUserHasUnreadMessages(
-      members.filter((member) => member.id !== chatUser?.id),
-      true,
-      chatUser ?? undefined
+      members.filter((member) => member.id !== chatUser?.id)
     );
     updateLastMessage(newMessage.messageBody ?? "", context);
 
@@ -191,7 +175,7 @@ export default function MessageBar(props: MessageBarProps) {
       uploadMedia(mediaData.type, blob);
       uploadMessage(newDataMessage);
       sendNotification(user ?? undefined, chat, members, newDataMessage, false);
-      updateChatUserHasUnreadMessages(members, true, chatUser ?? undefined);
+      updateChatUserHasUnreadMessages(members);
 
       updateChatUserOfActiveChatStatus(members, true);
     }

@@ -16,7 +16,10 @@ import { Ionicons, Octicons } from "@expo/vector-icons";
 
 import useAuthContext from "../../hooks/useAuthContext";
 import { animate, animateTwoSequence } from "../../managers/AnimationManager";
-import { getContactSubscription } from "../../managers/SubscriptionManager";
+import {
+  initializeUpdatedChatSubscription,
+  getContactSubscription,
+} from "../../managers/SubscriptionManager";
 import {
   fetchNotificationChat,
   setUpNotifications,
@@ -24,119 +27,336 @@ import {
 
 import Header from "../../components/Header";
 import DropdownItem, { DropdownItemProps } from "../../components/DropdownItem";
-import Contact, { MemoizedContact } from "../../components/Contact/Contact";
+import { MemoizedContact } from "../../components/Contact/Contact";
 
 import Colors from "../../constants/Colors";
 import { ContactScreenProps as Props } from "../../navigation/NavTypes";
-import { Chat, ChatUser } from "../../src/models";
+import { ChatUser, User } from "../../src/models";
 import { dropDown } from "../../constants/Dropdown";
 import { hasBezels } from "../../constants/hasBezels";
 import * as queries from "../../src/graphql/queries";
+import * as subscriptions from "../../src/graphql/subscriptions";
+import * as mutations from "../../src/graphql/mutations";
+import { ZenObservable } from "../../node_modules/zen-observable-ts";
+
 import {
-  ZenObservable,
-  Observable,
-} from "../../node_modules/zen-observable-ts";
-import { prependChat, removeChat } from "../../managers/ChatManager";
-import useFetchCachedChats from "../../hooks/useFetchCachedChats";
-import { onCreateChat, onUpdateChat } from "../../src/graphql/subscriptions";
+  ChatUserIncluded,
+  prependChatUser,
+  removeChatUser,
+  sortChatUsers,
+} from "../../managers/ChatUserManager";
+import useAppSyncSetUp from "../../hooks/useAppSyncSetUp";
+import { buildSync } from "aws-appsync";
+
+import { a as b } from "../../test";
+import gql from "graphql-tag";
+import useDataClean from "../../hooks/useDataClean";
+
+import { Observable } from "../../node_modules/zen-observable-ts";
 
 export default function ContactScreen({ route, navigation }: Props) {
   const context = useAuthContext();
   const { user } = context;
 
-  const [chats, setChats] = useState<Chat[]>([]);
+  const [chatUsers, setChatUsers] = useState<ChatUser[]>([]);
 
-  const hasRefreshedChatsRef = useRef<boolean>(false);
+  const hasRefreshedChatUsersRef = useRef<boolean>(false);
 
   const height = Dimensions.get("screen").height;
   const exitViewHeightAnim = useRef(new Animated.Value(0)).current;
   const exitViewOpacityAnim = useRef(new Animated.Value(0)).current;
 
   let contactSubscription: ZenObservable.Subscription;
+  let subscriptionsArrayRef = useRef<ZenObservable.Subscription[]>([]);
 
-  // const test = (specificChat: Chat) => {
-  //   // console.log("CHATS", chats);
-  //   let chatsList = removeChat(specificChat, chats);
-  //   chatsList = prependChat(specificChat, chatsList);
-  //   // console.log(chatsList.map((chat) => [chat.title, chat.lastMessage]));
-  //   setChats("CHATSLIST", chatsList);
-  // };
+  /*
+  This Screen keeps it pretty simple, think of leading chats as a sequence of 3
+
+  1. get up the cached chats -- these chats are likely outdated but then there is 
+  no lag time where the user sees a blank screen 
+
+  2. Refresh the chats -- here we actuall make a call to database to get most up
+  to date chats 
+
+  3. Initialize subscriptions -- we only want subscriptions after everything has
+  been updated, otherwaize we could get several refreshes all at once if there are 
+  changes before the refresh completes -- this look annoying 
+  */
 
   /* -------------------------------------------------------------------------- */
-  /*                                 Fetch Chats                                */
+  /*                                Set ChatUsers                               */
   /* -------------------------------------------------------------------------- */
 
-  /* ------------------------------- Sort Chats ------------------------------- */
-
-  const sortChats = (chat1: Chat, chat2: Chat) => {
-    if (chat1.updatedAt && chat2.updatedAt) {
-      const chat1Date = new Date(chat1.updatedAt);
-      const chat2Date = new Date(chat2.updatedAt);
-
-      if (chat1Date.getTime() > chat2Date.getTime()) {
-        return -1;
-      } else {
-        return 1;
-      }
-    }
-
-    return 0;
-  };
-
-  /* ------------------------------ Refresh Chats ----------------------------- */
-
-  let filter = {
-    isOfActiveChat: {
-      eq: true,
-    },
-  };
-
-  const refreshContacts = async () => {
-    const _chats = (
-      (await API.graphql(
-        graphqlOperation(queries.byUserID, {
-          userID: user?.id,
-          filter: filter,
-          limit: 1000,
-        })
-      )) as any
-    )?.data?.byUserID?.items
-      ?.filter(
-        (chatUser: ChatUser) =>
-          // @ts-ignore
-          !chatUser._deleted
-      )
-      ?.map((chatUser: ChatUser) => chatUser.chat)
-      ?.sort(sortChats);
-
-    hasRefreshedChatsRef.current = true;
-    if (_chats) {
-      setChats(_chats);
-    }
-  };
+  /* -------------------------- Get Cached ChatUsers -------------------------- */
 
   useEffect(() => {
-    refreshContacts();
-  }, []);
-
-  /* ------------------------------- fetch Chats ------------------------------ */
-
-  useEffect(() => {
-    const fetchChats = async () => {
-      const _chats = (
+    const getCachedChatUsers = async () => {
+      const _chatUsers = (
         await DataStore.query(ChatUser, (chatUser) =>
           chatUser.userID("eq", user?.id ?? "").isOfActiveChat("eq", true)
         )
-      )
-        .map((chatUser) => {
-          return chatUser.chat;
-        })
-        .sort(sortChats);
-
-      !hasRefreshedChatsRef.current && setChats(_chats);
+      ).sort(sortChatUsers);
+      //if refresh hasn't beaten cache, then do set chats
+      !hasRefreshedChatUsersRef.current && setChatUsers(_chatUsers);
     };
 
-    fetchChats();
+    getCachedChatUsers();
+  }, []);
+
+  /* ---------------------------- Refresh ChatUsers --------------------------- */
+
+  const refreshChatUsers = async () => {
+    try {
+      const _chatUsers = (
+        (await API.graphql(
+          graphqlOperation(queries.byUserID, {
+            userID: user?.id,
+            filter: { isOfActiveChat: { eq: true } },
+            limit: 1000,
+          })
+        )) as any
+      )?.data?.byUserID?.items
+        ?.filter(
+          (chatUser: ChatUser) =>
+            // @ts-ignore
+            !chatUser._deleted
+        )
+        ?.sort(sortChatUsers);
+
+      hasRefreshedChatUsersRef.current = true;
+
+      if (_chatUsers) {
+        setChatUsers(_chatUsers as ChatUser[]);
+      }
+    } catch (error) {
+      console.log(JSON.stringify(error));
+    }
+  };
+
+  useEffect(() => {
+    refreshChatUsers();
+  }, []);
+
+  /* -------------------------------------------------------------------------- */
+  /*                                Subscriptions                               */
+  /* -------------------------------------------------------------------------- */
+
+  /* ---------------------------- ChatUser Listener --------------------------- */
+
+  // const initializeChatUserDeletedSubscription = (
+  //   removeChatUser: (updatedChatUser: ChatUser) => void,
+  //   user?: User
+  // ) => {
+  //   const observable = API.graphql(
+  //     graphqlOperation(subscriptions.onDeleteChatUserByUserID, {
+  //       userID: user?.id,
+  //     })
+  //   ) as Observable<object>;
+
+  //   const subscription = observable.subscribe({
+  //     next: (chatUserMetaInfo) => {
+  //       const createdChatUser: ChatUser = (chatUserMetaInfo as any).value.data
+  //         .onUpdateChatUserByUserID;
+
+  //       removeChatUser(createdChatUser);
+  //     },
+
+  //     error: () => {},
+  //   });
+
+  //   return subscription;
+  // };
+
+  // const initializeChatUserCreatedSubscription = (
+  //   prependChatUser: (updatedChatUser: ChatUser) => void,
+  //   user?: User
+  // ) => {
+  //   const observable = API.graphql(
+  //     graphqlOperation(subscriptions.onCreateChatUserByUserID, {
+  //       userID: user?.id,
+  //     })
+  //   ) as Observable<object>;
+
+  //   const subscription = observable.subscribe({
+  //     next: (chatUserMetaInfo) => {
+  //       const createdChatUser: ChatUser = (chatUserMetaInfo as any).value.data
+  //         .onUpdateChatUserByUserID;
+
+  //       prependChatUser(createdChatUser);
+  //     },
+
+  //     error: () => {},
+  //   });
+
+  //   return subscription;
+  // };
+
+  useEffect(() => {
+    setTimeout(() => {
+      console.log("yeah");
+      const chatUserDetails = {
+        id: "0970d87e-db07-4678-b324-3f05847ba297",
+        unreadMessagesCount: 0,
+      };
+
+      API.graphql({
+        query: mutations.updateChatUser,
+        variables: { input: chatUserDetails },
+      });
+    }, 500);
+  }, []);
+
+  const initializeChatUserUpdatedSubscription = (
+    a?: (updatedChatUser: ChatUser) => void,
+    updateChatUser?: (updatedChatUser: ChatUser) => void,
+    user?: User
+  ) => {
+    const observable = API.graphql(
+      graphqlOperation(subscriptions.onUpdateChatUserByUserID, {
+        userID: user?.id,
+      })
+    ) as Observable<object>;
+
+    const subscription = observable.subscribe({
+      next: (chatUserMetaInfo) => {
+        const updatedChatUser: ChatUser = (chatUserMetaInfo as any).value.data
+          .onUpdateChatUserByUserID;
+
+        const currentChatUser = chatUsers.filter(
+          (chatUser) => chatUser.id === updatedChatUser.id
+        )[0];
+
+        const unreadMessagesIncremented =
+          (updatedChatUser.unreadMessagesCount ?? 0) >
+          (currentChatUser.unreadMessagesCount ?? 0);
+
+        if (!updatedChatUser.isOfActiveChat) {
+          removeChatUser(updatedChatUser, chatUsers);
+        } else if (unreadMessagesIncremented) {
+          reOrderChatUser(updatedChatUser);
+        }
+
+        //change in active chat -- remove user
+        //updated unread message -- move user
+        //change to other information for chatUser -- update user
+      },
+      error: () => {},
+    });
+    return subscription;
+  };
+
+  /* ------------------------ Chat Updated Subscription ----------------------- */
+
+  /*
+  This subscription listens to last message changing so that whenber someone texts
+  the message is moved to the top and has unread messages is update
+  */
+
+  // const initializeUpdatedChatSubscriptions = async () => {
+  //   const chats = chatUsers.map((chatUser) => chatUser?.chat);
+
+  //   for (const chat of chats) {
+  //     const subscription = initializeUpdatedChatSubscription(
+  //       chat,
+  //       reOrderChatUser,
+  //       user
+  //     );
+
+  //     if (subscription) {
+  //       subscriptionsArrayRef.current = [
+  //         ...subscriptionsArrayRef.current,
+  //         subscription,
+  //       ];
+  //     }
+  //   }
+  // };
+
+  const reOrderChatUser = (updatedChatUser: ChatUser) => {
+    let chatUsersList = removeChatUser(updatedChatUser, chatUsers);
+    chatUsersList = prependChatUser(updatedChatUser, chatUsersList);
+    setChatUsers(chatUsersList);
+  };
+
+  const updateChatUserInPlace = (updatedChatUser: ChatUser) => {
+    const updatedChatUsersList = chatUsers.map((chatUser) => {
+      if (chatUser.id === updatedChatUser.id) {
+        return updatedChatUser;
+      } else {
+        return chatUser;
+      }
+    });
+
+    setChatUsers(updatedChatUsersList);
+  };
+
+  /* --------------------------- Chat Added/Deleted --------------------------- */
+
+  /*
+  This subscription follows adding and removing chats that are not currently
+  on the contact screen. This includes an old chat becoming active again, 
+  a chat being created, and a user leaving a chat.
+  */
+  const initializeAddRemoveSubscription = () => {
+    const addRemoveSubscription = getContactSubscription(
+      addRemoveChatUser,
+      user
+    );
+
+    return addRemoveSubscription;
+  };
+
+  const addRemoveChatUser = (specificChatUser: ChatUser) => {
+    const chatIncluded = !!ChatUserIncluded(specificChatUser, chatUsers);
+    const isOfActiveChat = specificChatUser.isOfActiveChat;
+
+    if (chatIncluded && !isOfActiveChat) {
+      const updatedChatUsers = removeChatUser(specificChatUser, chatUsers);
+      setChatUsers(updatedChatUsers);
+    } else if (!chatIncluded && isOfActiveChat) {
+      const updatedChatUsers = prependChatUser(specificChatUser, chatUsers);
+      setChatUsers(updatedChatUsers);
+    }
+  };
+
+  /* ----------------------- Chat Subscription UseEffect ---------------------- */
+
+  const unsubscribeAll = () => {
+    contactSubscription?.unsubscribe();
+
+    for (const subscription of subscriptionsArrayRef.current) {
+      subscription.unsubscribe();
+    }
+
+    subscriptionsArrayRef.current = [];
+  };
+
+  useEffect(() => {
+    initializeChatUserUpdatedSubscription(undefined, undefined, user);
+  }, []);
+
+  // useEffect(() => {
+  //   initializeUpdatedChatSubscriptions();
+
+  //   contactSubscription = initializeAddRemoveSubscription();
+
+  //   return () => unsubscribeAll();
+  // }, [chatUsers]);
+
+  /* ------------------------------ App Listener ------------------------------ */
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (status) => {
+      if (status === "active") {
+        refreshChatUsers();
+      } else if (status === "background") {
+        unsubscribeAll();
+        hasRefreshedChatUsersRef.current = false;
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   /* -------------------------------------------------------------------------- */
@@ -159,8 +379,7 @@ export default function ContactScreen({ route, navigation }: Props) {
           chatUser: results.chatUser,
           members: results.members,
           displayUser: results.displayUser,
-          chats: chats,
-          setChats: setChats,
+          triggeredByNotification: true,
         },
       });
     }
@@ -171,37 +390,6 @@ export default function ContactScreen({ route, navigation }: Props) {
   useEffect(() => {
     setUpNotifications(notificationRespondedTo, user);
   }, []);
-
-  /* -------------------------------------------------------------------------- */
-  /*                                Subscriptions                               */
-  /* -------------------------------------------------------------------------- */
-
-  /* ------------------------------ App Listener ------------------------------ */
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (status) => {
-      if (status === "active") {
-        refreshContacts();
-      } else {
-        contactSubscription?.unsubscribe();
-        hasRefreshedChatsRef.current = false;
-      }
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
-
-  /* ---------------------------- Contact Listener ---------------------------- */
-
-  useEffect(() => {
-    if (hasRefreshedChatsRef.current) {
-      contactSubscription = getContactSubscription(chats, setChats, user);
-    }
-
-    return () => contactSubscription?.unsubscribe();
-  }, [chats]);
 
   /* -------------------------------------------------------------------------- */
   /*                               Sub-Components                               */
@@ -245,8 +433,14 @@ export default function ContactScreen({ route, navigation }: Props) {
 
   /* --------------------------------- Contact -------------------------------- */
 
-  const renderContact = ({ item }: { item: Chat }) => {
-    return <MemoizedContact chat={item} chats={chats} setChats={setChats} />;
+  const renderContact = ({ item }: { item: ChatUser }) => {
+    return (
+      <MemoizedContact
+        chatUser={item}
+        chatUsers={chatUsers}
+        setChatUsers={setChatUsers}
+      />
+    );
   };
 
   /* ----------------------------- Drop Down Item ----------------------------- */
@@ -257,8 +451,8 @@ export default function ContactScreen({ route, navigation }: Props) {
         tab={item}
         exitViewHeightAnim={exitViewHeightAnim}
         exitViewOpacityAnim={exitViewOpacityAnim}
-        chats={chats}
-        setChats={setChats}
+        // chats={chatUsers}
+        // setChats={setChatUsers}
       />
     );
   };
@@ -278,7 +472,7 @@ export default function ContactScreen({ route, navigation }: Props) {
       <FlatList
         style={styles.FlatList}
         numColumns={2}
-        data={chats}
+        data={chatUsers}
         renderItem={renderContact}
         keyExtractor={(item) => item?.id}
         showsVerticalScrollIndicator={false}

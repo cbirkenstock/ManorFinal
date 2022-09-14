@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
+  Alert,
   AppState,
   FlatList,
   KeyboardAvoidingView,
@@ -14,6 +15,7 @@ import useAppContext from "../../hooks/useAppContext";
 import {
   updateChatUserHasUnreadAnnouncements,
   updateChatUserHasUnreadMessages,
+  updateChatUserUpToDate,
 } from "../../managers/ChatUserManager";
 import {
   messageSubscription,
@@ -46,8 +48,8 @@ import * as queries from "../../src/graphql/queries";
 export default function ChatScreen({ navigation, route }: Props) {
   const context = useAppContext();
   const {
-    setChat,
     chat,
+    setChat,
     setChatUser,
     chatUser,
     setMembers,
@@ -69,35 +71,17 @@ export default function ChatScreen({ navigation, route }: Props) {
       yCoordinate: number;
       message: Message;
     }>();
-  const [page, setPage] = useState<number>(0);
 
-  const [mustResfreshMessages, setMustRefreshMessages] =
-    useState<boolean>(true);
+  const nextTokenRef = useRef<string>();
+  const triggeredByNotificationRef = useRef<boolean>(
+    route.params.triggeredByNotification && route.params?.chat === chat
+      ? false
+      : true
+  );
 
-  const hasMoreMessages = useRef<boolean>(true);
-
-  const chatcontextUpdated = chat?.id === route.params?.chat.id;
-  const chats = route.params.chats;
-  const chatScreenSetChats = route.params.setChats;
-
-  useEffect(() => {
-    const refreshMessages = async () => {
-      if (!chatcontextUpdated || !mustResfreshMessages) return;
-
-      const refreshMessages = (
-        (await API.graphql(
-          graphqlOperation(queries.byChat, {
-            chatID: chat?.id,
-            limit: 30,
-          })
-        )) as any
-      ).data.byChat.items;
-
-      setMessages(refreshMessages);
-    };
-
-    refreshMessages();
-  }, [chat, mustResfreshMessages]);
+  // useEffect(() => {
+  //   Alert.alert(triggeredByNotificationRef.current.toString());
+  // }, [route.params?.triggeredByNotification]);
 
   /* -------------------------------------------------------------------------- */
   /*                             Set Proper Context                             */
@@ -105,10 +89,8 @@ export default function ChatScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     setMessages([]);
-    hasMoreMessages.current = true;
 
-    updateChatUserHasUnreadMessages([route.params?.chatUser], false);
-    updateChatUserHasUnreadAnnouncements([route.params?.chatUser], false);
+    updateChatUserUpToDate(route.params.chatUser);
 
     setChatUser(route.params?.chatUser);
     setChat(route.params?.chat);
@@ -122,11 +104,6 @@ export default function ChatScreen({ navigation, route }: Props) {
   /*                                Fetch Members                               */
   /* -------------------------------------------------------------------------- */
 
-  /*
-  I am using the route param here instead of waiting for global variable because
-  I don't want to have to wait for update to chat to start members call -- it would also
-  require additional useEffect based on chat being set
-  */
   const fetchMembers = async () => {
     const members = DataStore.query(ChatUser, (chatUser) =>
       chatUser.chatID("eq", route.params?.chat.id)
@@ -136,65 +113,85 @@ export default function ChatScreen({ navigation, route }: Props) {
   };
 
   /* -------------------------------------------------------------------------- */
-  /*                               Fetch Messages                               */
+  /*                                Set Messages                                */
   /* -------------------------------------------------------------------------- */
 
-  /*
-  We check to make sure that the chat global variable is updated to
-  what is should be before calling messages to make sure we don't pull
-  down messages from wrong chat
+  /* --------------------------- Get Cached Messages -------------------------- */
 
-  we do this instead of passing chat param from route directly
-  becuase the message component also relies on the global variable
-  */
   useEffect(() => {
     const fetchMessages = async () => {
-      if (
-        hasMoreMessages.current &&
-        chatcontextUpdated &&
-        (messages.length === 0 || page !== 0)
-      ) {
-        const _messages = (
-          await DataStore.query(
-            Message,
-            (message) => message.chatID("eq", chat?.id),
-            {
-              page: page,
-              limit: 30,
-              sort: (message) => message.createdAt(SortDirection.DESCENDING),
-            }
-          )
-        ).filter((message) => !message.announcementBody);
+      const _messages = (
+        await DataStore.query(
+          Message,
+          (message) => message.chatID("eq", route.params?.chat.id),
+          {
+            limit: 30,
+            sort: (message) => message.createdAt(SortDirection.DESCENDING),
+          }
+        )
+      ).filter((message) => !message.announcementBody);
 
-        if (_messages.length < 30) {
-          hasMoreMessages.current = false;
-        }
-
-        if (page === 0) {
-          setMessages(_messages);
-        } else {
-          setMessages([...messages, ..._messages]);
-        }
+      //makes sure that true query didn't actually beat cache
+      if (nextTokenRef.current === undefined) {
+        setMessages(_messages);
       }
     };
 
     fetchMessages();
-  }, [chat, page, messages]);
+  }, [route.params?.chat]);
+
+  /* ---------------------------- Refresh Messages ---------------------------- */
+
+  const refreshMessages = async () => {
+    if (nextTokenRef.current === null) return;
+
+    try {
+      const { nextToken, items } = (
+        (await API.graphql(
+          graphqlOperation(queries.byChat, {
+            chatID: route.params?.chat.id,
+            limit: 30,
+            nextToken: nextTokenRef.current,
+          })
+        )) as any
+      ).data.byChat;
+
+      const _messages = (items as Message[]).filter(
+        (message) => !message.announcementBody
+      );
+
+      if (!nextTokenRef.current) {
+        nextTokenRef.current = nextToken;
+        setMessages(_messages as Message[]);
+      } else {
+        nextTokenRef.current = nextToken;
+        setMessages([...messages, ..._messages]);
+      }
+    } catch (error) {}
+  };
+
+  useEffect(() => {
+    refreshMessages();
+  }, [route.params.chat]);
 
   /* -------------------------------------------------------------------------- */
   /*                             Fetch Announcements                            */
   /* -------------------------------------------------------------------------- */
 
+  //TODO -- make GraphQL
   useEffect(() => {
     const fetchAnnouncements = async () => {
-      if (chatcontextUpdated && pendingAnnouncements.length === 0) {
+      if (pendingAnnouncements.length === 0) {
         const today = new Date(formatDateTime(new Date())!);
 
         const _pendingAnnouncements = (
           await DataStore.query(
             PendingAnnouncement,
             (pendingAnnouncement) =>
-              pendingAnnouncement.chatUserID("eq", chatUser?.id ?? ""),
+              pendingAnnouncement.chatUserID(
+                "eq",
+                route.params?.chatUser.id ?? ""
+              ),
             {
               sort: (announcement) =>
                 announcement.createdAt(SortDirection.ASCENDING),
@@ -216,33 +213,17 @@ export default function ChatScreen({ navigation, route }: Props) {
   /*                                Subscriptions                               */
   /* -------------------------------------------------------------------------- */
 
-  /* ------------------------------ App Listener ------------------------------ */
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (status) => {
-      if (status === "active") {
-        setMustRefreshMessages(true);
-      } else {
-        setMustRefreshMessages(false);
-      }
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
-
   /* -------------------------- Message Subscription -------------------------- */
 
   useEffect(() => {
     const subscription = messageSubscription(
       context,
       appendMessage,
-      updateMessageLocally,
-      mustResfreshMessages
+      updateMessageLocally
     );
+
     return () => subscription.unsubscribe();
-  }, [messages, mustResfreshMessages]);
+  }, [messages]);
 
   /* -------------------- Pending Announcement Subscription ------------------- */
 
@@ -251,20 +232,34 @@ export default function ChatScreen({ navigation, route }: Props) {
       context,
       appendPendingAnnouncement
     );
+
     return () => subscription.unsubscribe();
-  }, [pendingAnnouncements, chatUser]);
+  }, [pendingAnnouncements]);
 
-  /* -------------------------------------------------------------------------- */
-  /*                               Sub-Components                               */
-  /* -------------------------------------------------------------------------- */
+  /* ------------------------------ App Listener ------------------------------ */
 
-  const GoToChatInfoScreen = () => {
-    navigation.navigate("ChatInfoScreen", {
-      displayUser: route.params?.displayUser,
-      eventMessages: [],
-      chats: route.params.chats,
-      setChats: route.params.setChats,
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (status) => {
+      if (status === "active") {
+        if (!triggeredByNotificationRef.current) {
+          refreshMessages();
+        } else {
+          triggeredByNotificationRef.current = false;
+        }
+      } else {
+        unsubscribeAll();
+      }
     });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  /* ----------------------------- Unsubscribe All ---------------------------- */
+
+  const unsubscribeAll = () => {
+    nextTokenRef.current = undefined;
   };
 
   /* -------------------------------------------------------------------------- */
@@ -296,8 +291,7 @@ export default function ChatScreen({ navigation, route }: Props) {
         <View style={{ flex: 1 }}>
           <FlatList
             onEndReached={() => {
-              console.log("hey");
-              // setPage(page + 1);
+              refreshMessages();
             }}
             style={[styles.messageFlatlist]}
             inverted
@@ -318,9 +312,7 @@ export default function ChatScreen({ navigation, route }: Props) {
           ) : null}
         </View>
         <MessageBar
-          chat={chat ?? undefined}
-          chats={chats ?? []}
-          setChats={chatScreenSetChats}
+          chat={route.params?.chat}
           messageToReplyTo={messageToReplyTo}
           threadMessages={threadMessages}
           setThreadMessages={setThreadMessages}
@@ -335,7 +327,11 @@ export default function ChatScreen({ navigation, route }: Props) {
             undefined
           }
           menuFunctions={[
-            GoToChatInfoScreen,
+            () => {
+              navigation.navigate("ChatInfoScreen", {
+                displayUser: route.params?.displayUser,
+              });
+            },
             () => setIsAnnouncementDialogVisible(true),
           ]}
         />

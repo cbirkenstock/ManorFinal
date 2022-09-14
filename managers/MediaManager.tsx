@@ -43,7 +43,7 @@ export enum PickImageRequestEnum {
 const getImageWidthAndQuality = (request: PickImageRequestEnum) => {
   switch (request) {
     case PickImageRequestEnum.sendChatImage:
-      return { width: 700, quality: 0.3 };
+      return { width: 700, quality: 0.6 };
     case PickImageRequestEnum.setProfileImage:
       return { width: 300, quality: 0.7 };
     case PickImageRequestEnum.setChatImage:

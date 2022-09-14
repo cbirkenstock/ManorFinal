@@ -87,6 +87,13 @@ export const schema = {
           isRequired: false,
           attributes: [],
         },
+        lastMessageSenderID: {
+          name: "lastMessageSenderID",
+          isArray: false,
+          type: "String",
+          isRequired: false,
+          attributes: [],
+        },
         chatCreator: {
           name: "chatCreator",
           isArray: false,
@@ -1153,5 +1160,5 @@ export const schema = {
   },
   enums: {},
   nonModels: {},
-  version: "f6c683fd4f6625123bf6184668e42e7c",
+  version: "bf5c9c610b74bd88e4dfa9b40698aade",
 };
